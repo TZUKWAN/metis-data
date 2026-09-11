@@ -63,6 +63,7 @@ def test_login_executor_existing_account(browser_session, fixture_server):
         REPO.add_credential(new_id("cred"), "fixture_site", "password", "researcher@example.edu", "fixture_site.credentials")
 
         class Driver:
+
             async def open(self, url):
                 await browser_session.navigate(url)
 
@@ -78,6 +79,8 @@ def test_login_executor_existing_account(browser_session, fixture_server):
             async def body_text(self):
                 return await browser_session.page.inner_text("body")
 
+        Driver.browser_session = browser_session  # P03-005: real storage_state save path
+
         form = {"email": "#email", "password": "#password", "_submit": "#login-btn"}
         result = await LoginExecutor("fixture_site", Driver()).login(_url(fixture_server, "login.html"), form)
         assert result["result"] == "INVALID_CREDENTIALS" and result["attempts"] == 1
@@ -85,9 +88,11 @@ def test_login_executor_existing_account(browser_session, fixture_server):
         # now store the correct password → success + session persisted in vault
         vault.set_secret("fixture_site.credentials", "Corr3ct-Passw0rd!")
         result2 = await LoginExecutor("fixture_site", Driver()).login(_url(fixture_server, "login.html"), form)
-        assert result2["result"] == "SUCCESS"
+        assert result2["result"] == "SUCCESS" and result2["storage_state_saved"] is True
         sessions = REPO.list_sessions("fixture_site")
         assert sessions and sessions[-1]["status"] == "VALID"
+        # vault holds real storage state, not a placeholder
+        assert get_vault().exists("fixture_site.storage_state")
         # account deletion revokes: next access must re-auth
         ACCOUNTS.delete_account("fixture_site")
         assert all(s["status"] == "REVOKED" for s in REPO.list_sessions("fixture_site"))
