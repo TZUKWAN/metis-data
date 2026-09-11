@@ -1,12 +1,38 @@
 # Engineering Progress — Metis Data Productization
 
 ## Current Phase
-Phase 3（真实 Session / Vault）
+Phase 4（Access State Machine）
 
 ## Current Task
-P03-004 storage_state schema
+P04-001 AccessJob 模型
 
 ## Completed
+
+### Task P03-001..010
+Status: PASS
+Goal: 真实 Session / Vault（替换占位字符串 session）
+Files Changed: metis/backend/app/auth/{secret_store,vault,browser_state,recipes,accounts}.py、metis/backend/tests/fixtures/pages/{login,login_success}.html、metis/backend/tests/test_p03_session.py
+Implementation:
+- P03-001 SecretStore ABC（set/get/delete/exists/list_keys）；get_secret_store() 平台路由
+- P03-002 保留 DPAPI 实现；调用改走平台符号（64 位安全原型仅 Windows 声明）
+- P03-003 非 Windows import 安全；调用时 VAULT_UNAVAILABLE（无明文 fallback）
+- P03-004 BrowserStateRecord schema（provider/account/created/verified/expires/vault_key）
+- P03-005 登录成功后 context.storage_state() 序列化入 Vault（LoginExecutor 集成，storage_state_saved 返回）
+- P03-006 restore_browser_storage：新 Context 注入 cookies + localStorage init scripts
+- P03-007 probe_session_valid：按 recipe logged_in/logged_out selector 真实探测，不信任 DB status
+- P03-008 失效 → SESSION_EXPIRED（DB session+account 同步标记）
+- P03-009 OAuthCredential（access/refresh/expires/scope）Vault 存取
+- P03-010 delete_browser_state + 账户删除联动（REVOKED）
+Tests: `python -m pytest metis/backend/tests/test_p03_session.py` — 4 passed
+  （含真实 E2E：登录→真实 storage_state 保存→关闭浏览器→新 session 恢复→probe 仍登录；无登录态探测→SESSION_EXPIRED）
+Evidence: tests/test_p03_session.py；recipes.py（fixture_site + kaggle 真实定位器）
+Acceptance:
+- [x] Vault 存真实 state（含 metis_logged_in localStorage 标记），非占位字符串
+- [x] 登录→保存→重启→恢复→仍登录（本地 fixture）
+- [x] 探测不只信 DB status
+- [x] 过期进 SESSION_EXPIRED
+- [x] 删除后需重新认证
+
 
 ### Task P02-002..014（P02-001/009 已在 Phase 0 完成）
 Status: PASS

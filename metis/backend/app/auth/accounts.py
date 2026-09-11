@@ -214,11 +214,21 @@ class LoginExecutor:
             await self.driver.click(form_map["_submit"])
             last = await self._classify()
             if last == "SUCCESS":
-                session_key = f"{self.provider_id}.session_state"
-                vault.set_secret(session_key, f"fixture-session:{self.provider_id}:{cred['account_label']}")
-                REPO.upsert_session(new_id("sess"), self.provider_id, session_key, status="VALID", account_id=aid)
+                # P03-005: persist the REAL browser storage_state (cookies+localStorage) in the vault
+                saved = False
+                bs = getattr(self.driver, "browser_session", None)
+                if bs is not None:
+                    try:
+                        from app.auth.browser_state import save_browser_state
+
+                        await save_browser_state(bs, self.provider_id, account_id=cred["account_label"])
+                        saved = True
+                    except Exception as exc:  # noqa: BLE001
+                        log.warning_ctx("storage_state save failed", provider_id=self.provider_id, error=str(exc)[:200])
+                if not saved:
+                    log.warning_ctx("login succeeded without a browser session; no storage_state persisted", provider_id=self.provider_id)
                 REPO.upsert_account(aid, self.provider_id, status=AccountStatusKind.SESSION_VALID, last_verified_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat())
-                return {"result": "SUCCESS", "attempts": attempt}
+                return {"result": "SUCCESS", "attempts": attempt, "storage_state_saved": saved}
             if last == "INVALID_CREDENTIALS":
                 break  # wrong credentials: retrying cannot help
             if last in ("CAPTCHA_REQUIRED", "MFA_REQUIRED"):

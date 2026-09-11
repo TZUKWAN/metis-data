@@ -6,9 +6,11 @@ with the log-redaction registry so it is masked everywhere automatically.
 from __future__ import annotations
 
 import ctypes
+import sys
 from ctypes import wintypes
 from pathlib import Path
 
+from app.auth.secret_store import SecretStore
 from app.core.errors import MetisError
 from app.core.logging import get_logger
 from app.core.paths import vault_dir
@@ -18,20 +20,28 @@ log = get_logger("vault")
 _DOMAIN = "MetisData"
 
 # 64-bit safe prototypes
-_crypt = ctypes.windll.crypt32
-_crypt.CryptProtectData.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, wintypes.DWORD, ctypes.c_void_p]
-_crypt.CryptProtectData.restype = wintypes.BOOL
-_crypt.CryptUnprotectData.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, wintypes.DWORD, ctypes.c_void_p]
-_crypt.CryptUnprotectData.restype = wintypes.BOOL
-_kernel32 = ctypes.windll.kernel32
-_kernel32.LocalFree.argtypes = [wintypes.HLOCAL]
-_kernel32.LocalFree.restype = wintypes.HLOCAL
+if sys.platform == "win32":
+    _crypt = ctypes.windll.crypt32
+    _crypt.CryptProtectData.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, wintypes.DWORD, ctypes.c_void_p]
+    _crypt.CryptProtectData.restype = wintypes.BOOL
+    _crypt.CryptUnprotectData.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, wintypes.DWORD, ctypes.c_void_p]
+    _crypt.CryptUnprotectData.restype = wintypes.BOOL
+    _kernel32 = ctypes.windll.kernel32
+    _kernel32.LocalFree.argtypes = [wintypes.HLOCAL]
+    _kernel32.LocalFree.restype = wintypes.HLOCAL
+else:  # non-Windows: import-safe; call raises VAULT_UNAVAILABLE (no plaintext fallback)
+    def _crypt():  # noqa: F811 — accessed only via _dpapi_or_fail
+        raise MetisError("VAULT_UNAVAILABLE", f"DPAPI unavailable on {sys.platform}")
+    _kernel32 = None
 
 
-class Vault:
+
+class Vault(SecretStore):
     """key -> secret storage backed by Windows DPAPI (user scope, machine-bound)."""
 
     def __init__(self) -> None:
+        if sys.platform != "win32":
+            raise MetisError("VAULT_UNAVAILABLE", f"DPAPI vault requires Windows, got {sys.platform}")
         self._blob_dir = vault_dir()
         self._blob_dir.mkdir(parents=True, exist_ok=True)
         (self._blob_dir / ".gitkeep").touch(exist_ok=True)
@@ -44,13 +54,13 @@ class Vault:
 
         din = DATA_BLOB(len(data), ctypes.cast(ctypes.c_char_p(data), ctypes.c_void_p))
         dout = DATA_BLOB()
-        ok = ctypes.windll.crypt32.CryptProtectData(ctypes.byref(din), "MetisData", None, None, None, 0, ctypes.byref(dout))
+        ok = _crypt.CryptProtectData(ctypes.byref(din), "MetisData", None, None, None, 0, ctypes.byref(dout))
         if not ok:
             raise MetisError("VAULT_UNAVAILABLE", "CryptProtectData failed")
         try:
             return ctypes.string_at(dout.pbData, dout.cbData)
         finally:
-            ctypes.windll.kernel32.LocalFree(dout.pbData)
+            _kernel32.LocalFree(dout.pbData)
 
     @staticmethod
     def _unprotect(blob: bytes) -> bytes:
@@ -59,13 +69,13 @@ class Vault:
 
         din = DATA_BLOB(len(blob), ctypes.cast(ctypes.c_char_p(blob), ctypes.c_void_p))
         dout = DATA_BLOB()
-        ok = ctypes.windll.crypt32.CryptUnprotectData(ctypes.byref(din), None, None, None, None, 0, ctypes.byref(dout))
+        ok = _crypt.CryptUnprotectData(ctypes.byref(din), None, None, None, None, 0, ctypes.byref(dout))
         if not ok:
             raise MetisError("VAULT_UNAVAILABLE", "CryptUnprotectData failed (wrong user or corrupted blob)")
         try:
             return ctypes.string_at(dout.pbData, dout.cbData)
         finally:
-            ctypes.windll.kernel32.LocalFree(dout.pbData)
+            _kernel32.LocalFree(dout.pbData)
 
     def _path(self, key: str) -> Path:
         safe = key.replace("/", "_").replace("\\", "_")
