@@ -195,48 +195,52 @@ class LoginExecutor:
         self.driver = driver
 
     async def login(self, login_url: str, form_map: dict[str, str], credential_id: str | None = None) -> dict:
+        """Try each stored credential (bounded); INVALID stops that credential immediately."""
         vault = get_vault()
-        creds = [c for c in REPO.list_credentials(self.provider_id) if c["kind"] == "password"]
+        creds = [c for c in REPO.list_credentials(self.provider_id) if c["kind"] in ("password", "oauth")]
         if not creds:
             raise MetisError("INVALID_CREDENTIALS", f"no stored credentials for {self.provider_id}; bind an existing account first")
-        cred = creds[0]
-        password = vault.get_secret(cred["vault_key"])
+        if credential_id:
+            creds = [c for c in creds if c["credential_id"] == credential_id] or creds
 
         aid = AccountService().account_for(self.provider_id, create=True)
-        attempt = 0
         last = None
-        while attempt < self.MAX_ATTEMPTS:
-            attempt += 1
-            REPO.add_ui_event("auth.login_submit", "INFO", payload={"provider": self.provider_id, "attempt": attempt})
-            await self.driver.open(login_url)
-            await self.driver.fill(form_map["email"], cred["account_label"])
-            await self.driver.fill(form_map["password"], password)
-            await self.driver.click(form_map["_submit"])
-            last = await self._classify()
-            if last == "SUCCESS":
-                # P03-005: persist the REAL browser storage_state (cookies+localStorage) in the vault
-                saved = False
-                bs = getattr(self.driver, "browser_session", None)
-                if bs is not None:
-                    try:
-                        from app.auth.browser_state import save_browser_state
+        tried = 0
+        for cred in creds[: self.MAX_ATTEMPTS]:
+            password = vault.get_secret(cred["vault_key"])
+            attempt = 0
+            while attempt < 1:  # one attempt per credential; invalid creds never retried
+                attempt += 1
+                tried += 1
+                REPO.add_ui_event("auth.login_submit", "INFO", payload={"provider": self.provider_id, "attempt": tried, "account": cred["account_label"]})
+                await self.driver.open(login_url)
+                await self.driver.fill(form_map["email"], cred["account_label"])
+                await self.driver.fill(form_map["password"], password)
+                await self.driver.click(form_map["_submit"])
+                last = await self._classify()
+                if last == "SUCCESS":
+                    saved = False
+                    bs = getattr(self.driver, "browser_session", None)
+                    if bs is not None:
+                        try:
+                            from app.auth.browser_state import save_browser_state
 
-                        await save_browser_state(bs, self.provider_id, account_id=cred["account_label"])
-                        saved = True
-                    except Exception as exc:  # noqa: BLE001
-                        log.warning_ctx("storage_state save failed", provider_id=self.provider_id, error=str(exc)[:200])
-                if not saved:
-                    log.warning_ctx("login succeeded without a browser session; no storage_state persisted", provider_id=self.provider_id)
-                REPO.upsert_account(aid, self.provider_id, status=AccountStatusKind.SESSION_VALID, last_verified_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat())
-                return {"result": "SUCCESS", "attempts": attempt, "storage_state_saved": saved}
-            if last == "INVALID_CREDENTIALS":
-                break  # wrong credentials: retrying cannot help
-            if last in ("CAPTCHA_REQUIRED", "MFA_REQUIRED"):
-                REPO.upsert_account(aid, self.provider_id, status=AccountStatusKind.LOGIN_FAILED)
-                return {"result": last, "attempts": attempt}
+                            await save_browser_state(bs, self.provider_id, account_id=cred["account_label"])
+                            saved = True
+                        except Exception as exc:  # noqa: BLE001
+                            log.warning_ctx("storage_state save failed", provider_id=self.provider_id, error=str(exc)[:200])
+                    if not saved:
+                        log.warning_ctx("login succeeded without a browser session; no storage_state persisted", provider_id=self.provider_id)
+                    REPO.upsert_account(aid, self.provider_id, status=AccountStatusKind.SESSION_VALID, last_verified_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat())
+                    return {"result": "SUCCESS", "attempts": tried, "account": cred["account_label"], "storage_state_saved": saved}
+                if last == "INVALID_CREDENTIALS":
+                    break  # wrong credentials: retrying cannot help
+                if last in ("CAPTCHA_REQUIRED", "MFA_REQUIRED"):
+                    REPO.upsert_account(aid, self.provider_id, status=AccountStatusKind.LOGIN_FAILED)
+                    return {"result": last, "attempts": tried}
         REPO.upsert_account(aid, self.provider_id, status=AccountStatusKind.LOGIN_FAILED)
-        REPO.add_ui_event("auth.login_failed", "WARNING", payload={"provider": self.provider_id, "result": str(last), "attempts": attempt})
-        return {"result": last or "FAILED", "attempts": attempt}
+        REPO.add_ui_event("auth.login_failed", "WARNING", payload={"provider": self.provider_id, "result": str(last), "attempts": tried})
+        return {"result": last or "FAILED", "attempts": tried}
 
     async def _classify(self) -> str:
         url = await self.driver.current_url()

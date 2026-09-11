@@ -24,6 +24,8 @@ def temp_workspace(tmp_path, monkeypatch):
     monkeypatch.setenv("METIS_LOG_DIR", str(ws / "logs"))
     monkeypatch.setenv("METIS_BROWSER_DOWNLOAD_DIR", str(ws / "downloads" / "browser"))
     monkeypatch.setenv("METIS_BROWSER_USER_DATA_DIR", str(ws / "browser-profile"))
+    # Tests MUST never open visible windows on the user's desktop.
+    monkeypatch.setenv("METIS_BROWSER_HEADLESS", "true")
     from app.core.config import reset_settings
 
     reset_settings()

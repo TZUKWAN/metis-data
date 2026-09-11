@@ -313,3 +313,37 @@ async function recomputeSourcePlan() {
     ${r.policy_problems?.length?`<div class="limits">${r.policy_problems.map(x=>`<span class="pill">⚠ ${esc(x)}</span>`).join("")}</div>`:""}`;
   pushEvent("agent.source_plan", "INFO", { message: `搜索计划已重算：${r.source_plan.provider_priorities.join(", ")}` });
 }
+
+
+/* ---------- P05: Account Center ---------- */
+async function refreshAccountCenter() {
+  const providers = await api("/api/providers");
+  const sel = $("ac-provider");
+  if (!sel.options.length) {
+    sel.innerHTML = providers.map(p => `<option value="${esc(p.provider_id)}">${esc(p.name)}</option>`).join("");
+  }
+  const accounts = await api("/api/accounts");
+  $("ac-list").innerHTML = accounts.map(a =>
+    `<div class="event"><b>${esc(a.provider_id)}</b> <span class="badge ${a.status === "SESSION_VALID" || a.status === "FULLY_ACTIVE" ? "ok" : a.status === "NONE" ? "" : "warn"}">${esc(a.status)}</span>
+     自动注册: ${a.auto_register_enabled ? "开" : "关"} ${a.last_verified_at ? `· 验证 ${esc(a.last_verified_at).slice(0, 10)}` : ""}</div>`).join("") || "<p style='color:var(--dim)'>暂无账号</p>";
+}
+$("ac-bind").onclick = async () => {
+  await api("/api/accounts/bind", { method: "POST", body: { provider_id: $("ac-provider").value, account_label: $("ac-label").value, password: $("ac-password").value } });
+  pushEvent("account.bound", "INFO", { message: "账号已绑定，凭据入 Vault" });
+  refreshAccountCenter();
+};
+$("ac-login").onclick = async () => {
+  const pid = $("ac-provider").value;
+  const r = await api(`/api/accounts/${pid}/login`, { method: "POST", body: {} });
+  pushEvent("account.login", r.result.result === "SUCCESS" ? "INFO" : "WARNING", { message: `${pid} 登录: ${r.result.result}（尝试 ${r.result.attempts} 次，storage_state ${r.result.storage_state_saved ? "已保存" : "未保存"}）` });
+  refreshAccountCenter();
+};
+$("ac-delete").onclick = async () => {
+  await api(`/api/accounts/${$("ac-provider").value}`, { method: "DELETE" });
+  pushEvent("account.deleted", "WARNING", { message: "账号已删除，session 全部撤销" });
+  refreshAccountCenter();
+};
+$("ac-auto").onchange = async (e) => {
+  await api(`/api/accounts/${$("ac-provider").value}/auto_register`, { method: "POST", body: { enabled: e.target.checked } });
+};
+refreshAccountCenter();

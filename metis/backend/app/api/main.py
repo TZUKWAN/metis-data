@@ -39,6 +39,11 @@ def err(e: MetisError):
     return JSONResponse(status_code=422 if e.code not in ("NOT_FOUND",) else 404, content=e.to_dict())
 
 
+@app.exception_handler(MetisError)
+async def metis_error_handler(_request, exc: MetisError):
+    return err(exc)
+
+
 # ---------------- models ----------------
 class RequirementIn(BaseModel):
     text: str
@@ -615,6 +620,110 @@ async def agent_plan_sources(body: dict):
         "query_plans": [q.model_dump(mode="json") for q in queries],
         "policy_problems": problems,
     }
+
+
+# ---------------- account center: login/register APIs (P05-003/005) ----------------
+class LoginIn(BaseModel):
+    base_url: str | None = None  # for fixture/test providers with relative recipe URLs
+
+
+class RegisterIn(BaseModel):
+    register_url: str | None = None
+    base_url: str | None = None
+
+
+@app.post("/api/accounts/{provider_id}/login")
+async def account_login(provider_id: str, body: LoginIn):
+    """Drive the real login flow in the live browser, persist storage_state, resume pending access jobs."""
+    from app.auth.accounts import ACCOUNTS, LoginExecutor
+    from app.auth.browser_state import save_browser_state
+    from app.auth.recipes import PROVIDER_RECIPES, resolve_url
+    from app.browser.runtime import MANAGER, LocatorTarget
+
+    recipe = PROVIDER_RECIPES.get(provider_id)
+    if not recipe or "login" not in recipe:
+        raise HTTPException(404, f"no login recipe for {provider_id}")
+    base = body.base_url or get_settings().fixture_server
+
+    class Driver:
+        def __init__(self, session):
+            self.browser_session = session
+
+        async def open(self, url):
+            await self.browser_session.navigate(url)
+
+        async def fill(self, selector, value):
+            await self.browser_session.type_text(LocatorTarget(css=selector), value, secret=("password" in selector))
+
+        async def click(self, selector):
+            await self.browser_session.click(LocatorTarget(css=selector))
+
+        async def current_url(self):
+            return self.browser_session.page.url
+
+        async def body_text(self):
+            return await self.browser_session.page.inner_text("body")
+
+    session = await MANAGER.new_session(f"login:{provider_id}")
+    driver = Driver(session)
+    form = {"email": recipe["login"]["email"], "password": recipe["login"]["password"], "_submit": recipe["login"]["submit"]}
+    result = await LoginExecutor(provider_id, driver).login(resolve_url(base, recipe["login_url"]), form)
+
+    # P04-010: resume the most recent pending access job for this provider
+    resumed = None
+    if result["result"] == "SUCCESS":
+        pending = [j for j in REPO.list_access_jobs(provider_id) if j["state"] in ("LOGGING_IN", "LOGIN_REQUIRED", "WAITING_USER", "SESSION_EXPIRED")]
+        if pending:
+            from app.access.executor import resume_after_user
+            from app.access.machine import AccessJob
+
+            resumed = (await resume_after_user(pending[0]["access_job_id"], "success")).model_dump(mode="json")
+    return {"result": result, "access_job": resumed, "session_id": session.session_id}
+
+
+@app.post("/api/accounts/{provider_id}/register")
+async def account_register(provider_id: str, body: RegisterIn):
+    """Drive ordinary self-service registration (only when the user enabled it)."""
+    from app.auth.accounts import ACCOUNTS, IDENTITY, RegistrationExecutor
+    from app.auth.recipes import PROVIDER_RECIPES, resolve_url
+    from app.browser.runtime import MANAGER, LocatorTarget
+
+    recipe = PROVIDER_RECIPES.get(provider_id)
+    if not recipe or "registration" not in recipe:
+        raise HTTPException(404, f"no registration recipe for {provider_id}")
+    if not ACCOUNTS.auto_register_allowed(provider_id):
+        raise MetisError("REGISTRATION_BLOCKED", "auto registration is disabled for this provider")
+    # P05-012 retry guard: max 3 registration attempts per provider
+    attempts = [e for e in REPO.list_ui_events(200) if e["kind"] == "registration.submitted" and (e["payload"] or {}).get("provider") == provider_id]
+    if len(attempts) >= 3:
+        raise MetisError("REGISTRATION_BLOCKED", "registration retry limit reached for this provider")
+
+    base = body.base_url or get_settings().fixture_server
+    session = await MANAGER.new_session(f"register:{provider_id}")
+
+    class Driver:
+        browser_session = session
+
+        async def open(self, url):
+            await session.navigate(url)
+
+        async def fill(self, selector, value):
+            await session.type_text(LocatorTarget(css=selector), value, secret=("password" in selector))
+
+        async def click(self, selector):
+            await session.click(LocatorTarget(css=selector))
+
+        async def current_url(self):
+            return session.page.url
+
+        async def body_text(self):
+            return await session.page.inner_text("body")
+
+    reg = recipe["registration"]
+    form_map = {**reg["fields"], "_submit": reg["submit"]}
+    ex = RegistrationExecutor(provider_id, Driver())
+    result = await ex.run(resolve_url(base, reg["url"]), form_map, password_rules=recipe.get("password_policy"))
+    return {**result, "session_id": session.session_id}
 
 
 # ---------------- events / health ----------------
