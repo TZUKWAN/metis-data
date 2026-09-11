@@ -140,7 +140,7 @@ async def main() -> int:
     cfg = BuildConfig(
         title="GOLDEN panel 2015-2023",
         requirement_id=req["requirement_id"] if isinstance(req, dict) else req.requirement_id,
-        inputs=[BuildInputRef(artifact_id=a["artifact_id"]) for a in acquired[:3]],  # GS-5: up to 3 inputs
+        inputs=[BuildInputRef(artifact_id=a["artifact_id"], filter={"sex": "T", "age": "Y15-24", "unit": "PC_ACT"} if a["provider_id"] == "eurostat" else {}) for a in acquired[:3]],  # GS-5: up to 3 inputs
         keys=["country", "year"],
         missing_policy="none",
         derived_variables=[],

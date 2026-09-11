@@ -67,9 +67,10 @@ def safe_join(left: pd.DataFrame, right: pd.DataFrame, keys: list[str], *, how: 
     merged = merged.drop(columns=["_merge"])
     # sample unmatched entities
     if how == "inner":
-        l_keys = set(map(tuple, left[keys].drop_duplicates().values))
-        r_keys = set(map(tuple, right[keys].drop_duplicates().values))
-        unmatched_samples = [list(t) for t in list(l_keys - r_keys)[:10]]
+        # stringify so exotic cell values (lists from JSON sources) remain hashable
+        l_keys = set(left[keys].astype(str).agg("|".join, axis=1))
+        r_keys = set(right[keys].astype(str).agg("|".join, axis=1))
+        unmatched_samples = sorted(l_keys - r_keys)[:10]
     else:
         unmatched_samples = []
     report = {

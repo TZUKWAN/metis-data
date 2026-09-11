@@ -17,6 +17,11 @@ def _add(build_id: str, code: str, severity: str, message: str, field: str | Non
 def run_validations(df: pd.DataFrame, build_id: str, *, keys: list[str] | None = None, join_report: dict | None = None, expected_row_count: int | None = None, expected_schema: dict | None = None, imputation_stats: dict | None = None) -> list[dict]:
     out: list[dict] = []
 
+    # joins can produce duplicate column labels; pandas then returns DataFrames for
+    # df[col] — deduplicate (keep first) so every check sees Series
+    if df.columns.duplicated().any():
+        df = df.loc[:, ~df.columns.duplicated()].copy()
+
     # canonicalize key names to the final frame (country→iso3) and keep only existing columns
     if keys:
         key_canon = {"country": "iso3", "country_name": "iso3", "nation": "iso3"}

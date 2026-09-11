@@ -223,6 +223,7 @@ class DownloadJob(BaseModel):
 class BuildInputRef(BaseModel):
     artifact_id: str
     alias: str = ""
+    filter: dict[str, str] = {}  # column equality filters (e.g. {"sex": "T"}) applied at load
 
 
 class BuildPlanStep(BaseModel):

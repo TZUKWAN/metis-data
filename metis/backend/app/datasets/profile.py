@@ -79,6 +79,12 @@ def profile_file(path: Path) -> dict:
                 chunks = chunks[-3:]
 
     sample_df = pd.concat(chunks, ignore_index=True) if len(chunks) > 1 else (chunks[0] if chunks else parsed.df)
+    # sanitize exotic cells (lists/dicts from JSON sources) so hashing ops (duplicated,
+    # nunique, groupby) never see unhashable values
+    sample_df = sample_df.copy()
+    for col in sample_df.columns:
+        if sample_df[col].map(lambda v: isinstance(v, (list, dict))).any():
+            sample_df[col] = sample_df[col].map(lambda v: json.dumps(v, ensure_ascii=False)[:500] if isinstance(v, (list, dict)) else v)
     prof.update(
         {
             "row_count": int(n_rows if df_all is None else len(df_all)),
@@ -133,6 +139,10 @@ def _schema(df: pd.DataFrame) -> list[dict]:
 
     out = []
     n = max(len(df), 1)
+    df = df.copy()
+    for col in df.columns:
+        if df[col].map(lambda v: isinstance(v, (list, dict))).any():
+            df[col] = df[col].map(lambda v: json.dumps(v, ensure_ascii=False)[:500] if isinstance(v, (list, dict)) else v)
     for col in df.columns:
         s = df[col]
         numeric = pd.api.types.is_numeric_dtype(s)

@@ -1,0 +1,27 @@
+{
+  "scenario": "GS-3 research repositories",
+  "query": "大学生 generative AI survey data",
+  "started": 1789147662.9359913,
+  "repos": {
+    "zenodo": {
+      "search": "OK",
+      "n": 5
+    },
+    "harvard_dataverse": {
+      "search": "OK",
+      "n": 5
+    }
+  },
+  "dedup_groups": 10,
+  "acquired": {
+    "provider_id": "zenodo",
+    "ref": "15076219",
+    "sha256": "f21499e36f8a0def",
+    "size": 771180,
+    "doi": "https://doi.org/10.5281/zenodo.15076219",
+    "license": "CC-BY-4.0"
+  },
+  "blocked": [],
+  "result": "PASS",
+  "duration_s": 14.4
+}

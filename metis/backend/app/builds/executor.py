@@ -71,6 +71,9 @@ class BuildExecutor:
 
                 parsed = parse_table(path)
                 df = parsed.df
+                for col, val in (inp.filter or {}).items():
+                    if col in df.columns:
+                        df = df[df[col].astype(str) == str(val)]
                 frames.append((inp, df))
                 input_schemas.append({"artifact_id": inp.artifact_id, "columns": list(map(str, df.columns)), "rows": int(len(df))})
                 art_data = REPO.get_artifact(inp.artifact_id) or {}
@@ -218,7 +221,14 @@ class BuildExecutor:
 
         canonicalized: list[pd.DataFrame] = []
         for idx, (inp, df) in enumerate(self._inputs, start=1):
+            df = df.copy()
+            for col, val in (inp.filter or {}).items():
+                if col in df.columns:
+                    df = df[df[col].astype(str) == str(val)]
             c = self._canon_key(df, cfg)
+            # distinct measurement columns per input so joins never duplicate labels
+            if "value" in c.columns:
+                c = c.rename(columns={"value": f"value_i{idx}"})
             c = self._with_time(c, cfg)
             canonicalized.append(c)
             self._record_op("canonicalize_input", {"input_index": idx, "artifact_id": inp.artifact_id, "columns": list(map(str, c.columns))}, [], [], None, int(len(c)), None, int(c.shape[1]))
@@ -279,7 +289,7 @@ class BuildExecutor:
 
         # 2) geo column (tolerant name match: spaces->underscores)
         norm = {c: c.lower().replace(" ", "_") for c in out.columns}
-        geo = next((c for c, n in norm.items() if n in ("country", "country_name", "nation", "country_code", "iso3", "iso2")), None)
+        geo = next((c for c, n in norm.items() if n in ("country", "country_name", "nation", "country_code", "iso3", "iso2", "geo", "ref_area", "reporter", "partner")), None)
         if geo is not None and "iso3" not in {n for n in norm.values()}:
             from app.builds.entities import CountryResolver
 

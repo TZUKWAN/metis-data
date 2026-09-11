@@ -393,7 +393,7 @@ class NasaEarthdataAdapter(ProviderAdapter):
     provider_id = "nasa_earthdata"
 
     async def search_datasets(self, query: str, filters: dict | None = None, limit: int = 20) -> list[DatasetCandidate]:
-        r = await get("https://cmr.earthdata.nasa.gov/search/collections.json", params={"has_granules": "true", "page_size": min(limit, 25), "phrase": query}, timeout=60)
+        r = await get("https://cmr.earthdata.nasa.gov/search/collections.json", params={"has_granules": "true", "page_size": min(limit, 25), "keyword": query}, timeout=60)
         if r.status != 200:
             raise RuntimeError(f"cmr HTTP {r.status}")
         entries = safe_get(r.json(), "feed", "entry", default=[]) or []

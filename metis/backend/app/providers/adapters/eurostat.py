@@ -112,11 +112,46 @@ class EurostatAdapter(ProviderAdapter):
         return {"access_mode": "PUBLIC_ANONYMOUS_API", "requires_login": False, "restricted": False, "license": "CC-BY-4.0", "notes": "Eurostat dissemination API"}
 
     async def acquire_dataset(self, dataset_ref: str, dest_dir, access_context: dict | None = None) -> list[str]:
+        """Download JSON-stat and convert to a tidy long CSV (dimension columns + value)."""
+        import itertools
+        import json as _json
+
+        import pandas as pd
         from pathlib import Path
 
         r = await get(f"{BASE}/statistics/1.0/data/{dataset_ref}?lang=EN&format=JSON", timeout=120)
         if r.status != 200:
             raise RuntimeError(f"eurostat download HTTP {r.status}")
-        dest = Path(dest_dir) / f"eurostat_{dataset_ref}.json"
-        write_small_payload(dest, r.content)
+        data = _json.loads(r.content)
+        if "value" not in data or "id" not in data:
+            dest = Path(dest_dir) / f"eurostat_{dataset_ref}.json"
+            write_small_payload(dest, r.content)
+            return [str(dest)]
+        dims = data["id"]
+        sizes = data["size"]
+        dim_categories = {}
+        for d in dims:
+            cat = data["dimension"].get(d, {}).get("category", {})
+            index = cat.get("index", [])
+            if isinstance(index, dict):
+                ordered = sorted(index.items(), key=lambda kv: kv[1])
+                dim_categories[d] = [k for k, _ in ordered]
+            else:
+                dim_categories[d] = list(index)
+        rows = []
+        values = data["value"]
+        for combo in itertools.product(*(range(sz) for sz in sizes)):
+            flat = 0
+            for idx, sz in zip(combo, sizes):
+                flat = flat * sz + idx
+            v = values.get(str(flat), values.get(flat))
+            if v is None:
+                continue
+            row = {d: dim_categories[d][i] for d, i in zip(dims, combo)}
+            row["value"] = v
+            rows.append(row)
+        df = pd.DataFrame(rows)
+        dest = Path(dest_dir) / f"eurostat_{dataset_ref}.csv"
+        df.to_csv(dest, index=False)
         return [str(dest)]
+

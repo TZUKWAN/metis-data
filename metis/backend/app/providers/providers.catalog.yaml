@@ -1,5 +1,5 @@
 version: '1.0'
-updated: '2026-09-11'
+updated: '2026-09-12'
 providers:
 - provider_id: world_bank
   name: World Bank Open Data / Data360
@@ -29,7 +29,7 @@ providers:
   privacy_url: ''
   adapter_version: 1.0.0
   integration_level: 4
-  last_verified_at: '2026-09-10'
+  last_verified_at: '2026-09-11'
   blocking_reason: null
 - provider_id: imf
   name: IMF Data
@@ -189,7 +189,7 @@ providers:
   trust_class: international
   status: active
   capabilities:
-    discovery_api: false
+    discovery_api: true
     discovery_http: false
     discovery_browser: false
     metadata_api: false
@@ -208,8 +208,8 @@ providers:
   terms_url: ''
   privacy_url: ''
   adapter_version: ''
-  integration_level: 0
-  last_verified_at: null
+  integration_level: 1
+  last_verified_at: '2026-09-11'
   blocking_reason: null
 - provider_id: un_comtrade
   name: UN Comtrade
@@ -519,7 +519,7 @@ providers:
   trust_class: official
   status: active
   capabilities:
-    discovery_api: false
+    discovery_api: true
     discovery_http: false
     discovery_browser: false
     metadata_api: false
@@ -538,10 +538,9 @@ providers:
   terms_url: ''
   privacy_url: ''
   adapter_version: 1.0.0
-  integration_level: 0
-  last_verified_at: '2026-09-10'
-  blocking_reason: 'anonymous HTTP search failed (RuntimeError: cmr HTTP 400) on 2026-09-10;
-    browser search required or platform changed'
+  integration_level: 1
+  last_verified_at: '2026-09-11'
+  blocking_reason: null
 - provider_id: usgs
   name: USGS
   category: us_gov
@@ -2059,7 +2058,7 @@ providers:
   trust_class: academic
   status: active
   capabilities:
-    discovery_api: false
+    discovery_api: true
     discovery_http: false
     discovery_browser: false
     metadata_api: false
@@ -2078,8 +2077,8 @@ providers:
   terms_url: ''
   privacy_url: ''
   adapter_version: ''
-  integration_level: 0
-  last_verified_at: null
+  integration_level: 1
+  last_verified_at: '2026-09-11'
   blocking_reason: null
 - provider_id: papers_with_code
   name: Papers with Code Datasets

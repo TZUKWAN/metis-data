@@ -208,7 +208,14 @@ class DownloadManager:
             file_path.unlink(missing_ok=True)  # content-dedup, logical ref kept (PRD §17)
             raw_path = raw_path
         else:
-            os.replace(file_path, raw_path)
+            try:
+                os.replace(file_path, raw_path)
+            except OSError:
+                # cross-volume rename is not atomic on Windows — copy+unlink
+                import shutil
+
+                shutil.copy2(file_path, raw_path)
+                file_path.unlink(missing_ok=True)
 
         artifact = DatasetArtifact(
             download_job_id=job["download_job_id"],
