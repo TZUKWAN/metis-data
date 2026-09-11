@@ -99,10 +99,12 @@ def setup_logging(level: str = "INFO") -> None:
 
 class _LoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):  # noqa: ANN001, ANN202
-        return msg, kwargs
+        # redact at emit-source so any handler (incl. test capture) sees masked text
+        return redact(str(msg)), kwargs
 
     def ctx(self, level: int, message: str, **context) -> None:
-        self.logger.log(level, message, extra={"ctx": context})
+        # redact at the adapter level so every handler (incl. test capture) sees masked text
+        self.logger.log(level, redact(str(message)), extra={"ctx": {k: redact(str(v)) for k, v in context.items()}})
 
     def info_ctx(self, message: str, **context) -> None:
         self.ctx(logging.INFO, message, **context)

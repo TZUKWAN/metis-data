@@ -11,8 +11,8 @@ import re
 from app.domain.schemas import DataRequirement, VariableRequest
 
 UNIT_PATTERNS = [
-    ("country", [r"\b国家层面\b", r"\b跨国\b", r"national level", r"\bcountries?\b", r"\bcountry-level\b", r"国际"]),
-    ("individual", [r"\b个体\b", r"\b个人层面\b", r"individuals?\b", r"\brespondents?\b", r"大学生", r"住户"]),
+    ("country", [r"国家层面", r"国家级", r"跨国", r"national level", r"国家", r"全球", r"countries?", r"country-level", r"国际"]),
+    ("individual", [r"个体", r"个人层面", r"individuals?", r"respondents?", r"大学生", r"住户", r"微观"]),
     ("province", [r"省级", r"省层面", r"province-level", r"\bprovinces\b"]),
     ("prefecture", [r"地级", r"prefecture", r"城市层面"]),
     ("firm", [r"\bfirm-level\b", r"\bfirms\b", r"企业层面"]),

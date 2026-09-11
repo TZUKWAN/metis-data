@@ -214,3 +214,56 @@ setInterval(refreshBrowser, 2500);
 connectWS();
 refreshDownloads();
 $("req-text").value = "构建 2015—2023 年国家层面的青年失业率、人均 GDP、教育水平面板，优先使用官方或国际组织数据。";
+
+
+/* ---------- P01-012: Agent requirement review (LLM plan, editable, re-plan) ---------- */
+$("btn-agent-plan").onclick = async () => {
+  const text = $("req-text").value.trim();
+  if (!text) return alert("请输入需求");
+  const r = await api("/api/agent/requirements/plan", { method: "POST", body: { text } });
+  STATE.agentPlan = r.plan; STATE.agentPlanSource = r.source;
+  renderAgentPlan();
+};
+
+function renderAgentPlan() {
+  const p = STATE.agentPlan;
+  const card = $("agent-plan-card");
+  card.className = "";
+  card.innerHTML = `
+    <div class="meta">规划来源：<b>${esc(STATE.agentPlanSource)}</b> · 研究单位：
+      <select id="ap-unit">${["country","province","prefecture","city","individual","firm","household","unknown"].map(u=>`<option ${u===p.unit_of_analysis?"selected":""}>${u}</option>`).join("")}</select> ·
+      频率：<select id="ap-freq">${["annual","quarterly","monthly","daily","unknown"].map(u=>`<option ${u===p.frequency?"selected":""}>${u}</option>`).join("")}</select>
+    </div>
+    <div class="meta">时间：<input id="ap-start" style="width:70px" value="${p.time_range?.start ?? ""}"> — <input id="ap-end" style="width:70px" value="${p.time_range?.end ?? ""}">
+      地理：<input id="ap-geo" style="width:120px" value="${esc((p.geography||[]).join(","))}"></div>
+    <div class="meta">变量（概念|角色，每行一个）：</div>
+    <textarea id="ap-vars" rows="4">${esc((p.variables||[]).map(v=>`${v.concept}|${v.role}`).join("
+"))}</textarea>
+    <details><summary>假设 / 待确认</summary>
+      <div class="unknowns">${(p.assumptions||[]).map(a=>`<span class="pill">A: ${esc(a)}</span>`).join("")}</div>
+      <div class="limits">${(p.questions||[]).map(q=>`<span class="pill">?: ${esc(q)}</span>`).join("")}</div>
+    </details>
+    <button id="ap-replan" class="primary" style="margin-top:6px">重新计算搜索计划</button>
+    <div id="ap-source-plan"></div>`;
+  $("ap-replan").onclick = recomputeSourcePlan;
+}
+
+async function recomputeSourcePlan() {
+  const p = STATE.agentPlan;
+  p.unit_of_analysis = $("ap-unit").value;
+  p.frequency = $("ap-freq").value;
+  p.geography = $("ap-geo").value.split(",").map(x => x.trim()).filter(Boolean);
+  p.time_range = { start: +$("ap-start").value || null, end: +$("ap-end").value || null };
+  p.variables = $("ap-vars").value.split("
+").map(l => l.trim()).filter(Boolean).map(line => {
+    const [concept, role] = line.split("|").map(x => x.trim());
+    return { concept, role: role || "control", description: "" };
+  });
+  const r = await api("/api/agent/sources/plan", { method: "POST", body: { requirement: p } });
+  STATE.agentPlan = p;
+  $("ap-source-plan").innerHTML = `
+    <div class="meta">Provider 优先级：${r.source_plan.provider_priorities.map(x=>`<span class="pill">${esc(x)}</span>`).join("")}</div>
+    ${(r.query_plans||[]).map(q=>`<div class="event"><b>${esc(q.provider_id)}</b> ${esc(q.queries.join(" | "))}${q.indicator_code_hints.length?` <span class="pill">codes: ${esc(q.indicator_code_hints.join(","))}</span>`:""}</div>`).join("")}
+    ${r.policy_problems?.length?`<div class="limits">${r.policy_problems.map(x=>`<span class="pill">⚠ ${esc(x)}</span>`).join("")}</div>`:""}`;
+  pushEvent("agent.source_plan", "INFO", { message: `搜索计划已重算：${r.source_plan.provider_priorities.join(", ")}` });
+}

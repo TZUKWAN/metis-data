@@ -549,6 +549,57 @@ async def vault_keys():
     return {"keys": get_vault().list_keys()}  # never returns values
 
 
+# ---------------- agent planning (P01-011) ----------------
+class AgentPlanIn(BaseModel):
+    text: str
+
+
+class MeasurementPlanIn(BaseModel):
+    concepts: list[dict]  # [{concept, role}]
+
+
+class BuildPlanIn(BaseModel):
+    requirement: dict
+    assets: list[dict]
+
+
+@app.post("/api/agent/requirements/plan")
+async def agent_plan_requirement(body: AgentPlanIn):
+    from app.agent.requirement_planner import plan_requirement
+
+    plan, source = await plan_requirement(body.text)
+    return {"plan": plan.model_dump(mode="json"), "source": source}
+
+
+@app.post("/api/agent/measurements/plan")
+async def agent_plan_measurements(body: MeasurementPlanIn):
+    from app.agent.measurement_planner import plan_measurements
+
+    plans = await plan_measurements(body.concepts)
+    return {"plans": [p.model_dump(mode="json") for p in plans]}
+
+
+@app.post("/api/agent/sources/plan")
+async def agent_plan_sources(body: dict):
+    from app.agent.measurement_planner import plan_measurements
+    from app.agent.source_planner import plan_queries, plan_sources
+    from app.agent.schemas import DataRequirementPlan, VariableMeasurementPlan
+
+    req = DataRequirementPlan(**body["requirement"])
+    raw_measurements = body.get("measurements")
+    if raw_measurements:
+        measurements = [VariableMeasurementPlan(**m) for m in raw_measurements]
+    else:
+        measurements = await plan_measurements([{"concept": v.concept, "role": v.role} for v in req.variables])
+    source_plan, problems = await plan_sources(req, measurements)
+    queries = await plan_queries(req, source_plan, measurements)
+    return {
+        "source_plan": source_plan.model_dump(mode="json"),
+        "query_plans": [q.model_dump(mode="json") for q in queries],
+        "policy_problems": problems,
+    }
+
+
 # ---------------- events / health ----------------
 @app.get("/api/events")
 async def events(limit: int = 100):
