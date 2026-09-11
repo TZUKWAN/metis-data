@@ -53,6 +53,7 @@ async def stream_to_file(
     dest = Path(dest_path)
     dest.parent.mkdir(parents=True, exist_ok=True)
     max_bytes = max_bytes or get_settings().download_max_bytes
+    validate_url(descriptor.url)
     partial = dest.with_suffix(dest.suffix + ".partial")
 
     headers = dict(descriptor.headers)
@@ -117,3 +118,33 @@ async def stream_to_file(
 
     os.replace(partial, dest)
     return {"path": str(dest), "size": final_size, "sha256": h.hexdigest()}
+
+
+def validate_url(url: str, *, allow_private: bool = True) -> str:
+    """P26-008/009: scheme allowlist + optional private-network guard (SSRF).
+
+    Desktop/local deployments set METIS_SSRF_ALLOW_PRIVATE=true (default) so
+    fixture servers and local mirrors work; hosted deployments set it false.
+    """
+    from urllib.parse import urlparse
+
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise MetisError("STATE_INVALID", f"URL scheme not allowed: {parsed.scheme or '(none)'}")
+    host = parsed.hostname or ""
+    import os
+
+    allow_private = os.environ.get("METIS_SSRF_ALLOW_PRIVATE", "true").lower() in ("1", "true", "yes")
+    if not allow_private:
+        import ipaddress
+        import socket
+
+        try:
+            infos = socket.getaddrinfo(host, None)
+        except OSError as exc:
+            raise MetisError("PROVIDER_UNAVAILABLE", f"cannot resolve host {host}: {exc}") from exc
+        for info in infos:
+            ip = ipaddress.ip_address(info[4][0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                raise MetisError("STATE_INVALID", f"private network target blocked by SSRF guard: {host}")
+    return url

@@ -1,0 +1,63 @@
+name: CI (P28)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install ruff
+      - run: ruff check metis/backend/app
+
+  unit-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install fastapi uvicorn sqlalchemy pandas pyarrow httpx pydantic openpyxl pyreadstat netCDF4 pyshp pycountry playwright pytest httpx
+      - run: python -m playwright install chromium --with-deps || python -m playwright install chromium
+      - run: python -m pytest metis/backend/tests -q --tb=short -m "not smoke"
+        env:
+          METIS_BROWSER_HEADLESS: "true"
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python scripts/secrets_scan.py
+
+  frontend-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python - <<'PY'
+        import json, pathlib
+        idx = pathlib.Path("metis/frontend/static/index.html").read_text(encoding="utf-8")
+        js = pathlib.Path("metis/frontend/static/app.js").read_text(encoding="utf-8")
+        assert "Metis Data" in idx and "api/browser/sessions" in js
+        # node syntax check
+        PY
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: node --check metis/frontend/static/app.js
+
+  real-provider-smoke:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install fastapi uvicorn sqlalchemy pandas pyarrow httpx pydantic openpyxl
+      - run: python scripts/provider_smoke.py --search-only

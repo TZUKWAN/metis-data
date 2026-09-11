@@ -193,8 +193,8 @@ def test_time_normalization_and_fy():
     import pandas as pd
 
     df = pd.DataFrame({"month": ["2020-01", "2020-02", "2020-03"], "v": [1.0, 2.0, 3.0]})
-    agg, prov = aggregate_to_year(df, "month", ["v"], method="mean")
-    assert len(agg) == 1 and abs(agg["v"].iloc[0] - 2.0) < 1e-9 and prov["method"] == "mean"
+    agg, prov = aggregate_to_year(df, "month", {"v": "mean"})
+    assert len(agg) == 1 and abs(agg["v"].iloc[0] - 2.0) < 1e-9 and prov["methods"] == {"v": "mean"}
     conflict = check_frequency_conflict("monthly", "annual")
     assert conflict["conflict"] and conflict["needs_alignment"]
 

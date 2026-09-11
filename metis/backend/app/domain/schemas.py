@@ -242,6 +242,7 @@ class BuildConfig(BaseModel):
     time_frequency: str = "annual"
     missing_policy: str = "none"  # none is default (A28)
     missing_policy_params: dict[str, Any] = {}
+    aggregations: list[dict[str, Any]] = []  # [{field, method, weight_field?}] - P19
     derived_variables: list[dict[str, Any]] = []
     validation_profile: str = "default"
     exports: list[str] = ["parquet", "csv", "xlsx"]

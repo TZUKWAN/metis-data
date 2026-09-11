@@ -127,7 +127,12 @@ def _iter_chunks(path: Path, parsed: ParsedTable):
 
 
 def _schema(df: pd.DataFrame) -> list[dict]:
+    """P16-001..007: extended per-column profile (quantiles, cardinality, pattern,
+    language hints, categorical candidates, unit/rate/currency/price hints)."""
+    import re as _re
+
     out = []
+    n = max(len(df), 1)
     for col in df.columns:
         s = df[col]
         numeric = pd.api.types.is_numeric_dtype(s)
@@ -137,6 +142,7 @@ def _schema(df: pd.DataFrame) -> list[dict]:
             "nullable": bool(s.isna().any()),
             "missing_rate": round(float(s.isna().mean()), 4),
             "unique": int(s.nunique(dropna=True)),
+            "cardinality_ratio": round(float(s.nunique(dropna=True)) / n, 4),
             "numeric": numeric,
         }
         if numeric:
@@ -144,9 +150,31 @@ def _schema(df: pd.DataFrame) -> list[dict]:
             entry["min"] = _safe(desc.get("min"))
             entry["max"] = _safe(desc.get("max"))
             entry["mean"] = _safe(desc.get("mean"))
+            try:
+                q = s.quantile([0.25, 0.5, 0.75])
+                entry["quantiles"] = {"q25": _safe(q.get(0.25)), "q50": _safe(q.get(0.5)), "q75": _safe(q.get(0.75))}
+            except Exception:  # noqa: BLE001
+                entry["quantiles"] = None
+            cl = str(col).lower()
+            if any(k in cl for k in ("percent", "rate", "share", "ratio", "%")):
+                entry["unit_hint"] = "percent-or-fraction"
+                if entry.get("max") is not None and float(entry["max"]) <= 1.5:
+                    entry["unit_hint"] = "fraction"
+            if any(k in cl for k in ("usd", "gdp", "income", "price", "gdp_pc")):
+                entry["currency_hint"] = "currency-like (check current vs constant price)"
+            if any(k in cl for k in ("per_1000", "per1000", "per_100k", "per_100_000")):
+                entry["rate_basis_hint"] = "per-1000/per-100k"
         else:
             vc = s.dropna().astype(str).value_counts()
             entry["top_values"] = {k: int(v) for k, v in vc.head(5).items()}
+            sample = s.dropna().astype(str).head(50)
+            if len(sample):
+                digitish = sum(1 for v in sample if _re.fullmatch(r"[\d.,\-]+", v))
+                cjk = sum(1 for v in sample if _re.search(r"[一-鿿]", v))
+                entry["pattern"] = "numeric-string" if digitish > len(sample) * 0.8 else "text"
+                entry["language_hint"] = "contains-CJK" if cjk > len(sample) * 0.2 else "latin-or-other"
+            if 1 < entry["unique"] <= 20:
+                entry["categorical_candidate"] = True
         out.append(entry)
     return out
 

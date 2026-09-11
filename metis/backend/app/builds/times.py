@@ -76,14 +76,18 @@ def check_frequency_conflict(freq_a: str, freq_b: str) -> dict:
     return {"conflict": True, "needs_alignment": True, "from": freq_a, "to": freq_b, "message": f"frequency conflict: {freq_a} vs {freq_b}; explicit aggregation/annualization required"}
 
 
-def aggregate_to_year(df, time_col: str, value_cols: list[str], method: str = "mean") -> tuple[object, dict]:
-    """Explicit month/quarter→year aggregation with provenance record (A25).
+def aggregate_to_year(df, time_col: str, methods: dict[str, str], weight_field: str | None = None) -> tuple[object, dict]:
+    """P19-001..005: per-variable aggregation semantics (NO default-mean).
 
-    Returns (agg_df, provenance_record). method: mean | sum | last.
+    methods: {column: mean|sum|last|first|median|min|max|weighted_mean|none}.
+    Columns mapped to "none" pass through unaggregated and are flagged for review.
     """
-    if method not in ("mean", "sum", "last", "min", "max"):
-        raise MetisError("TIME_FREQUENCY_CONFLICT", f"unsupported aggregation method {method}")
+    import pandas as pd
 
+    supported = {"mean", "sum", "last", "first", "median", "weighted_mean", "min", "max", "none"}
+    bad = {c: m for c, m in methods.items() if m not in supported}
+    if bad:
+        raise MetisError("TIME_FREQUENCY_CONFLICT", f"unsupported aggregation methods: {bad}")
     years = []
     for v in df[time_col]:
         tv = parse_time_value(v)
@@ -92,18 +96,40 @@ def aggregate_to_year(df, time_col: str, value_cols: list[str], method: str = "m
             continue
         years.append(tv.year)
     work = df.assign(__year=years).dropna(subset=["__year"])
-    agg = getattr(work.groupby("__year")[value_cols], method)()
-    agg = agg.reset_index().rename(columns={"__year": time_col})
+    year_list = sorted(work["__year"].unique().tolist())
+    out = pd.DataFrame({time_col: year_list})
+    notes = []
+    for col, method in methods.items():
+        if col not in work.columns:
+            continue
+        if method == "weighted_mean":
+            if not weight_field or weight_field not in work.columns:
+                raise MetisError("TIME_FREQUENCY_CONFLICT", "weighted_mean requires a weight field present in the frame")
+
+            def wm(g, col=col):
+                wsum = g[weight_field].sum()
+                return (g[col] * g[weight_field]).sum() / wsum if wsum else None
+
+            vals = work.groupby("__year").apply(wm, include_groups=False)
+            out[col] = out[time_col].map(vals)
+        elif method == "none":
+            vals = work.groupby("__year")[col].first()
+            out[col] = out[time_col].map(vals)
+            notes.append(f"{col}: aggregation=none (needs review)")
+        else:
+            vals = getattr(work.groupby("__year")[col], method)()
+            out[col] = out[time_col].map(vals)
     prov = {
         "operation": "time_aggregation",
         "from_frequency": detect_frequency(df[time_col].tolist()),
         "to_frequency": "year",
-        "method": method,
+        "methods": methods,
+        "weight_field": weight_field,
         "rows_before": int(len(df)),
-        "rows_after": int(len(agg)),
-        "note": f"aggregated sub-year periods to years using {method}",
+        "rows_after": int(len(out)),
+        "note": "per-variable aggregation (no default mean); " + ("; ".join(notes) if notes else "all variables had explicit semantics"),
     }
-    return agg, prov
+    return out, prov
 
 
 def annualize_fiscal(df, time_col: str, rule: str = "start_year") -> tuple[object, dict]:

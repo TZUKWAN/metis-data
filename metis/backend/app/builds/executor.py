@@ -193,9 +193,22 @@ class BuildExecutor:
             freq = detect_frequency(self.data[time_col].tolist()[:5000])
             note["detected_frequency"] = freq
             if freq in ("month", "quarter", "day") and cfg.time_frequency == "annual":
+                # P19-002/005: per-variable methods from the plan; NO default mean.
+                plan_methods = {a.get("field"): a.get("method") for a in getattr(cfg, "aggregations", []) or []}
+                weight_field = next((a.get("weight_field") for a in getattr(cfg, "aggregations", []) or [] if a.get("method") == "weighted_mean"), None)
                 numeric_cols = [c for c in self.data.select_dtypes("number").columns if c != time_col]
-                self.data, prov = aggregate_to_year(self.data, time_col, numeric_cols, method="mean")
-                self._record_op("time_aggregation", prov, [], [], prov["rows_before"], prov["rows_after"], None, None, warnings=[prov["note"]])
+                methods = {}
+                warnings = []
+                for col in numeric_cols:
+                    method = plan_methods.get(col)
+                    if method is None:
+                        method = "none"
+                        warnings.append(f"{col}: no aggregation semantics in plan → passed through unaggregated (NEEDS_REVIEW)")
+                    methods[col] = method
+                self.data, prov = aggregate_to_year(self.data, time_col, methods, weight_field=weight_field)
+                if not methods:
+                    warnings.append("no numeric columns to aggregate")
+                self._record_op("time_aggregation", prov, [], [], prov["rows_before"], prov["rows_after"], None, None, warnings=warnings)
         self._record_op("time_alignment", {"time_column": time_col, **note}, [], [], None, int(len(self.data)), None, self.data.shape[1])
         REPO.set_build_checkpoint(self.build_id, "TEMPORAL_ALIGNMENT", {"time_column": time_col, **note, "done": True})
 

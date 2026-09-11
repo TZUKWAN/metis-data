@@ -125,7 +125,11 @@ async function refreshDownloads() {
   ).join("") || "<p style='color:var(--dim)'>暂无下载</p>";
   const arts = await api("/api/artifacts");
   STATE.artifacts = arts;
-  $("artifact-list").innerHTML = arts.map((a) => `<button onclick="showArtifact('${esc(a.artifact_id)}')">${esc(a.dataset_title || a.dataset_ref)} (${esc(a.file_format)})</button>`).join(" ");
+  $("artifact-list").innerHTML = arts.map((a) =>
+    `<span class="row" style="display:inline-flex;margin:2px">
+       <input type="checkbox" class="asset-check" id="asset-${esc(a.artifact_id)}" onchange="toggleAsset('${esc(a.artifact_id)}', this.checked)" style="width:auto">
+       <button onclick="showArtifact('${esc(a.artifact_id)}')">${esc(a.dataset_title || a.dataset_ref)} (${esc(a.file_format)})</button>
+     </span>`).join("");
 }
 $("btn-refresh-downloads").onclick = refreshDownloads;
 
@@ -138,17 +142,22 @@ window.showArtifact = async (aid) => {
 };
 
 /* ---------- builds (A26-A34) ---------- */
+STATE.selectedAssets = new Set();
+window.toggleAsset = (aid, checked) => {
+  if (checked) STATE.selectedAssets.add(aid); else STATE.selectedAssets.delete(aid);
+};
 $("btn-build-create").onclick = async () => {
-  const selected = STATE.artifacts.slice(0, 2);
-  if (selected.length < 1) return alert("先下载并注册至少一个 artifact");
+  // P18-001: build uses EXACTLY what the user selected (no slice() shortcuts)
+  const ids = [...STATE.selectedAssets];
+  if (ids.length < 1) return alert("勾选至少一个数据资产（Data Asset）后再合成");
   const cfg = await api("/api/builds", { method: "POST", body: {
     title: `panel-${new Date().toISOString().slice(0, 10)}`,
-    inputs: selected.map((a) => ({ artifact_id: a.artifact_id })),
+    inputs: ids.map((aid) => ({ artifact_id: aid })),
     keys: ["country", "year"],
     missing_policy: "none",
     derived_variables: [],
   }});
-  pushEvent("build.created", "INFO", { message: `Build ${cfg.build_id} 已创建，计划 ${cfg.plan.length} 步（m:m 默认阻止）` });
+  pushEvent("build.created", "INFO", { message: `Build ${cfg.build_id} 已创建（用户选择 ${ids.length} 个输入），计划 ${cfg.plan.length} 步（m:m 默认阻止）` });
   await api(`/api/builds/${cfg.build_id}/run`, { method: "POST" });
   pollBuild(cfg.build_id);
 };
@@ -283,8 +292,7 @@ function renderAgentPlan() {
     <div class="meta">时间：<input id="ap-start" style="width:70px" value="${p.time_range?.start ?? ""}"> — <input id="ap-end" style="width:70px" value="${p.time_range?.end ?? ""}">
       地理：<input id="ap-geo" style="width:120px" value="${esc((p.geography||[]).join(","))}"></div>
     <div class="meta">变量（概念|角色，每行一个）：</div>
-    <textarea id="ap-vars" rows="4">${esc((p.variables||[]).map(v=>`${v.concept}|${v.role}`).join("
-"))}</textarea>
+    <textarea id="ap-vars" rows="4">${esc((p.variables||[]).map(v=>`${v.concept}|${v.role}`).join("\n"))}</textarea>
     <details><summary>假设 / 待确认</summary>
       <div class="unknowns">${(p.assumptions||[]).map(a=>`<span class="pill">A: ${esc(a)}</span>`).join("")}</div>
       <div class="limits">${(p.questions||[]).map(q=>`<span class="pill">?: ${esc(q)}</span>`).join("")}</div>
@@ -300,8 +308,7 @@ async function recomputeSourcePlan() {
   p.frequency = $("ap-freq").value;
   p.geography = $("ap-geo").value.split(",").map(x => x.trim()).filter(Boolean);
   p.time_range = { start: +$("ap-start").value || null, end: +$("ap-end").value || null };
-  p.variables = $("ap-vars").value.split("
-").map(l => l.trim()).filter(Boolean).map(line => {
+  p.variables = $("ap-vars").value.split("\n").map(l => l.trim()).filter(Boolean).map(line => {
     const [concept, role] = line.split("|").map(x => x.trim());
     return { concept, role: role || "control", description: "" };
   });
@@ -347,3 +354,18 @@ $("ac-auto").onchange = async (e) => {
   await api(`/api/accounts/${$("ac-provider").value}/auto_register`, { method: "POST", body: { enabled: e.target.checked } });
 };
 refreshAccountCenter();
+
+
+/* ---------- P08-003/004: Provider Matrix (registry ≠ integrated) ---------- */
+$("btn-matrix").onclick = async () => {
+  const rows = await api("/api/providers");
+  const lvl = (p) => `P${p.integration_level}`;
+  $("provider-matrix").innerHTML = `<details open><summary>${rows.length} 个平台（点击展开）</summary>` +
+    rows.slice().sort((a, b) => b.integration_level - a.integration_level).map((p) => {
+      const integrated = p.integration_level >= 1;
+      return `<div class="event"><span class="badge ${integrated ? "ok" : ""}">${lvl(p)} ${integrated ? "已接入" : "仅登记"}</span>
+        <b>${esc(p.name)}</b> <span class="ts">${esc(p.category)}</span>
+        ${p.last_verified_at ? `· 验证 ${esc(p.last_verified_at)}` : ""}
+        ${p.blocking_reason ? `<div class="limits">⛔ ${esc(p.blocking_reason)}</div>` : ""}</div>`;
+    }).join("") + "</details>";
+};
