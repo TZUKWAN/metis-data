@@ -1,12 +1,36 @@
 # Engineering Progress — Metis Data Productization
 
 ## Current Phase
-Phase 4（Access State Machine）
+Phase 5（Account Center 与 Auto Registration API）
 
 ## Current Task
-P04-001 AccessJob 模型
+P05-001 Account Center UI
 
 ## Completed
+
+### Task P04-001..012
+Status: PASS
+Goal: Access State Machine 与下载主链路闭环
+Files Changed: metis/backend/app/access/{machine,executor,__init__}.py、metis/backend/app/db/{models,repository}.py（access_jobs 表）、metis/backend/app/api/main.py（/api/downloads 接入）、metis/backend/tests/test_p04_access.py
+Implementation:
+- P04-001/002 AccessJob 模型 + 21 态 AccessState（含 WAITING_CAPTCHA/MFA/AGREEMENT/USER）
+- P04-003 FLOW 转换守卫（非法跳转 STATE_INVALID）
+- P04-004 inspect_access_requirements 归一化 public/login_required/registration_possible/agreement/restricted/paid/unknown
+- P04-005 公共分支 → AUTHORIZED；UNKNOWN 模式允许匿名尝试（失败在 acquire 暴露，不静默）
+- P04-006 真实 session 探测（复用 Phase 3 ensure_valid_session）
+- P04-007 有存储账号 → LOGIN_REQUIRED/LOGGING_IN（Account Center API 驱动，P04-010 resume 继续）
+- P04-008 自动注册仅用户开启才进 REGISTER_REQUIRED
+- P04-009 CAPTCHA/MFA/协议 → WAITING_* → WAITING_USER
+- P04-010 resume_after_user(success/captcha/mfa/agreement/failure)
+- P04-011 失败码复用 ERROR_CODES（INVALID_CREDENTIALS/SESSION_EXPIRED/USER_INTERVENTION_REQUIRED 等）
+- P04-012 POST /api/downloads 不再直接 acquire：Download Request → AccessJob → Authorized → Acquisition；未授权返回 202 + access job 状态
+Tests: `python -m pytest metis/backend/tests/test_p04_access.py` — 7 passed（public/无账号等待/账号登录派发/会话有效授权/非法转换/恢复/不存在 job 报错）
+Evidence: tests/test_p04_access.py；access_jobs 表持久化 history
+Acceptance:
+- [x] 状态机与下载闭环
+- [x] 每次 transition 持久化 + event + reason + timestamp
+- [x] 下载主链路经 AccessJob
+
 
 ### Task P03-001..010
 Status: PASS

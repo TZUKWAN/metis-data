@@ -7,6 +7,7 @@ from typing import Any, TypeVar
 from sqlalchemy import select
 
 from app.db.models import (
+    AccessJobRow,
     AccountRow,
     ArtifactRow,
     BrowserEventRow,
@@ -578,6 +579,30 @@ class Repository:
                 {"id": r.id, "session_id": r.session_id, "seq": r.seq, "ts": r.ts.isoformat(), "kind": r.kind, "payload": r.payload_json}
                 for r in reversed(rows)
             ]
+
+    # ---- access jobs ----
+    def upsert_access_job(self, payload: dict) -> None:
+        with new_session() as s:
+            row = s.get(AccessJobRow, payload["access_job_id"])
+            if row is None:
+                row = AccessJobRow(access_job_id=payload["access_job_id"], provider_id=payload.get("provider_id", ""), state=payload.get("state", ""), data_json=payload)
+                s.add(row)
+            row.state = payload.get("state", row.state)
+            row.data_json = payload
+            s.commit()
+
+    def get_access_job(self, access_job_id: str) -> dict | None:
+        with new_session() as s:
+            row = s.get(AccessJobRow, access_job_id)
+            return row.data_json if row else None
+
+    def list_access_jobs(self, provider_id: str | None = None, limit: int = 50) -> list[dict]:
+        stmt = select(AccessJobRow).order_by(AccessJobRow.created_at.desc()).limit(limit)
+        if provider_id:
+            stmt = stmt.where(AccessJobRow.provider_id == provider_id)
+        with new_session() as s:
+            rows = s.scalars(stmt).all()
+            return [r.data_json for r in rows]
 
     # ---- provider health / audits ----
     def upsert_provider_health(self, provider_id: str, status: str, consecutive_failures: int = 0, circuit_open: bool = False, last_error: str | None = None) -> None:

@@ -244,3 +244,15 @@ class CapabilityAuditRow(Base):
     evidence: Mapped[str] = mapped_column(Text, default="")
     blocking_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     last_verified_at: Mapped[str] = mapped_column(String(40))
+
+
+class AccessJobRow(Base):
+    __tablename__ = "access_jobs"
+    access_job_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    provider_id: Mapped[str] = mapped_column(String(64), index=True)
+    candidate_id: Mapped[str] = mapped_column(String(64), default="")
+    download_job_id: Mapped[str] = mapped_column(String(64), default="")
+    state: Mapped[str] = mapped_column(String(40), index=True)
+    data_json: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)

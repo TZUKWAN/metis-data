@@ -255,11 +255,27 @@ async def select_candidate(candidate_id: str, selected: bool = True):
 # ---------------- downloads (A14-A18) ----------------
 @app.post("/api/downloads")
 async def create_download(body: DownloadIn):
+    """P04-012: Download Request → AccessJob → Authorized → Acquisition.
+
+    If access cannot be resolved without the user, returns 202 with the access
+    job state (WAITING_USER / LOGIN flow) instead of acquiring.
+    """
+    from app.access.executor import resolve_access
     from app.downloads.service import MANAGER
+    from app.domain.schemas import DownloadJob
 
     job = MANAGER.create_job(body.provider_id, body.dataset_ref, body.source_url, dataset_title=body.dataset_title, version=body.version, license=body.license, access_mode=body.access_mode)
+    try:
+        access_job = await resolve_access(body.provider_id, body.dataset_ref, download_job_id=job.download_job_id)
+    except MetisError as e:
+        REPO.save_download_job({**job.model_dump(mode="json"), "status": "FAILED", "error_code": e.code, "error_message": e.message})
+        return err(e)
+
+    if access_job.state != "AUTHORIZED":
+        return JSONResponse(status_code=202, content={"download_job": job.model_dump(mode="json"), "access_job": access_job.model_dump(mode="json"), "next": "complete access via Account Center / browser takeover, then resume"})
 
     async def _run():
+        from app.access.machine import transition, AccessState
         from app.providers.base import get_adapter
 
         adapter = get_adapter(body.provider_id)
@@ -275,9 +291,10 @@ async def create_download(body: DownloadIn):
 
         for f in files:
             await M._verify_and_commit(Path(f), job2, Path(f).stat().st_size)
+        transition(access_job, AccessState.COMPLETE, "acquisition + verification complete")
 
     TASKS[job.download_job_id] = asyncio.create_task(_run())
-    return job.model_dump(mode="json")
+    return {**job.model_dump(mode="json"), "access_job_id": access_job.access_job_id}
 
 
 @app.get("/api/downloads")
