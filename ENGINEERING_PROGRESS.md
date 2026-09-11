@@ -1,12 +1,38 @@
 # Engineering Progress — Metis Data Productization
 
 ## Current Phase
-Phase 5（Account Center 与 Auto Registration API）
+Phase 6（Provider Contract 重构）+ Phase 7（DownloadManager 工程化）
 
 ## Current Task
-P05-001 Account Center UI
+P06-001 AcquisitionDescriptor
 
 ## Completed
+
+### Task P05-001..012（Account Center + APIs）
+Status: PASS（UI + API + 测试）
+Files Changed: metis/backend/app/api/main.py（login/register API + MetisError 全局 handler + 202 access 流）、metis/backend/app/auth/{accounts,recipes}.py（多凭据有界登录、recipe 驱动、P05-012 重试上限 3 次）、metis/frontend/static/{index.html,app.js}（Account Center 面板）、metis/backend/tests/test_p05_accounts.py
+Implementation:
+- P05-001 Account Center 面板：Provider 选择/账号状态/auto-register 开关/绑定/登录/删除
+- P05-002 绑定已有账号（密码不回显，入 Vault）
+- P05-003 POST /api/accounts/{provider}/login：recipe 驱动真实浏览器登录 + storage_state 保存 + P04-010 恢复挂起 AccessJob
+- P05-004 recipes.py：fixture_site + kaggle 定位器/成功失败检测/password policy
+- P05-005/006 POST /api/accounts/{provider}/register：RegistrationExecutor + recipe 字段映射
+- P05-007 password_policy per provider（recipe 覆盖默认 16 位强密码）
+- P05-008/009 Data Identity + 字段禁用（既有 IdentityService）
+- P05-010 协议/实名/CAPTCHA → WAITING_USER（注册分类已有）
+- P05-011 VERIFY_EMAIL_REQUIRED 不标 FULLY_ACTIVE（已有，回归验证）
+- P05-012 同 Provider 注册尝试 ≥3 次 → REGISTRATION_BLOCKED
+Tests: `python -m pytest metis/backend/tests/test_p05_accounts.py` — 3 passed；login E2E（P08）1 passed
+Evidence: tests/test_p05_accounts.py
+Acceptance:
+- [x] 登录/注册 API 前端可调（Account Center 按钮）
+- [x] 敏感信息不回显
+- [x] 重试上限
+- [x] MetisError 全局 → 4xx JSON（原 500 修复）
+
+### 附带修复
+- 全量回归 88 tests 0 failed；测试强制 headless（用户桌面不再弹窗，commit 935616c）
+
 
 ### Task P04-001..012
 Status: PASS
