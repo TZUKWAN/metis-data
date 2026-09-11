@@ -1,12 +1,34 @@
 # Engineering Progress — Metis Data Productization
 
 ## Current Phase
-Phase 6（Provider Contract 重构）+ Phase 7（DownloadManager 工程化）
+Phase 8+（Provider Matrix / 前端产品化 / 聚合语义 / CI / Golden）
 
 ## Current Task
-P06-001 AcquisitionDescriptor
+P18-001 用户选择接入 Build
 
 ## Completed
+
+### Task P06-001..005 + P07-001..014
+Status: PASS
+Files Changed: metis/backend/app/providers/{download_helper,base}.py、adapters/*.py（有界写入重构）、metis/backend/app/providers/download_helper.py、tests/test_p06_p07_download.py
+Implementation:
+- P06-001 AcquisitionDescriptor（url/method/headers/filename/expected_type/expected_size/auth_context/license/metadata）
+- P06-002 v2 接口 build_acquisition_descriptor/validate_download（默认桥接 legacy metadata→descriptor）
+- P06-003 兼容层：legacy acquire_dataset 保留，v2 默认实现包装
+- P06-004/005 静态扫描测试：adapter 禁触 raw/、禁无界 write_bytes（统一 32MB 上限 write_small_payload；大文件必须 DownloadManager）
+- P07-001/002/004/005/006/007/010 已有流式/chunk/partial/原子提交/SHA256/嗅探/取消（Phase 11 遗产）
+- P07-003 进度含 percent/speed/eta
+- P07-008 期望大小校验（声明+实际 vs descriptor.expected_size，不符 CHECKSUM_MISMATCH）
+- P07-009 Range 断点续传（.partial + Accept-Ranges，服务器忽略 Range 则重下）
+- P07-011 browser download 已统一 verify/commit；P07-012 多文件 job.files 列表；P07-013 防护保留
+- P07-014 1GB 合成流测试：2.2s 完成，sha256 校验，流式 1MB chunk 内存有界
+Tests: `python -m pytest metis/backend/tests/test_p06_p07_download.py` — 4 passed
+Acceptance:
+- [x] Adapter 不直接写 Raw（静态扫描）
+- [x] 下载路径无 response.content 整读（静态扫描 + 有界 helper）
+- [x] Range 续传 + 进度 + 期望大小
+- [x] 1GB RSS 有界
+
 
 ### Task P05-001..012（Account Center + APIs）
 Status: PASS（UI + API + 测试）

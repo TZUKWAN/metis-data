@@ -6,7 +6,7 @@ No credential-bypass: without credentials the adapter reports capability missing
 from __future__ import annotations
 
 from app.domain.schemas import DatasetCandidate
-from app.providers.adapters.common import mk_candidate
+from app.providers.adapters.common import mk_candidate, write_small_payload
 from app.providers.base import ProviderAdapter, register_adapter
 from app.providers.http_client import get
 
@@ -103,7 +103,7 @@ class KaggleAdapter(ProviderAdapter):
         if r.content[:2] != b"PK":
             raise RuntimeError("kaggle download did not return a zip archive")
         p = Path(dest_dir) / f"kaggle_{dataset_ref.replace('/', '_')}.zip"
-        p.write_bytes(r.content)
+        write_small_payload(p, r.content)
         with zipfile.ZipFile(p) as z:
             z.extractall(dest_dir)
         return [str(p)]

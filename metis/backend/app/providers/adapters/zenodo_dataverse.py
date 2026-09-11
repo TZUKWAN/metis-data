@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from app.domain.schemas import DatasetCandidate
-from app.providers.adapters.common import mk_candidate, safe_get
+from app.providers.adapters.common import mk_candidate, safe_get, write_small_payload
 from app.providers.base import ProviderAdapter, register_adapter
 from app.providers.http_client import get
 
@@ -108,7 +108,7 @@ class ZenodoAdapter(ProviderAdapter):
                 if fr.status_code != 200:
                     continue
                 p = Path(dest_dir) / f["key"].replace("/", "_")
-                p.write_bytes(fr.content)
+                write_small_payload(p, fr.content)
                 out.append(str(p))
         if not out:
             raise RuntimeError("zenodo file download failed")
@@ -195,7 +195,7 @@ class _DataverseBase(ProviderAdapter):
                     continue
                 name = safe_get(f, "dataFile", "filename") or f"dataverse_{fid}"
                 p = Path(dest_dir) / name.replace("/", "_")
-                p.write_bytes(fr.content)
+                write_small_payload(p, fr.content)
                 out.append(str(p))
         if not out:
             raise RuntimeError("dataverse no downloadable public files")

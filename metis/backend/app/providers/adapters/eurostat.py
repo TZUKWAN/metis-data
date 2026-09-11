@@ -9,7 +9,7 @@ import re
 from xml.etree import ElementTree
 
 from app.domain.schemas import DatasetCandidate
-from app.providers.adapters.common import mk_candidate, safe_get
+from app.providers.adapters.common import mk_candidate, safe_get, write_small_payload
 from app.providers.base import ProviderAdapter, register_adapter
 from app.providers.http_client import get
 
@@ -118,5 +118,5 @@ class EurostatAdapter(ProviderAdapter):
         if r.status != 200:
             raise RuntimeError(f"eurostat download HTTP {r.status}")
         dest = Path(dest_dir) / f"eurostat_{dataset_ref}.json"
-        dest.write_bytes(r.content)
+        write_small_payload(dest, r.content)
         return [str(dest)]

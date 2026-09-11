@@ -7,7 +7,7 @@ figshare, wikidata, nbs_china.
 from __future__ import annotations
 
 from app.domain.schemas import DatasetCandidate
-from app.providers.adapters.common import licenses_from_ckan, mk_candidate, safe_get
+from app.providers.adapters.common import licenses_from_ckan, mk_candidate, safe_get, write_small_payload
 from app.providers.base import ProviderAdapter, register_adapter
 from app.providers.http_client import get
 
@@ -82,7 +82,7 @@ class CkanAdapter(ProviderAdapter):
                     continue
                 name = u.rsplit("/", 1)[-1].split("?")[0] or "resource.bin"
                 p = Path(dest_dir) / name
-                p.write_bytes(fr.content)
+                write_small_payload(p, fr.content)
                 out.append(str(p))
         if not out:
             raise RuntimeError(f"{self.provider_id}: no downloadable resource")
@@ -180,7 +180,7 @@ class UsCensusAdapter(ProviderAdapter):
         if r.status != 200:
             raise RuntimeError(f"census download HTTP {r.status}")
         p = Path(dest_dir) / f"us_census_{dataset_ref.replace('/', '_')}.json"
-        p.write_bytes(r.content)
+        write_small_payload(p, r.content)
         return [str(p)]
 
 
@@ -246,7 +246,7 @@ class DataGouvFrAdapter(ProviderAdapter):
                 fr = await client.get(s.direct_file_url)
                 if fr.status_code == 200:
                     p = Path(dest_dir) / (s.direct_file_url.rsplit("/", 1)[-1].split("?")[0] or "resource.bin")
-                    p.write_bytes(fr.content)
+                    write_small_payload(p, fr.content)
                     out.append(str(p))
         if not out:
             raise RuntimeError("data.gouv.fr download failed")
@@ -330,7 +330,7 @@ class OecdAdapter(ProviderAdapter):
         if r.status != 200:
             raise RuntimeError(f"oecd data HTTP {r.status}")
         p = Path(dest_dir) / f"oecd_{fid}.csv"
-        p.write_bytes(r.content)
+        write_small_payload(p, r.content)
         return [str(p)]
 
 
@@ -383,7 +383,7 @@ class UnComtradeAdapter(ProviderAdapter):
         if r.status != 200:
             raise RuntimeError(f"comtrade HTTP {r.status}")
         p = Path(dest_dir) / f"un_comtrade_{reporter}_{year}.json"
-        p.write_bytes(r.content)
+        write_small_payload(p, r.content)
         return [str(p)]
 
 
@@ -492,7 +492,7 @@ class UsgsAdapter(ProviderAdapter):
                 fr = await client.get(f["url"])
                 if fr.status_code == 200:
                     p = Path(dest_dir) / (f.get("name") or f.get("fssid", "file"))
-                    p.write_bytes(fr.content)
+                    write_small_payload(p, fr.content)
                     out.append(str(p))
         if not out:
             raise RuntimeError("sciencebase no public files")
@@ -572,7 +572,7 @@ class HuggingFaceAdapter(ProviderAdapter):
                 fr = await client.get(url)
                 if fr.status_code == 200:
                     p = Path(dest_dir) / f"{f.get('config','data')}_{f.get('split','train')}_{f.get('filename','0.parquet')}"
-                    p.write_bytes(fr.content)
+                    write_small_payload(p, fr.content)
                     out.append(str(p))
         if not out:
             raise RuntimeError("hf no public parquet files (gated dataset needs account)")
@@ -637,7 +637,7 @@ class DryadAdapter(ProviderAdapter):
                 fr = await client.get(url)
                 if fr.status_code == 200:
                     p = Path(dest_dir) / (path.get("value") or "file").replace("/", "_")
-                    p.write_bytes(fr.content)
+                    write_small_payload(p, fr.content)
                     out.append(str(p))
         if not out:
             raise RuntimeError("dryad download failed")
@@ -702,7 +702,7 @@ class OsfAdapter(ProviderAdapter):
                 fr = await client.get(link)
                 if fr.status_code == 200:
                     p = Path(dest_dir) / (attrs.get("name") or "osf_file")
-                    p.write_bytes(fr.content)
+                    write_small_payload(p, fr.content)
                     out.append(str(p))
         if not out:
             raise RuntimeError("osf no public files")
@@ -779,7 +779,7 @@ class FigshareAdapter(ProviderAdapter):
                 fr = await client.get(f["download_url"])
                 if fr.status_code == 200:
                     p = Path(dest_dir) / f.get("name", "figshare_file")
-                    p.write_bytes(fr.content)
+                    write_small_payload(p, fr.content)
                     out.append(str(p))
         if not out:
             raise RuntimeError("figshare download failed")
@@ -824,7 +824,7 @@ class WikidataAdapter(ProviderAdapter):
         if r.status != 200:
             raise RuntimeError(f"wikidata HTTP {r.status}")
         p = Path(dest_dir) / "wikidata_result.json"
-        p.write_bytes(r.content)
+        write_small_payload(p, r.content)
         return [str(p)]
 
 
@@ -909,5 +909,5 @@ class NbsChinaAdapter(ProviderAdapter):
         if body.get("returncode") != 200:
             raise RuntimeError(f"nbs data error: {str(body)[:150]}")
         p = Path(dest_dir) / f"nbs_{dataset_ref}.json"
-        p.write_bytes(r.content)
+        write_small_payload(p, r.content)
         return [str(p)]

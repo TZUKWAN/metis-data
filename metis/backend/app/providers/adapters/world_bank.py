@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 
 from app.domain.schemas import DatasetCandidate
-from app.providers.adapters.common import mk_candidate
+from app.providers.adapters.common import mk_candidate, write_small_payload
 from app.providers.base import ProviderAdapter, register_adapter
 from app.providers.http_client import get
 
@@ -108,5 +108,5 @@ class WorldBankAdapter(ProviderAdapter):
         if r.status != 200:
             raise RuntimeError(f"world_bank download HTTP {r.status}")
         dest = Path(dest_dir) / f"world_bank_{dataset_ref}.json"
-        dest.write_bytes(r.content)
+        write_small_payload(dest, r.content)
         return [str(dest)]

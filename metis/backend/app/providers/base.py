@@ -6,6 +6,7 @@ Capability Guard refuses calls a provider does not declare (未实现能力不�
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
@@ -14,6 +15,9 @@ from app.core.logging import get_logger
 from app.domain.enums import AccessMode
 from app.domain.schemas import DatasetCandidate, ProviderRecord
 from app.providers.registry import get_registry
+
+if TYPE_CHECKING:
+    from app.providers.download_helper import AcquisitionDescriptor
 
 log = get_logger("provider")
 
@@ -71,6 +75,47 @@ class ProviderAdapter(ABC):
 
     async def refresh_auth(self) -> dict:
         return {"provider_id": self.provider_id, "status": "no_auth_required"}
+
+    # ---- Adapter v2 (P06-002/003): descriptor-based acquisition ----
+    async def build_acquisition_descriptor(self, dataset_ref: str, access_context: dict | None = None) -> "AcquisitionDescriptor | list[AcquisitionDescriptor]":
+        """Default v2 bridge: describe where the bytes live without downloading.
+
+        Adapters may override for precision (expected size/type). The returned
+        descriptor(s) are executed by DownloadManager — never by the adapter.
+        """
+        from app.providers.adapters.common import guess_format_from_url
+        from app.providers.download_helper import AcquisitionDescriptor
+
+        cand = await self.get_dataset_metadata(dataset_ref)
+        out = []
+        for src in cand.files:
+            url = src.direct_file_url or src.source_url
+            out.append(
+                AcquisitionDescriptor(
+                    url=url,
+                    filename=(url.rsplit("/", 1)[-1].split("?")[0] or f"{self.provider_id}_{dataset_ref}"),
+                    expected_type=guess_format_from_url(url),
+                    license=cand.license,
+                    metadata={"source_url": src.source_url, "source_ref": src.source_ref, "doi": cand.doi},
+                )
+            )
+        return out
+
+    async def validate_download(self, descriptor, path, size: int) -> dict:
+        """Post-download validation hook (content sniff + size check)."""
+        from pathlib import Path
+
+        from app.providers.adapters.common import looks_like_html
+
+        p = Path(path)
+        problems = []
+        if size == 0:
+            problems.append("empty file")
+        if descriptor.expected_type and p.suffix.lower().lstrip(".") not in descriptor.expected_type.lower() and p.suffix:
+            pass  # extension mismatch is a warning-level concern; content sniff is authoritative
+        if descriptor.expected_type not in (None, "TXT", "PDF") and looks_like_html(p.read_bytes()):
+            problems.append("content is HTML, not the expected data type")
+        return {"ok": not problems, "problems": problems}
 
 
 _ADAPTERS: dict[str, ProviderAdapter] = {}

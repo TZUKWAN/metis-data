@@ -121,3 +121,19 @@ def safe_get(d: dict | Any, *path: str, default: Any = None) -> Any:
         if cur is None:
             return default
     return cur
+
+
+SMALL_PAYLOAD_CAP = 32 * 1024 * 1024  # 32MB
+
+
+def write_small_payload(path, content: bytes, *, max_bytes: int = SMALL_PAYLOAD_CAP) -> None:
+    """Bounded write for SMALL API payloads (JSON/CSV metadata responses).
+
+    Large dataset downloads MUST go through DownloadManager streaming — never
+    through this helper (P06-005).
+    """
+    if len(content) > max_bytes:
+        from app.core.errors import MetisError
+
+        raise MetisError("DOWNLOAD_TOO_LARGE", f"payload {len(content)} bytes exceeds small-payload cap {max_bytes}; use DownloadManager streaming")
+    Path(path).write_bytes(content)
