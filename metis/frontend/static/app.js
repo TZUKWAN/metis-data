@@ -182,7 +182,6 @@ async function showPackage(bid) {
 /* ---------- live browser (A6-A9) ---------- */
 const bapi = (action, extra = {}) => api(`/api/browser/${action}`, { method: "POST", body: { session_id: STATE.sessionId, ...extra } });
 $("bs-new").onclick = async () => {
-  const s = await bapi("sessions", { url: undefined, task_label: "ui" }).catch(() => null);
   const r = await api("/api/browser/sessions", { method: "POST", body: { task_label: "ui" } });
   STATE.sessionId = r.session_id;
   refreshBrowser();

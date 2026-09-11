@@ -106,6 +106,7 @@ class BrowserSession:
         self.state: BrowserSessionState = BrowserSessionState.IDLE
         self.intervention: dict | None = None
         self.download_job_id: str | None = None
+        self.task_binding: dict = {"provider_id": None, "task_id": None, "access_job_id": None, "download_job_id": None}
         self.download_dir: Path | None = None
         self.downloads: list[dict] = []
         self.events: list[BrowserActionEvent] = []
@@ -114,6 +115,17 @@ class BrowserSession:
         self._last_element_ref: dict | None = None  # invalidated on Return
         self._install_page_listeners(page)
         page.on("download", lambda dl: asyncio.ensure_future(self._on_download(dl)))
+
+    def bind_task(self, *, provider_id: str | None = None, task_id: str | None = None,
+                  access_job_id: str | None = None, download_job_id: str | None = None) -> None:
+        """P02-009: trace which task/access/download this browser is working for."""
+        self.task_binding = {
+            "provider_id": provider_id, "task_id": task_id,
+            "access_job_id": access_job_id, "download_job_id": download_job_id,
+        }
+        if download_job_id:
+            self.download_job_id = download_job_id
+        self._emit("task.bound", dict(self.task_binding))
 
     # ---------- pages / tabs ----------
     @property
@@ -550,6 +562,7 @@ class BrowserManager:
                 "state": s.state.value,
                 "url": s._safe_url(),
                 "intervention": s.intervention,
+                "task_binding": s.task_binding,
                 "downloads": len(s.downloads),
             }
             for s in self._sessions.values()

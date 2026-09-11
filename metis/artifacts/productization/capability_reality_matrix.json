@@ -1,0 +1,114 @@
+{
+  "_comment": "P00-003 capability reality matrix. Levels: implemented/unit_tested/fixture_e2e/real_e2e/ui_connected are booleans or 'partial'; production_ready is false unless the capability works for a real user end-to-end without developer intervention.",
+  "updated": "2026-09-11",
+  "capabilities": {
+    "Requirement": {
+      "implemented": true,
+      "unit_tested": true,
+      "fixture_e2e": true,
+      "real_e2e": true,
+      "ui_connected": true,
+      "production_ready": "partial",
+      "notes": "rule/lexicon parser only; out-of-lexicon concepts fail (P01 will add LLM planner with rule fallback)"
+    },
+    "Search": {
+      "implemented": true,
+      "unit_tested": true,
+      "fixture_e2e": true,
+      "real_e2e": true,
+      "ui_connected": true,
+      "production_ready": "partial",
+      "notes": "8 providers real-parallel in golden; browser search worker absent (Phase 15); query planning hardcoded lexicon"
+    },
+    "Provider": {
+      "implemented": true,
+      "unit_tested": true,
+      "fixture_e2e": true,
+      "real_e2e": "partial",
+      "ui_connected": "partial",
+      "production_ready": false,
+      "notes": "84 registered; 20 adapters; 16 search-verified; only 4 anonymous-download-verified; matrix UI missing (Phase 8)"
+    },
+    "Browser": {
+      "implemented": true,
+      "unit_tested": true,
+      "fixture_e2e": true,
+      "real_e2e": "partial",
+      "ui_connected": "partial",
+      "production_ready": false,
+      "notes": "real headed Chromium, locator chain, pause/takeover/return verified; BUT create-session API schema broken (P00-004), UI is 2.5s screenshot polling, no cursor/typing visibility (Phase 2)"
+    },
+    "Auth": {
+      "implemented": "partial",
+      "unit_tested": true,
+      "fixture_e2e": true,
+      "real_e2e": false,
+      "ui_connected": "partial",
+      "production_ready": false,
+      "notes": "login executor works against local fixture site only; no provider recipes; session is placeholder string, not storage_state (Phase 3)"
+    },
+    "Registration": {
+      "implemented": "partial",
+      "unit_tested": true,
+      "fixture_e2e": true,
+      "real_e2e": false,
+      "ui_connected": false,
+      "production_ready": false,
+      "notes": "result classification verified on fixture; no API endpoint, no provider recipes (Phase 5)"
+    },
+    "Session": {
+      "implemented": false,
+      "unit_tested": false,
+      "fixture_e2e": false,
+      "real_e2e": false,
+      "ui_connected": false,
+      "production_ready": false,
+      "notes": "current persisted session is a placeholder string 'fixture-session:...'; real storage_state persistence/restoration/validity probing required (Phase 3)"
+    },
+    "Download": {
+      "implemented": true,
+      "unit_tested": true,
+      "fixture_e2e": true,
+      "real_e2e": true,
+      "ui_connected": true,
+      "production_ready": "partial",
+      "notes": "gating/streaming/checksum/sniff/safe-extract verified incl. 112MB; gaps: adapters read small files fully into memory (P06-005), no HTTP resume, no 1GB test (Phase 7)"
+    },
+    "Parser": {
+      "implemented": true,
+      "unit_tested": true,
+      "fixture_e2e": true,
+      "real_e2e": true,
+      "ui_connected": "partial",
+      "production_ready": true,
+      "notes": "16+ formats verified incl. real WB zip bundles; preview only virtualized by row cap"
+    },
+    "Build": {
+      "implemented": true,
+      "unit_tested": true,
+      "fixture_e2e": true,
+      "real_e2e": true,
+      "ui_connected": "partial",
+      "production_ready": false,
+      "notes": "pipeline+checkpoints+validation+package verified; BUT UI hardcodes artifacts.slice(0,2), keys default country/year, aggregation defaults mean — Build Planner + plan editor required (Phase 17-19)"
+    },
+    "Provenance": {
+      "implemented": true,
+      "unit_tested": true,
+      "fixture_e2e": true,
+      "real_e2e": true,
+      "ui_connected": "partial",
+      "production_ready": "partial",
+      "notes": "source/transform/field lineage verified in golden; viewer is basic; build-plan snapshot + agent decision snapshot missing (Phase 22)"
+    },
+    "UI": {
+      "implemented": "partial",
+      "unit_tested": false,
+      "fixture_e2e": false,
+      "real_e2e": "partial",
+      "ui_connected": "partial",
+      "production_ready": false,
+      "notes": "three-column workspace works (screenshot evidence) but: browser session create broken, no account center, no build plan editor, no project/task model (Phase 24)"
+    }
+  }
+}

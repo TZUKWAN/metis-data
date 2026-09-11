@@ -86,7 +86,16 @@ class BuildIn(BaseModel):
     exports: list[str] = ["parquet", "csv", "xlsx"]
 
 
-class BrowserActionIn(BaseModel):
+class BrowserCreateSessionRequest(BaseModel):
+    """P02-001: create does NOT require session_id (a session id is created, not supplied)."""
+    task_label: str = ""
+    provider_id: str | None = None
+    task_id: str | None = None
+    access_job_id: str | None = None
+    download_job_id: str | None = None
+
+
+class BrowserActionRequest(BaseModel):
     session_id: str
     url: str | None = None
     target: dict | None = None
@@ -99,6 +108,10 @@ class BrowserActionIn(BaseModel):
     index: int | None = None
     file_path: str | None = None
     task_label: str = ""
+
+
+# backwards-compatible alias for existing imports
+BrowserActionIn = BrowserActionRequest
 
 
 class BindIn(BaseModel):
@@ -389,10 +402,17 @@ async def package_file(build_id: str, path: str):
 
 # ---------------- browser (A6-A9) ----------------
 @app.post("/api/browser/sessions")
-async def new_browser_session(body: BrowserActionIn):
+async def new_browser_session(body: BrowserCreateSessionRequest):
     from app.browser.runtime import MANAGER
 
     sess = await MANAGER.new_session(body.task_label)
+    if body.provider_id or body.task_id or body.download_job_id or body.access_job_id:
+        sess.bind_task(
+            provider_id=body.provider_id,
+            task_id=body.task_id,
+            access_job_id=body.access_job_id,
+            download_job_id=body.download_job_id,
+        )
     return {"session_id": sess.session_id, "state": sess.state, "owner": sess.owner}
 
 
