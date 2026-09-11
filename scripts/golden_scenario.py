@@ -25,12 +25,15 @@ sys.path.insert(0, str(ROOT / "metis" / "backend"))
 REQUEST = "构建 2015—2023 年国家层面的青年失业率、人均 GDP、教育水平面板，优先使用官方或国际组织数据。"
 
 # acquisitions we WANT for the panel (indicator-level, real provider datasets)
+# GS-1 needs >=2 distinct international organizations; GS-5 needs >=3 inputs
 ACQUIRE_HINTS = {
-    "world_bank": ["SL.UEM.1524.ZS", "NY.GDP.PCAP.CD", "SE.TER.ENRR"],  # youth unemp, GDP pc, tertiary education
+    "world_bank": ["SL.UEM.1524.ZS", "NY.GDP.PCAP.CD"],  # youth unemp, GDP pc
     "eurostat": ["une_rt_a"],
     "ilostat": ["DF_SDG_0831_SEX_ECO_RT"],
+    "un_comtrade": ["annual_2022"],
 }
 MIN_ACQUIRE = 2
+MIN_PROVIDERS = 2
 
 
 async def main() -> int:
@@ -85,7 +88,8 @@ async def main() -> int:
 
     acquired: list[dict] = []
     for pid, refs in ACQUIRE_HINTS.items():
-        if len(acquired) >= 3:
+        providers_hit = {a["provider_id"] for a in acquired}
+        if len(acquired) >= 4 and len(providers_hit) >= MIN_PROVIDERS:
             break
         if pid not in [p.provider_id for p in providers]:
             continue
@@ -112,8 +116,10 @@ async def main() -> int:
             except Exception as e:  # noqa: BLE001
                 print(f"    acquire failed {pid}:{ref}: {type(e).__name__}: {str(e)[:120]}")
     assert len(acquired) >= MIN_ACQUIRE, f"need >=2 real acquisitions, got {len(acquired)}"
-    report["stages"]["acquisition"] = {"ok": True, "acquired": acquired}
-    print(f"[4/9] acquired {len(acquired)} real sources")
+    n_providers = len({a["provider_id"] for a in acquired})
+    assert n_providers >= MIN_PROVIDERS, f"GS-1 needs >=2 distinct providers, got {n_providers}"
+    report["stages"]["acquisition"] = {"ok": True, "acquired": acquired, "distinct_providers": n_providers}
+    print(f"[4/9] acquired {len(acquired)} real sources from {n_providers} providers")
 
     # ---- 5. Profile ----
     from app.datasets.profile import profile_artifact
@@ -134,7 +140,7 @@ async def main() -> int:
     cfg = BuildConfig(
         title="GOLDEN panel 2015-2023",
         requirement_id=req["requirement_id"] if isinstance(req, dict) else req.requirement_id,
-        inputs=[BuildInputRef(artifact_id=acquired[0]["artifact_id"]), BuildInputRef(artifact_id=acquired[1]["artifact_id"])],
+        inputs=[BuildInputRef(artifact_id=a["artifact_id"]) for a in acquired[:3]],  # GS-5: up to 3 inputs
         keys=["country", "year"],
         missing_policy="none",
         derived_variables=[],
@@ -145,7 +151,11 @@ async def main() -> int:
     result = await BuildExecutor(cfg.build_id).run()
     assert result["status"] == "COMPLETE"
     validations = REPO.list_validations(cfg.build_id)
-    report["stages"]["build"] = {"ok": True, "build_id": cfg.build_id, "rows": result["rows"], "validations": validations, "operations": [o["operation_type"] for o in REPO.list_build_operations(cfg.build_id)]}
+    report["stages"]["build"] = {
+        "ok": True, "build_id": cfg.build_id, "rows": result["rows"], "validations": validations,
+        "n_inputs": min(len(acquired), 3),
+        "operations": [o["operation_type"] for o in REPO.list_build_operations(cfg.build_id)],
+    }
     print(f"[6/9] build COMPLETE: {result['rows']} rows; ops={report['stages']['build']['operations']}")
 
     # ---- 7. Final package integrity ----
