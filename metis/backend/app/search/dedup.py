@@ -84,10 +84,10 @@ def deduplicate(candidates: list[dict]) -> list[list[dict]]:
             primary.setdefault("reasons", []).append(f"merged {len(members)} identical records across providers; mirrors preserved as acquisition sources")
         groups.append(members)
 
-    for doi, members in by_doi.items():
+    for members in by_doi.values():
         _merge_group(members)
     claimed = {id(c) for g in groups for c in g}
-    for url, members in by_url.items():
+    for members in by_url.values():
         members = [m for m in members if id(m) not in claimed]
         if members:
             _merge_group(members)

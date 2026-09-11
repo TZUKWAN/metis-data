@@ -115,9 +115,9 @@ class EurostatAdapter(ProviderAdapter):
         """Download JSON-stat and convert to a tidy long CSV (dimension columns + value)."""
         import itertools
         import json as _json
+        from pathlib import Path
 
         import pandas as pd
-        from pathlib import Path
 
         r = await get(f"{BASE}/statistics/1.0/data/{dataset_ref}?lang=EN&format=JSON", timeout=120)
         if r.status != 200:
@@ -142,12 +142,12 @@ class EurostatAdapter(ProviderAdapter):
         values = data["value"]
         for combo in itertools.product(*(range(sz) for sz in sizes)):
             flat = 0
-            for idx, sz in zip(combo, sizes):
+            for idx, sz in zip(combo, sizes, strict=False):
                 flat = flat * sz + idx
             v = values.get(str(flat), values.get(flat))
             if v is None:
                 continue
-            row = {d: dim_categories[d][i] for d, i in zip(dims, combo)}
+            row = {d: dim_categories[d][i] for d, i in zip(dims, combo, strict=False)}
             row["value"] = v
             rows.append(row)
         df = pd.DataFrame(rows)

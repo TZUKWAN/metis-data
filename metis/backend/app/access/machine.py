@@ -6,8 +6,8 @@ auditable and resumable.
 """
 from __future__ import annotations
 
+from datetime import UTC
 from enum import StrEnum
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -119,9 +119,9 @@ class AccessJob(BaseModel):
 
 
 def create_access_job(provider_id: str, candidate_id: str = "", download_job_id: str = "") -> AccessJob:
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     job = AccessJob(
         access_job_id=new_id("acc"),
         provider_id=provider_id,
@@ -141,11 +141,11 @@ def transition(job: AccessJob, target: AccessState, reason: str = "") -> AccessJ
     current = AccessState(job.state)
     if target not in FLOW.get(current, set()):
         raise MetisError("STATE_INVALID", f"access: illegal transition {current} -> {target}", details={"job": job.access_job_id, "reason": reason})
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     job.state = target
     job.reason = reason
-    job.updated_at = datetime.now(timezone.utc).isoformat()
+    job.updated_at = datetime.now(UTC).isoformat()
     job.history.append({"state": target, "reason": reason, "ts": job.updated_at})
     _persist(job)
     REPO.add_ui_event("access.transition", provider_id=job.provider_id, task_id=job.download_job_id or None, payload={"access_job_id": job.access_job_id, "state": target, "reason": reason})

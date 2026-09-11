@@ -144,24 +144,24 @@ def _schema(df: pd.DataFrame) -> list[dict]:
         if df[col].map(lambda v: isinstance(v, (list, dict))).any():
             df[col] = df[col].map(lambda v: json.dumps(v, ensure_ascii=False)[:500] if isinstance(v, (list, dict)) else v)
     for col in df.columns:
-        s = df[col]
-        numeric = pd.api.types.is_numeric_dtype(s)
+        s_col = df[col]
+        numeric = pd.api.types.is_numeric_dtype(s_col)
         entry = {
             "name": str(col),
-            "dtype": str(s.dtype),
-            "nullable": bool(s.isna().any()),
-            "missing_rate": round(float(s.isna().mean()), 4),
-            "unique": int(s.nunique(dropna=True)),
-            "cardinality_ratio": round(float(s.nunique(dropna=True)) / n, 4),
+            "dtype": str(s_col.dtype),
+            "nullable": bool(s_col.isna().any()),
+            "missing_rate": round(float(s_col.isna().mean()), 4),
+            "unique": int(s_col.nunique(dropna=True)),
+            "cardinality_ratio": round(float(s_col.nunique(dropna=True)) / n, 4),
             "numeric": numeric,
         }
         if numeric:
-            desc = s.describe()
+            desc = s_col.describe()
             entry["min"] = _safe(desc.get("min"))
             entry["max"] = _safe(desc.get("max"))
             entry["mean"] = _safe(desc.get("mean"))
             try:
-                q = s.quantile([0.25, 0.5, 0.75])
+                q = s_col.quantile([0.25, 0.5, 0.75])
                 entry["quantiles"] = {"q25": _safe(q.get(0.25)), "q50": _safe(q.get(0.5)), "q75": _safe(q.get(0.75))}
             except Exception:  # noqa: BLE001
                 entry["quantiles"] = None
@@ -175,9 +175,9 @@ def _schema(df: pd.DataFrame) -> list[dict]:
             if any(k in cl for k in ("per_1000", "per1000", "per_100k", "per_100_000")):
                 entry["rate_basis_hint"] = "per-1000/per-100k"
         else:
-            vc = s.dropna().astype(str).value_counts()
+            vc = s_col.dropna().astype(str).value_counts()
             entry["top_values"] = {k: int(v) for k, v in vc.head(5).items()}
-            sample = s.dropna().astype(str).head(50)
+            sample = s_col.dropna().astype(str).head(50)
             if len(sample):
                 digitish = sum(1 for v in sample if _re.fullmatch(r"[\d.,\-]+", v))
                 cjk = sum(1 for v in sample if _re.search(r"[一-鿿]", v))
@@ -205,7 +205,6 @@ def _guess_roles(df: pd.DataFrame, schema: list[dict]) -> dict:
     name_map = {c["name"]: c for c in schema}
     for col in df.columns:
         cl = str(col).lower()
-        s = df[col]
         entry = name_map.get(str(col), {})
         if cl in ("year", "年份") or (cl.endswith("_year") or "year" == cl.split("_")[-1]) or cl in ("date", "日期", "time", "period", "quarter", "month"):
             roles["likely_time"].append(str(col))

@@ -67,8 +67,6 @@ def build_provenance(build_id: str, cfg: BuildConfig, ops: list[dict]) -> dict:
 
     # field lineage: trace final columns back to source fields via operation chain
     lineage = []
-    if ops:
-        final_cols = list(ops[-1].get("params", {}).get("columns", [])) if ops else []
     for src in sources:
         art = REPO.get_artifact(src["artifact_id"]) or {}
         profile = art.get("profile") or {}

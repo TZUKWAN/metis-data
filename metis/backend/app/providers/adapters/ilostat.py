@@ -45,8 +45,8 @@ async def _load_dataflows() -> list[tuple[str, str]]:
 
 async def _dataflow_dims(flow_id: str) -> list[str]:
     """Dimension order for building SDMX keys."""
-    agency, fid, version = "ILO", flow_id, "1.0"
-    r = await get(f"{BASE}/datastructure/ILO/DSD_{fid.split('DF_')[-1] if fid.startswith('DF_') else fid}/latest?references=none", timeout=60, max_retries=0)
+    dsd = flow_id.replace("DF_", "") if flow_id.startswith("DF_") else flow_id
+    r = await get(f"{BASE}/datastructure/ILO/DSD_{dsd}/latest?references=none", timeout=60, max_retries=0)
     if r.status != 200:
         return []
     root = ElementTree.fromstring(r.content)

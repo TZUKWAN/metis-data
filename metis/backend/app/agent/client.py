@@ -39,7 +39,7 @@ class LLMConfig:
     max_retries: int
 
     @classmethod
-    def from_env(cls) -> "LLMConfig":
+    def from_env(cls) -> LLMConfig:
         base = os.environ.get("METIS_LLM_BASE_URL", "").strip()
         key = os.environ.get("METIS_LLM_API_KEY", "").strip()
         model = os.environ.get("METIS_LLM_MODEL", "").strip()

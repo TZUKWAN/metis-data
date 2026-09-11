@@ -11,7 +11,6 @@ from app.agent.schemas import (
     AggregationPlan,
     BuildPlan,
     CandidateAnalysis,
-    FieldMapping,
     JoinPlan,
     ReviewPoint,
 )

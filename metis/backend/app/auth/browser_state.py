@@ -9,12 +9,11 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from pydantic import BaseModel
 
 from app.auth.secret_store import get_secret_store
-from app.core.errors import MetisError
 from app.core.logging import get_logger
 from app.db.repository import REPO
 from app.domain.enums import AccountStatusKind
@@ -42,8 +41,8 @@ async def save_browser_state(session, provider_id: str, account_id: str | None =
     record = BrowserStateRecord(
         provider_id=provider_id,
         account_id=account_id,
-        created_at=datetime.now(timezone.utc).isoformat(),
-        last_verified_at=datetime.now(timezone.utc).isoformat(),
+        created_at=datetime.now(UTC).isoformat(),
+        last_verified_at=datetime.now(UTC).isoformat(),
         expires_hint=expires_hint,
         vault_key=vault_key,
     )
@@ -68,7 +67,6 @@ async def restore_browser_storage(context, provider_id: str) -> bool:
             await context.add_cookies(cookies)
         # localStorage / origin storage: inject via init script per origin
         for origin_block in state.get("origins", []):
-            origin = origin_block.get("origin", "")
             for item in origin_block.get("localStorage", []):
                 script = (
                     f"try {{ window.localStorage.setItem({json.dumps(item['name'])}, {json.dumps(item['value'])}); }} catch (e) {{}}"
@@ -148,7 +146,7 @@ class OAuthCredential(BaseModel):
         REPO.add_credential(new_id("cred"), self.provider_id, "oauth", self.account_identity, f"{self.provider_id}.oauth")
 
     @classmethod
-    def load(cls, provider_id: str) -> "OAuthCredential | None":
+    def load(cls, provider_id: str) -> OAuthCredential | None:
         store = get_secret_store()
         if not store.exists(f"{provider_id}.oauth"):
             return None

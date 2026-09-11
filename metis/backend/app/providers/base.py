@@ -6,7 +6,7 @@ Capability Guard refuses calls a provider does not declare (未实现能力不�
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
@@ -77,7 +77,7 @@ class ProviderAdapter(ABC):
         return {"provider_id": self.provider_id, "status": "no_auth_required"}
 
     # ---- Adapter v2 (P06-002/003): descriptor-based acquisition ----
-    async def build_acquisition_descriptor(self, dataset_ref: str, access_context: dict | None = None) -> "AcquisitionDescriptor | list[AcquisitionDescriptor]":
+    async def build_acquisition_descriptor(self, dataset_ref: str, access_context: dict | None = None) -> AcquisitionDescriptor | list[AcquisitionDescriptor]:
         """Default v2 bridge: describe where the bytes live without downloading.
 
         Adapters may override for precision (expected size/type). The returned

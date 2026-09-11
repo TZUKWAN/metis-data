@@ -173,7 +173,6 @@ def derive_variable(df: pd.DataFrame, formula: str, output_field: str, input_fie
         values = eval(expr, {"__builtins__": {}}, env)  # noqa: S307 — token whitelist above
     values = pd.Series(values, index=df.index).replace([__import__("numpy").inf, -__import__("numpy").inf], __import__("numpy").nan)
     result[output_field] = values
-    n_zero_div = int((env.get("/") is not None) and 0)  # computed via inf→nan replacement
     prov = {
         "operation": "derived_variable",
         "formula": formula,

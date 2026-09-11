@@ -49,11 +49,11 @@ class Vault(SecretStore):
     # ---------- DPAPI ----------
     @staticmethod
     def _protect(data: bytes) -> bytes:
-        class DATA_BLOB(ctypes.Structure):
+        class DataBlob(ctypes.Structure):
             _fields_ = [("cbData", wintypes.DWORD), ("pbData", ctypes.c_void_p)]
 
-        din = DATA_BLOB(len(data), ctypes.cast(ctypes.c_char_p(data), ctypes.c_void_p))
-        dout = DATA_BLOB()
+        din = DataBlob(len(data), ctypes.cast(ctypes.c_char_p(data), ctypes.c_void_p))
+        dout = DataBlob()
         ok = _crypt.CryptProtectData(ctypes.byref(din), "MetisData", None, None, None, 0, ctypes.byref(dout))
         if not ok:
             raise MetisError("VAULT_UNAVAILABLE", "CryptProtectData failed")
@@ -64,11 +64,11 @@ class Vault(SecretStore):
 
     @staticmethod
     def _unprotect(blob: bytes) -> bytes:
-        class DATA_BLOB(ctypes.Structure):
+        class DataBlob(ctypes.Structure):
             _fields_ = [("cbData", wintypes.DWORD), ("pbData", ctypes.c_void_p)]
 
-        din = DATA_BLOB(len(blob), ctypes.cast(ctypes.c_char_p(blob), ctypes.c_void_p))
-        dout = DATA_BLOB()
+        din = DataBlob(len(blob), ctypes.cast(ctypes.c_char_p(blob), ctypes.c_void_p))
+        dout = DataBlob()
         ok = _crypt.CryptUnprotectData(ctypes.byref(din), None, None, None, None, 0, ctypes.byref(dout))
         if not ok:
             raise MetisError("VAULT_UNAVAILABLE", "CryptUnprotectData failed (wrong user or corrupted blob)")

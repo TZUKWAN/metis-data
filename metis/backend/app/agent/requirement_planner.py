@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from app.agent.client import AgentError, LLMClient
-from app.agent.policy import plan_str, reject_unsafe, validate_requirement_plan
+from app.agent.policy import reject_unsafe, validate_requirement_plan
 from app.agent.schemas import DataRequirementPlan, VariableConcept
 from app.core.logging import get_logger
 

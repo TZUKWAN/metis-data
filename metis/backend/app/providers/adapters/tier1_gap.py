@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 from app.domain.schemas import DatasetCandidate
+from app.providers.adapters.common import mk_candidate, safe_get
 from app.providers.base import ProviderAdapter, register_adapter
 from app.providers.http_client import get
-from app.providers.adapters.common import mk_candidate, safe_get
 
 
 @register_adapter
@@ -44,7 +44,7 @@ class UnSdgAdapter(ProviderAdapter):
         ]
 
     async def get_dataset_metadata(self, dataset_ref: str) -> DatasetCandidate:
-        r = await get(f"https://unstats.un.org/sdgapi/v1/sdg/Series/List", params={"pageSize": 2000}, timeout=60)
+        r = await get("https://unstats.un.org/sdgapi/v1/sdg/Series/List", params={"pageSize": 2000}, timeout=60)
         for sr in r.json() or []:
             if str(sr.get("code")) == dataset_ref:
                 return mk_candidate(
@@ -134,14 +134,13 @@ class UciMlAdapter(ProviderAdapter):
         return {"access_mode": "PUBLIC_ANONYMOUS_HTTP", "requires_login": False, "restricted": False, "license": "VARIES", "notes": "UCI public zip download"}
 
     async def acquire_dataset(self, dataset_ref: str, dest_dir, access_context: dict | None = None) -> list[str]:
-        import httpx
         from pathlib import Path
+
+        import httpx
 
         r = await get(f"https://archive.ics.uci.edu/api/dataset/{dataset_ref}", timeout=45)
         it = r.json().get("data", {})
         url = None
-        for sup in it.get("external_url", []) or []:
-            pass
         # canonical zip: /static/public/uci/<id>/... exposed via api 'data_url'
         url = it.get("data_url")
         if not url:

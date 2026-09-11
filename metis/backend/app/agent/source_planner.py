@@ -58,7 +58,8 @@ async def plan_sources(requirement: DataRequirementPlan, measurements: list[Vari
 
 
 def _rule_plan(requirement: DataRequirementPlan, measurements: list[VariableMeasurementPlan]) -> SourcePlan:
-    from app.domain.schemas import DataRequirement as DomainReq, VariableRequest
+    from app.domain.schemas import DataRequirement as DomainReq
+    from app.domain.schemas import VariableRequest
 
     # reuse the existing deterministic selector on a domain-shaped requirement
     variables = VariableRequest()
@@ -75,7 +76,8 @@ def _rule_plan(requirement: DataRequirementPlan, measurements: list[VariableMeas
         variables=variables,
         preferred_sources=requirement.preferred_sources,
     )
-    from app.search.selector import plan_queries as rule_plan_queries, select_providers
+    from app.search.selector import plan_queries as rule_plan_queries
+    from app.search.selector import select_providers
 
     providers = select_providers(domain_req, max_providers=8)
     queries = rule_plan_queries(domain_req, providers)

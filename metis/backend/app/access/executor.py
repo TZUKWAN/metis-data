@@ -9,15 +9,12 @@ auth executors (login/registration) and DownloadManager.
 """
 from __future__ import annotations
 
-from typing import Any
-
-from app.access.machine import AccessAction, AccessJob, AccessState, create_access_job, next_action, transition
+from app.access.machine import AccessJob, AccessState, create_access_job, transition
 from app.auth.browser_state import ensure_valid_session
-from app.providers.base import get_adapter
 from app.core.errors import MetisError
 from app.core.logging import get_logger
 from app.db.repository import REPO
-from app.domain.enums import AccountStatusKind
+from app.providers.base import get_adapter
 
 log = get_logger("access.executor")
 

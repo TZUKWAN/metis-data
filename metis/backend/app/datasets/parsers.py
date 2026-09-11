@@ -95,7 +95,7 @@ def sniff_format(path: Path) -> str:
                 return "JSON"
             except json.JSONDecodeError:
                 pass
-        lines = [l for l in text.splitlines() if l.strip()]
+        lines = [ln for ln in text.splitlines() if ln.strip()]
         if len(lines) >= 2 and lines[-1].lstrip().startswith(("}", "]")) is False:
             return "JSONL"
         if path.stat().st_size > 8192:
@@ -151,7 +151,7 @@ def parse_table(path: Path) -> ParsedTable:
             fields = [f[0] for f in sf.fields[1:]]
             rows = []
             for sr in sf.iterShapeRecords():
-                row = dict(zip(fields, sr.record))
+                row = dict(zip(fields, sr.record, strict=False))
                 row["_shape_type"] = sr.shape.shapeType
                 rows.append(row)
             return pd.DataFrame(rows)
@@ -211,7 +211,7 @@ def parse_table(path: Path) -> ParsedTable:
     if fmt == "JSON":
         return ParsedTable(path, "JSON", lambda: pd.json_normalize(_load_json(path)))
     if fmt == "JSONL":
-        return ParsedTable(path, "JSONL", lambda: pd.json_normalize([json.loads(l) for l in path.read_text(encoding="utf-8", errors="ignore").splitlines() if l.strip()]))
+        return ParsedTable(path, "JSONL", lambda: pd.json_normalize([json.loads(ln) for ln in path.read_text(encoding="utf-8", errors="ignore").splitlines() if ln.strip()]))
     if fmt == "PARQUET":
         return ParsedTable(path, "PARQUET", lambda: pd.read_parquet(path))
     if fmt in ("XLSX", "XLS"):
@@ -272,7 +272,7 @@ def parse_table(path: Path) -> ParsedTable:
             fields = [f[0] for f in sf.fields[1:]]
             rows = []
             for sr in sf.iterShapeRecords():
-                row = dict(zip(fields, sr.record))
+                row = dict(zip(fields, sr.record, strict=False))
                 row["_shape_type"] = sr.shape.shapeType
                 rows.append(row)
             return pd.DataFrame(rows)

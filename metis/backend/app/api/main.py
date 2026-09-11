@@ -267,7 +267,6 @@ async def create_download(body: DownloadIn):
     """
     from app.access.executor import resolve_access
     from app.downloads.service import MANAGER
-    from app.domain.schemas import DownloadJob
 
     job = MANAGER.create_job(body.provider_id, body.dataset_ref, body.source_url, dataset_title=body.dataset_title, version=body.version, license=body.license, access_mode=body.access_mode)
     try:
@@ -280,7 +279,7 @@ async def create_download(body: DownloadIn):
         return JSONResponse(status_code=202, content={"download_job": job.model_dump(mode="json"), "access_job": access_job.model_dump(mode="json"), "next": "complete access via Account Center / browser takeover, then resume"})
 
     async def _run():
-        from app.access.machine import transition, AccessState
+        from app.access.machine import AccessState, transition
         from app.providers.base import get_adapter
 
         adapter = get_adapter(body.provider_id)
@@ -604,8 +603,8 @@ async def agent_plan_measurements(body: MeasurementPlanIn):
 @app.post("/api/agent/sources/plan")
 async def agent_plan_sources(body: dict):
     from app.agent.measurement_planner import plan_measurements
-    from app.agent.source_planner import plan_queries, plan_sources
     from app.agent.schemas import DataRequirementPlan, VariableMeasurementPlan
+    from app.agent.source_planner import plan_queries, plan_sources
 
     req = DataRequirementPlan(**body["requirement"])
     raw_measurements = body.get("measurements")
@@ -635,8 +634,7 @@ class RegisterIn(BaseModel):
 @app.post("/api/accounts/{provider_id}/login")
 async def account_login(provider_id: str, body: LoginIn):
     """Drive the real login flow in the live browser, persist storage_state, resume pending access jobs."""
-    from app.auth.accounts import ACCOUNTS, LoginExecutor
-    from app.auth.browser_state import save_browser_state
+    from app.auth.accounts import LoginExecutor
     from app.auth.recipes import PROVIDER_RECIPES, resolve_url
     from app.browser.runtime import MANAGER, LocatorTarget
 
@@ -675,7 +673,6 @@ async def account_login(provider_id: str, body: LoginIn):
         pending = [j for j in REPO.list_access_jobs(provider_id) if j["state"] in ("LOGGING_IN", "LOGIN_REQUIRED", "WAITING_USER", "SESSION_EXPIRED")]
         if pending:
             from app.access.executor import resume_after_user
-            from app.access.machine import AccessJob
 
             resumed = (await resume_after_user(pending[0]["access_job_id"], "success")).model_dump(mode="json")
     return {"result": result, "access_job": resumed, "session_id": session.session_id}
@@ -684,7 +681,7 @@ async def account_login(provider_id: str, body: LoginIn):
 @app.post("/api/accounts/{provider_id}/register")
 async def account_register(provider_id: str, body: RegisterIn):
     """Drive ordinary self-service registration (only when the user enabled it)."""
-    from app.auth.accounts import ACCOUNTS, IDENTITY, RegistrationExecutor
+    from app.auth.accounts import ACCOUNTS, RegistrationExecutor
     from app.auth.recipes import PROVIDER_RECIPES, resolve_url
     from app.browser.runtime import MANAGER, LocatorTarget
 

@@ -131,7 +131,7 @@ class UsCensusAdapter(ProviderAdapter):
                 scored.append((s, ds))
         scored.sort(key=lambda x: -x[0])
         out = []
-        for s, ds in scored[:limit]:
+        for _score, ds in scored[:limit]:
             identifier = ds.get("identifier", "")
             out.append(
                 mk_candidate(

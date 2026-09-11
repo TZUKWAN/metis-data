@@ -113,8 +113,8 @@ def licenses_kaggle(lics) -> str:
     if not lics:
         return "UNKNOWN"
     names = []
-    for l in lics:
-        n = (l.get("name") if isinstance(l, dict) else str(l)) or ""
+    for lic in lics:
+        n = (lic.get("name") if isinstance(lic, dict) else str(lic)) or ""
         names.append(n)
     joined = ", ".join(names).upper()
     return joined or "UNKNOWN"
