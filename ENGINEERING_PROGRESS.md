@@ -1,12 +1,37 @@
 # Engineering Progress — Metis Data Productization
 
 ## Current Phase
-Phase 2（Browser 产品化）
+Phase 3（真实 Session / Vault）
 
 ## Current Task
-P02-002 Live Stream 协议
+P03-004 storage_state schema
 
 ## Completed
+
+### Task P02-002..014（P02-001/009 已在 Phase 0 完成）
+Status: PASS
+Goal: Browser 从截图轮询升级为可观察 Computer Use
+Files Changed: metis/backend/app/browser/runtime.py、metis/backend/app/api/main.py、metis/frontend/static/{index.html,app.js}、metis/backend/tests/test_p02_browser.py
+Implementation:
+- P02-002 WS 直播流 `/ws/browser/{id}`：JPEG 帧目标 15FPS + cursor/click/typing 元数据
+- P02-003 背压：发送耗时超帧预算自动降频，无无界队列
+- P02-004/006 光标轨迹 + 点击环（canvas overlay，前端绘制）
+- P02-005 语义定位→元素盒→插值移动→可视点击（默认路径，不再瞬移）
+- P02-007/008 真实 keyboard.type(delay=30) 默认逐字可见；secret 用 fill 且不显示明文
+- P02-010 Tab 模型 API（index/title/url/active）+ 幂等页面跟踪（popup 事件与手动 new_tab 竞态去重）
+- P02-011/012 Takeover/Return 已有（fixture E2E 覆盖）
+- P02-013 check_crashed()：连接断开标记 CRASHED，WS 推送 crashed 事件，不假装 IDLE
+- P02-014 sanitize_url：事件/UI 层 URL 敏感 query 参数掩码
+Tests: `python -m pytest metis/backend/tests/test_p02_browser.py metis/backend/tests/test_p08_browser_e2e.py` — 16 passed
+Evidence: tests/test_p02_browser.py（帧率≥8fps 断言、JPEG magic、光标位移、typed_by=keyboard、CRASHED、URL 掩码）
+Acceptance:
+- [x] 连续观看无 2.5s 跳帧（15FPS WS 流替代轮询）
+- [x] 鼠标/键盘/点击可视
+- [x] Tab 切换真实
+- [x] Takeover/Return 同 session
+- [x] 崩溃标 CRASHED
+- [x] 敏感信息不泄露（typed secret + URL query）
+
 
 ### Task P01-001..011
 Status: PASS

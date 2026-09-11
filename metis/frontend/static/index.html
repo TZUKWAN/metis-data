@@ -63,7 +63,9 @@
         </span>
       </h3>
       <div id="browser-status" class="badge"></div>
-      <img id="browser-shot" alt="浏览器实时画面">
+      <div style="position:relative">
+        <canvas id="browser-shot" width="800" height="500" style="width:100%;background:#000;border:1px solid var(--line);border-radius:6px"></canvas>
+      </div>
       <div id="browser-intervention" class="hidden"></div>
       <div id="browser-events"></div>
     </div>

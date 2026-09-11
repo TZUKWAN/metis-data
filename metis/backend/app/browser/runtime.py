@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import io
+import re
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -26,6 +27,16 @@ from app.core.logging import get_logger
 from app.domain.enums import BrowserOwner, BrowserSessionState, InterventionKind
 
 log = get_logger("browser")
+
+_SENSITIVE_QUERY = re.compile(r"([?&](?:token|key|otp|password|secret|code|signature)=)([^&]+)", re.I)
+
+
+def sanitize_url(url: str | None) -> str | None:
+    """P02-014: mask sensitive query values before URLs reach events/UI."""
+    if not url:
+        return url
+    return _SENSITIVE_QUERY.sub(lambda m: m.group(1) + "***", url)
+
 
 INTERVENTION_PATTERNS: list[tuple[InterventionKind, list[str]]] = [
     (InterventionKind.CAPTCHA, ["recaptcha", "g-recaptcha", "hcaptcha", "geetest", "are you a robot", "human verification", "captcha challenge", "prove you are not a robot"]),
@@ -107,6 +118,11 @@ class BrowserSession:
         self.intervention: dict | None = None
         self.download_job_id: str | None = None
         self.task_binding: dict = {"provider_id": None, "task_id": None, "access_job_id": None, "download_job_id": None}
+        # P02-004/006: visible cursor + click feedback state (streamed to UI)
+        self.cursor: dict = {"x": 0, "y": 0}
+        self.last_click: dict | None = None
+        self.last_typing_at: float = 0.0
+        self._frame_lock = asyncio.Lock()
         self.download_dir: Path | None = None
         self.downloads: list[dict] = []
         self.events: list[BrowserActionEvent] = []
@@ -134,11 +150,17 @@ class BrowserSession:
 
     def _install_page_listeners(self, page: Any) -> None:
         def on_popup(p: Any) -> None:
-            self._pages.append(p)
-            p.on("download", lambda dl: asyncio.ensure_future(self._on_download(dl)))
+            self._track_page(p)
             self._emit("tab.opened", {"url": p.url, "total_tabs": len(self._pages)})
 
         page.context.on("page", on_popup)
+
+    def _track_page(self, page: Any) -> int:
+        """Idempotent page registration (context popup event + manual new_tab can race)."""
+        if page not in self._pages:
+            self._pages.append(page)
+            page.on("download", lambda dl: asyncio.ensure_future(self._on_download(dl)))
+        return self._pages.index(page)
 
     # ---------- events ----------
     def subscribe(self) -> asyncio.Queue:
@@ -172,7 +194,7 @@ class BrowserSession:
 
     def _safe_url(self) -> str:
         try:
-            return self.page.url
+            return sanitize_url(self.page.url)
         except Exception:  # noqa: BLE001
             return None  # type: ignore[return-value]
 
@@ -286,24 +308,47 @@ class BrowserSession:
         await self._post_action_intervention_check()
         return {"url": self.page.url}
 
+    async def _human_move(self, x: float, y: float) -> None:
+        """P02-005: interpolate cursor movement so the UI shows a visible trajectory."""
+        steps = max(6, min(30, int(abs(x - self.cursor["x"]) + abs(y - self.cursor["y"])) // 18 or 6))
+        await self.page.mouse.move(x, y, steps=steps)
+        self.cursor = {"x": int(x), "y": int(y)}
+
     async def click(self, t: LocatorTarget) -> dict:
         self.assert_can_dispatch()
         target, strategy = await self.resolve(t)
         self.state = BrowserSessionState.RUNNING
         try:
             self._emit("click", {"target": t.describe()}, strategy=strategy, target=t.describe())
+            box = None
+            if strategy not in ("coordinate_fallback", "vision_template"):
+                try:
+                    box = await target.bounding_box()
+                except Exception:  # noqa: BLE001
+                    box = None
             if strategy in ("coordinate_fallback", "vision_template"):
                 if len(target) == 2:
-                    await self.page.mouse.click(target[0], target[1])  # type: ignore[index]
+                    cx, cy = target[0], target[1]
                 else:
                     x, y, w, h = target  # type: ignore[misc]
-                    await self.page.mouse.click(x + w // 2, y + h // 2)
+                    cx, cy = x + w // 2, y + h // 2
+                await self._human_move(cx, cy)
+                await self.page.mouse.down()
+                await self.page.mouse.up()
+            elif box:
+                # P02-005/006: semantic locate → element box → visible move → click
+                cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+                await self._human_move(cx, cy)
+                await self.page.mouse.down()
+                await self.page.mouse.up()
             else:
                 await target.click(timeout=15000)
+            self.cursor = {"x": int(self.cursor["x"]), "y": int(self.cursor["y"])}
+            self.last_click = {"x": self.cursor["x"], "y": self.cursor["y"], "ts": time.time()}
             self._last_element_ref = {"target": t.describe(), "strategy": strategy}
             await asyncio.sleep(0.3)
             await self._post_action_intervention_check()
-            return {"url": self.page.url, "strategy": strategy}
+            return {"url": self.page.url, "strategy": strategy, "cursor": self.cursor}
         finally:
             if self.state is BrowserSessionState.RUNNING:
                 self.state = BrowserSessionState.IDLE
@@ -330,8 +375,17 @@ class BrowserSession:
             self._emit("type", {"target": t.describe(), "typed_value": text if not secret else "***", "secret": secret}, strategy=strategy, target=t.describe())
             if strategy in ("coordinate_fallback", "vision_template"):
                 raise MetisError("STATE_INVALID", "cannot type via coordinate; DOM target required")
-            await target.fill(text, timeout=15000)
-            return {"strategy": strategy, "secret": secret}
+            if secret:
+                await target.fill(text, timeout=15000)  # secrets type fast, never displayed
+            else:
+                # P02-007: real keyboard typing with delay — visible char-by-char in live view
+                try:
+                    await target.focus(timeout=5000)
+                    await self.page.keyboard.type(text, delay=30)
+                except Exception:  # noqa: BLE001
+                    await target.fill(text, timeout=15000)  # P02-008: fill only as fallback
+            self.last_typing_at = time.time()
+            return {"strategy": strategy, "secret": secret, "typed_by": "fill" if secret else "keyboard"}
         finally:
             if self.state is BrowserSessionState.RUNNING:
                 self.state = BrowserSessionState.IDLE
@@ -364,9 +418,8 @@ class BrowserSession:
     async def new_tab(self, url: str | None = None) -> dict:
         self.assert_can_dispatch()
         page = await self.context.new_page()
-        self._pages.append(page)
-        page.on("download", lambda dl: asyncio.ensure_future(self._on_download(dl)))
-        self._current = len(self._pages) - 1
+        await asyncio.sleep(0)  # let the context popup event settle, then idempotent-track
+        self._current = self._track_page(page)
         if url:
             await page.goto(url, wait_until="domcontentloaded")
         self._emit("tab.new", {"total_tabs": len(self._pages)})
@@ -377,8 +430,11 @@ class BrowserSession:
         if len(self._pages) <= 1:
             raise MetisError("STATE_INVALID", "cannot close the last tab")
         page = self._pages.pop(self._current)
-        await page.close()
-        self._current = max(0, self._current - 1)
+        try:
+            await page.close()
+        except Exception:  # noqa: BLE001
+            pass
+        self._current = max(0, min(self._current, len(self._pages) - 1))
         return {"tabs": len(self._pages)}
 
     async def switch_tab(self, index: int) -> dict:
@@ -439,6 +495,41 @@ class BrowserSession:
 
                 REPO.add_ui_event("browser.intervention", "WARNING", task_id=self.download_job_id, payload=dict(self.intervention))
                 return
+
+    # ---------- live frame stream (P02-002/003) ----------
+    async def get_frame(self) -> dict:
+        """One JPEG frame (base64) + cursor/click/typing meta for the WS stream."""
+        async with self._frame_lock:
+            if not await self.is_alive():
+                return {"alive": False}
+            shot = await self.page.screenshot(type="jpeg", quality=55)
+        return {
+            "alive": True,
+            "img": base64.b64encode(shot).decode(),
+            "cursor": self.cursor,
+            "click": self.last_click,
+            "typing_recently": (time.time() - self.last_typing_at) < 1.5,
+            "url": self._safe_url(),
+            "owner": self.owner.value,
+            "state": self.state.value,
+        }
+
+    async def is_alive(self) -> bool:
+        try:
+            return bool(self.browser.is_connected()) and self.page is not None and not self.page.is_closed()
+        except Exception:  # noqa: BLE001
+            return False
+
+    # ---------- crash detection (P02-013) ----------
+    async def check_crashed(self) -> bool:
+        """Marks the session CRASHED if the browser/page died. Never pretends IDLE."""
+        if self.state in (BrowserSessionState.CLOSED, BrowserSessionState.CRASHED):
+            return self.state is BrowserSessionState.CRASHED
+        if not await self.is_alive():
+            self.state = BrowserSessionState.CRASHED
+            self._emit("crash", {"note": "browser/page died; session marked CRASHED"}, status="error")
+            return True
+        return False
 
     # ---------- downloads (A16) ----------
     async def _on_download(self, download: Any) -> None:

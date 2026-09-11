@@ -202,13 +202,59 @@ async function refreshBrowser() {
     $("browser-intervention").className = "intervention";
     $("browser-intervention").innerHTML = `⛔ ${esc(s.intervention.kind)}：${esc(s.intervention.message)}<br><small>Agent 已停止输入。请手动完成该步骤后点击“交还 Agent”。</small>`;
   } else $("browser-intervention").className = "hidden";
-  const shot = await bapi("screenshot");
-  $("browser-shot").src = shot.image;
   const evs = await api(`/api/browser/sessions/${STATE.sessionId}/events`);
   $("browser-events").innerHTML = evs.slice(-12).reverse().map((e) =>
     `<div class="event ${e.status === "error" ? "err" : ""}"><span class="ts">${ts(e.ts)}</span><b>${esc(e.action)}</b> ${esc(e.target || "")} ${e.strategy ? `<span class="pill">${esc(e.strategy)}</span>` : ""} ${esc(e.status)}</div>`).join("");
 }
+
+/* ---------- P02-002..008: live WS stream + cursor/click/typing overlay ---------- */
+let browserWS = null;
+function connectBrowserWS() {
+  if (!STATE.sessionId) return;
+  if (browserWS) { try { browserWS.close(); } catch (e) {} }
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  browserWS = new WebSocket(`${proto}://${location.host}/ws/browser/${STATE.sessionId}`);
+  browserWS.onmessage = (m) => {
+    const msg = JSON.parse(m.data);
+    if (msg.t === "frame") drawFrame(msg);
+    if (msg.t === "crashed") pushEvent("browser.crashed", "ERROR", { message: "浏览器会话已崩溃（CRASHED，非 IDLE）" });
+  };
+  browserWS.onclose = () => { /* poll fallback keeps state alive */ };
+}
+function drawFrame(msg) {
+  const canvas = $("browser-shot");
+  const ctx = canvas.getContext("2d");
+  const img = new Image();
+  img.onload = () => {
+    // fit frame into canvas while preserving aspect
+    const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+    const dw = img.width * scale, dh = img.height * scale;
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, dw, dh);
+    const sx = dw / img.width, sy = dh / img.height;
+    // click ring (P02-006): highlight recent clicks for ~1.2s
+    if (msg.click && Date.now() / 1000 - msg.click.ts < 1.2) {
+      ctx.strokeStyle = "#ff5555"; ctx.lineWidth = 2;
+      const r = 8 + 18 * (1 - (Date.now() / 1000 - msg.click.ts) / 1.2);
+      ctx.beginPath(); ctx.arc(msg.click.x * sx, msg.click.y * sy, r, 0, 7); ctx.stroke();
+    }
+    // cursor (P02-004)
+    ctx.fillStyle = "#4f8cff";
+    ctx.beginPath(); ctx.arc(msg.cursor.x * sx, msg.cursor.y * sy, 5, 0, 7); ctx.fill();
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke();
+    // typing indicator (P02-007)
+    if (msg.typing_recently) {
+      ctx.fillStyle = "#39c26d"; ctx.font = "12px sans-serif";
+      ctx.fillText("⌨ typing…", 8, canvas.height - 10);
+    }
+  };
+  img.src = "data:image/jpeg;base64," + msg.img;
+}
 setInterval(refreshBrowser, 2500);
+// hook session creation to open the live stream
+const _origBsNew = $("bs-new").onclick;
+$("bs-new").onclick = async () => { await _origBsNew(); connectBrowserWS(); };
+window.connectBrowserWS = connectBrowserWS;
 
 /* ---------- init ---------- */
 connectWS();

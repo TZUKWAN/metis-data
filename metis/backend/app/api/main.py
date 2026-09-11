@@ -632,6 +632,57 @@ async def ws_events(ws: WebSocket):
         CLIENTS.discard(ws)
 
 
+# ---------------- live browser stream (P02-002/003) ----------------
+@app.websocket("/ws/browser/{session_id}")
+async def ws_browser_stream(ws: WebSocket, session_id: str):
+    """Binary-ish live view: JSON messages with JPEG frames + cursor/click/typing meta.
+
+    Backpressure: a slow client never grows a queue — we measure send time and
+    degrade frame rate; frames are dropped, never queued unboundedly.
+    """
+    from app.browser.runtime import MANAGER
+
+    await ws.accept()
+    session = MANAGER.get(session_id)
+    interval = 1 / 15.0  # target 15 FPS
+    try:
+        while True:
+            t0 = asyncio.get_event_loop().time()
+            if await session.check_crashed():
+                await ws.send_text(json.dumps({"t": "crashed"}))
+                break
+            frame = await session.get_frame()
+            if not frame.get("alive"):
+                break
+            try:
+                await ws.send_text(json.dumps({"t": "frame", **frame}))
+            except Exception:  # noqa: BLE001 — client gone
+                break
+            # backpressure: if the send itself took longer than a frame budget, slow down
+            elapsed = asyncio.get_event_loop().time() - t0
+            await asyncio.sleep(max(interval - elapsed, interval * (elapsed > interval)))
+    except WebSocketDisconnect:
+        pass
+    except Exception:  # noqa: BLE001
+        pass
+
+
+# ---------------- tab model (P02-010) ----------------
+@app.get("/api/browser/sessions/{session_id}/tabs")
+async def browser_tabs(session_id: str):
+    from app.browser.runtime import MANAGER
+
+    sess = MANAGER.get(session_id)
+    tabs = []
+    for i, page in enumerate(sess._pages):
+        try:
+            closed = page.is_closed()
+        except Exception:  # noqa: BLE001
+            closed = True
+        tabs.append({"index": i, "active": i == sess._current, "closed": closed, "url": sess._safe_url() if page is sess.page else page.url, "title": "" if closed else await page.title()})
+    return {"tabs": tabs}
+
+
 # ---------------- static frontend ----------------
 FRONTEND = Path(__file__).resolve().parents[3] / "frontend" / "static"
 if FRONTEND.exists():
