@@ -1,0 +1,45 @@
+# Secrets / credentials / auth state — never commit
+.env
+*.env
+!.env.example
+*auth_state*
+*session_state*
+*.secret
+vault/*.bin
+metis/workspace/vault/
+
+# Runtime workspace data (downloads, raw, intermediate, final artifacts)
+metis/workspace/raw/
+metis/workspace/intermediate/
+metis/workspace/final/
+metis/workspace/downloads/
+metis/workspace/tmp/
+metis/workspace/**/*.partial
+metis/artifacts/benchmarks/runtime/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large fixture data (regenerate via: python scripts/gen_fixtures.py)
+metis/backend/tests/fixtures/data/big_measurements.csv
+metis/backend/tests/fixtures/data/profile_100mb.csv
+
+# Runtime database / logs
+metis/workspace/*.db
+metis/workspace/*.db-wal
+metis/workspace/*.db-shm
+metis/workspace/logs/

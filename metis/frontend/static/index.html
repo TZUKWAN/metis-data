@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>Metis Data</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/ui/styles.css">
+</head>
+<body>
+<header>
+  <div class="brand">Metis Data <span class="sub">数据智能体 · 发现 → 获取 → 合成 → 可复现交付</span></div>
+  <div id="conn-status" class="conn">连接中…</div>
+</header>
+<main class="grid">
+  <!-- LEFT: task / data -->
+  <section class="col left">
+    <div class="panel">
+      <h3>数据需求</h3>
+      <textarea id="req-text" rows="4" placeholder="例：构建 2015—2023 年国家层面的青年失业率、人均 GDP、教育水平面板，优先使用官方或国际组织数据。"></textarea>
+      <button id="btn-parse" class="primary">解析需求</button>
+      <div id="req-card" class="hidden"></div>
+    </div>
+    <div class="panel">
+      <h3>搜索</h3>
+      <label class="row"><input type="checkbox" id="auto-select" checked> 搜索后自动排序候选</label>
+      <button id="btn-search" class="primary">并行搜索 Provider</button>
+      <button id="btn-cancel-search" class="danger">取消搜索</button>
+      <div id="provider-progress"></div>
+    </div>
+    <div class="panel">
+      <h3>候选数据集</h3>
+      <div id="candidates"></div>
+    </div>
+    <div class="panel">
+      <h3>下载</h3>
+      <button id="btn-refresh-downloads">刷新</button>
+      <div id="downloads"></div>
+    </div>
+    <div class="panel">
+      <h3>Build 合成</h3>
+      <button id="btn-build-create">从已选候选创建 Build</button>
+      <div id="builds"></div>
+    </div>
+    <div class="panel">
+      <h3>Provenance / 交付包</h3>
+      <div id="provenance"></div>
+    </div>
+  </section>
+
+  <!-- CENTER: live browser / data -->
+  <section class="col center">
+    <div class="panel browser">
+      <h3>Live Browser
+        <span class="btns">
+          <button id="bs-new">新会话</button>
+          <button id="bs-navigate">导航</button>
+          <input id="bs-url" placeholder="https://…">
+          <button id="bs-pause">Pause</button>
+          <button id="bs-takeover">我来操作</button>
+          <button id="bs-return">交还 Agent</button>
+        </span>
+      </h3>
+      <div id="browser-status" class="badge"></div>
+      <img id="browser-shot" alt="浏览器实时画面">
+      <div id="browser-intervention" class="hidden"></div>
+      <div id="browser-events"></div>
+    </div>
+    <div class="panel">
+      <h3>Data Preview / Schema</h3>
+      <div id="artifact-list"></div>
+      <div id="preview"></div>
+    </div>
+  </section>
+
+  <!-- RIGHT: agent -->
+  <section class="col right">
+    <div class="panel">
+      <h3>Data Agent</h3>
+      <div id="agent-events"></div>
+    </div>
+  </section>
+</main>
+<script src="/ui/app.js"></script>
+</body>
+</html>

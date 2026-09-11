@@ -1,0 +1,18 @@
+<html><head><title>Fixture Register</title><style>body{font-family:sans-serif;margin:40px} .btn{padding:12px 24px;font-size:18px} input{padding:8px;margin:6px 0;display:block} .msg{color:red}</style></head><body>
+<h2>Create account</h2>
+<form onsubmit="return doReg()">
+<input id="name" placeholder="full name"><input id="email" placeholder="email">
+<input id="password" type="password" placeholder="password">
+<label><input type="checkbox" id="captcha" style="display:inline;width:auto"> simulate CAPTCHA</label>
+<button id="reg-btn" type="submit">Register</button><p id="msg" class="msg"></p></form>
+<script>
+const EXISTING=['taken@example.edu'];
+function doReg(){
+  if(document.getElementById('captcha').checked){ document.getElementById('msg').textContent='CAPTCHA required'; return false; }
+  const e=document.getElementById('email').value, p=document.getElementById('password').value;
+  if(EXISTING.includes(e)){ document.getElementById('msg').textContent='duplicate email: an account with this email already exists'; return false; }
+  if(p.length<8 || !/[A-Z]/.test(p) || !/[a-z]/.test(p) || !/[0-9]/.test(p)){ document.getElementById('msg').textContent='password rule failed: need 8+ chars with upper, lower, digit'; return false; }
+  if(e==='verify@example.edu'){ location.href='verify_email.html'; return false; }
+  location.href='register_done.html?email='+encodeURIComponent(e); return false;
+}
+</script></body></html>

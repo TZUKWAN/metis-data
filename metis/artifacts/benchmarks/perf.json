@@ -1,0 +1,21 @@
+{
+  "date": "2026-09-11",
+  "profile_108mb_csv": {
+    "rows": 4200000,
+    "cols": 4,
+    "mode": "chunked_sample",
+    "duration_s": 9.0,
+    "peak_rss_mb": 110
+  },
+  "download_112mb_stream": {
+    "bytes": 112070498,
+    "duration_s": 1.0,
+    "throughput_mbps": 112.7,
+    "checksum_verified": true
+  },
+  "build_panel": {
+    "rows": 13002,
+    "duration_s": 62.6,
+    "note": "golden scenario incl. real network acquisition"
+  }
+}

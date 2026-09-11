@@ -1,0 +1,11 @@
+<html><head><title>Fixture Data Catalog</title><style>body{font-family:sans-serif;margin:40px} .btn{padding:12px 24px;font-size:18px} input{padding:8px;margin:6px 0;display:block} .msg{color:red}</style></head><body>
+<h1>Catalog search</h1>
+<input id="q" placeholder="Search datasets..."><button id="search-btn" onclick="runSearch()">Search</button>
+<div id="results"></div>
+<script>
+function runSearch(){
+  const q=document.getElementById('q').value.toLowerCase();
+  const items=[{t:'Youth unemployment panel 2015-2023',u:'dataset_a.html'},{t:'GDP per capita world table',u:'dataset_b.html'},{t:'Education attainment OECD',u:'dataset_c.html'}];
+  document.getElementById('results').innerHTML=items.filter(i=>!q||i.t.toLowerCase().includes(q.split(' ')[0])).map(i=>`<div><a href="${i.u}">${i.t}</a></div>`).join('');
+}
+</script></body></html>

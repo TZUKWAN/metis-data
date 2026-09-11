@@ -1,0 +1,19 @@
+[project]
+name = "metis-backend"
+version = "1.0.0"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+exclude = ["tests/fixtures", "workspace"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B"]
+ignore = ["E501", "B008", "UP007", "UP045", "N818", "B904"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+check_untyped_defs = false
+exclude = ["tests", "workspace"]

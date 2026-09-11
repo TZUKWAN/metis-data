@@ -1,0 +1,445 @@
+{
+  "request": "构建 2015—2023 年国家层面的青年失业率、人均 GDP、教育水平面板，优先使用官方或国际组织数据。",
+  "stages": {
+    "requirement": {
+      "ok": true,
+      "assumptions": [
+        "frequency='annual' inferred by default for macro panel request (shown explicitly)",
+        "trust_requirement='official_first' derived from preferred source mention"
+      ]
+    },
+    "provider_selection": {
+      "ok": true,
+      "providers": [
+        "ilostat",
+        "world_bank",
+        "oecd",
+        "eurostat",
+        "un_comtrade",
+        "us_census",
+        "usgs",
+        "data_gov_uk"
+      ],
+      "query_plan": {
+        "ilostat": [
+          "youth unemployment rate",
+          "青年失业率",
+          "taux de chômage des jeunes",
+          "unemployment rate"
+        ],
+        "world_bank": [
+          "youth unemployment rate",
+          "青年失业率",
+          "taux de chômage des jeunes",
+          "unemployment rate"
+        ],
+        "oecd": [
+          "youth unemployment rate",
+          "青年失业率",
+          "taux de chômage des jeunes",
+          "unemployment rate"
+        ],
+        "eurostat": [
+          "youth unemployment rate",
+          "青年失业率",
+          "taux de chômage des jeunes",
+          "unemployment rate"
+        ],
+        "un_comtrade": [
+          "trade 2023"
+        ],
+        "us_census": [
+          "youth unemployment rate",
+          "青年失业率",
+          "taux de chômage des jeunes",
+          "unemployment rate"
+        ],
+        "usgs": [
+          "youth unemployment rate",
+          "青年失业率",
+          "taux de chômage des jeunes",
+          "unemployment rate"
+        ],
+        "data_gov_uk": [
+          "youth unemployment rate",
+          "青年失业率",
+          "taux de chômage des jeunes",
+          "unemployment rate"
+        ]
+      }
+    },
+    "search": {
+      "ok": true,
+      "run_id": "run_554cc7b21f3c4da5",
+      "status": "COMPLETED",
+      "provider_tasks": [
+        {
+          "task_id": "pt_6a1fe486b75345f99463",
+          "provider_id": "ilostat",
+          "status": "done",
+          "result_count": 1,
+          "error_code": null,
+          "error_message": null,
+          "started_at": "2026-09-10T21:27:31.817405",
+          "finished_at": "2026-09-10T21:27:36.267551"
+        },
+        {
+          "task_id": "pt_2523f0390a654d1e85d8",
+          "provider_id": "world_bank",
+          "status": "done",
+          "result_count": 20,
+          "error_code": null,
+          "error_message": null,
+          "started_at": "2026-09-10T21:27:31.940721",
+          "finished_at": "2026-09-10T21:27:34.044470"
+        },
+        {
+          "task_id": "pt_d0315d4957674c6b9d18",
+          "provider_id": "oecd",
+          "status": "done",
+          "result_count": 1,
+          "error_code": null,
+          "error_message": null,
+          "started_at": "2026-09-10T21:27:31.967683",
+          "finished_at": "2026-09-10T21:27:33.515541"
+        },
+        {
+          "task_id": "pt_b4034ab86d204a81b451",
+          "provider_id": "eurostat",
+          "status": "timeout",
+          "result_count": 0,
+          "error_code": "PROVIDER_TIMEOUT",
+          "error_message": "provider exceeded 45s",
+          "started_at": "2026-09-10T21:27:31.991878",
+          "finished_at": "2026-09-10T21:28:17.002312"
+        },
+        {
+          "task_id": "pt_0e7c51fceb064c318f3e",
+          "provider_id": "un_comtrade",
+          "status": "done",
+          "result_count": 1,
+          "error_code": null,
+          "error_message": null,
+          "started_at": "2026-09-10T21:27:32.019483",
+          "finished_at": "2026-09-10T21:27:32.027663"
+        },
+        {
+          "task_id": "pt_9eaf1e1462854b539fa0",
+          "provider_id": "us_census",
+          "status": "done",
+          "result_count": 13,
+          "error_code": null,
+          "error_message": null,
+          "started_at": "2026-09-10T21:27:32.031782",
+          "finished_at": "2026-09-10T21:27:39.613478"
+        },
+        {
+          "task_id": "pt_7e456d0a4cc34d749c31",
+          "provider_id": "usgs",
+          "status": "done",
+          "result_count": 0,
+          "error_code": null,
+          "error_message": null,
+          "started_at": "2026-09-10T21:27:32.059064",
+          "finished_at": "2026-09-10T21:27:35.448536"
+        },
+        {
+          "task_id": "pt_ecb030921cdc4298926b",
+          "provider_id": "data_gov_uk",
+          "status": "done",
+          "result_count": 10,
+          "error_code": null,
+          "error_message": null,
+          "started_at": "2026-09-10T21:27:33.518996",
+          "finished_at": "2026-09-10T21:27:44.253339"
+        }
+      ],
+      "n_candidates": 37
+    },
+    "acquisition": {
+      "ok": true,
+      "acquired": [
+        {
+          "provider_id": "world_bank",
+          "ref": "SL.UEM.1524.ZS",
+          "artifact_id": "art_ebef39a9358e46ba8a79",
+          "sha256": "3d0b8b11813fe5df",
+          "size": 49004
+        },
+        {
+          "provider_id": "world_bank",
+          "ref": "NY.GDP.PCAP.CD",
+          "artifact_id": "art_ae0bf963d4ef40dab778",
+          "sha256": "1f1627cd35d56ab6",
+          "size": 146714
+        },
+        {
+          "provider_id": "world_bank",
+          "ref": "SE.TER.ENRR",
+          "artifact_id": "art_4e72a73f3a3d43acb969",
+          "sha256": "d22277b923432e34",
+          "size": 79108
+        }
+      ]
+    },
+    "profile": {
+      "ok": true,
+      "artifacts": {
+        "art_ebef39a9358e46ba8a79": {
+          "rows": 265,
+          "cols": 71,
+          "format": "ZIP"
+        },
+        "art_ae0bf963d4ef40dab778": {
+          "rows": 265,
+          "cols": 71,
+          "format": "ZIP"
+        },
+        "art_4e72a73f3a3d43acb969": {
+          "rows": 265,
+          "cols": 71,
+          "format": "ZIP"
+        }
+      }
+    },
+    "build": {
+      "ok": true,
+      "build_id": "build_880c5febdca4453d92b8",
+      "rows": 13002,
+      "validations": [
+        {
+          "code": "KEY_UNIQUE",
+          "severity": "INFO",
+          "message": "keys ['iso3', 'year'] unique",
+          "field": "iso3,year",
+          "affected_rows": null,
+          "remediation": null,
+          "details": {}
+        },
+        {
+          "code": "MISSING_HIGH",
+          "severity": "WARNING",
+          "message": "column Unnamed: 70 has 100% missing",
+          "field": "Unnamed: 70",
+          "affected_rows": 13002,
+          "remediation": "consider a missing policy (documented) or drop the column",
+          "details": {}
+        },
+        {
+          "code": "MISSING_HIGH",
+          "severity": "WARNING",
+          "message": "column value has 54% missing",
+          "field": "value",
+          "affected_rows": 6958,
+          "remediation": "consider a missing policy (documented) or drop the column",
+          "details": {}
+        },
+        {
+          "code": "MISSING_HIGH",
+          "severity": "WARNING",
+          "message": "column Unnamed: 70_right has 100% missing",
+          "field": "Unnamed: 70_right",
+          "affected_rows": 13002,
+          "remediation": "consider a missing policy (documented) or drop the column",
+          "details": {}
+        },
+        {
+          "code": "MISSING",
+          "severity": "INFO",
+          "message": "column value_right missing 16.8%",
+          "field": "value_right",
+          "affected_rows": null,
+          "remediation": null,
+          "details": {}
+        },
+        {
+          "code": "OUTLIER",
+          "severity": "WARNING",
+          "message": "44 extreme outliers (|z|>6) in value_right",
+          "field": "value_right",
+          "affected_rows": 44,
+          "remediation": "inspect source records; do not delete silently",
+          "details": {}
+        },
+        {
+          "code": "TEMPORAL_COMPLETE",
+          "severity": "INFO",
+          "message": "no temporal gaps in range",
+          "field": null,
+          "affected_rows": null,
+          "remediation": null,
+          "details": {}
+        },
+        {
+          "code": "CONSTANT_COLUMN",
+          "severity": "WARNING",
+          "message": "column Indicator Name is constant",
+          "field": "Indicator Name",
+          "affected_rows": null,
+          "remediation": "verify whether the constant is expected",
+          "details": {}
+        },
+        {
+          "code": "CONSTANT_COLUMN",
+          "severity": "WARNING",
+          "message": "column Indicator Code is constant",
+          "field": "Indicator Code",
+          "affected_rows": null,
+          "remediation": "verify whether the constant is expected",
+          "details": {}
+        },
+        {
+          "code": "CONSTANT_COLUMN",
+          "severity": "WARNING",
+          "message": "column Unnamed: 70 is constant",
+          "field": "Unnamed: 70",
+          "affected_rows": null,
+          "remediation": "verify whether the constant is expected",
+          "details": {}
+        },
+        {
+          "code": "CONSTANT_COLUMN",
+          "severity": "WARNING",
+          "message": "column Indicator Name_right is constant",
+          "field": "Indicator Name_right",
+          "affected_rows": null,
+          "remediation": "verify whether the constant is expected",
+          "details": {}
+        },
+        {
+          "code": "CONSTANT_COLUMN",
+          "severity": "WARNING",
+          "message": "column Indicator Code_right is constant",
+          "field": "Indicator Code_right",
+          "affected_rows": null,
+          "remediation": "verify whether the constant is expected",
+          "details": {}
+        },
+        {
+          "code": "CONSTANT_COLUMN",
+          "severity": "WARNING",
+          "message": "column Unnamed: 70_right is constant",
+          "field": "Unnamed: 70_right",
+          "affected_rows": null,
+          "remediation": "verify whether the constant is expected",
+          "details": {}
+        }
+      ],
+      "operations": [
+        "load_input",
+        "load_input",
+        "semantic_alignment_scan",
+        "entity_resolution",
+        "time_alignment",
+        "reshape_wide_to_long",
+        "canonicalize_input",
+        "reshape_wide_to_long",
+        "canonicalize_input",
+        "join",
+        "missing_policy"
+      ]
+    },
+    "package": {
+      "ok": true,
+      "files": [
+        "final/dataset.parquet",
+        "final/dataset.csv",
+        "metadata/dataset.json",
+        "metadata/variables.json",
+        "metadata/sources.json",
+        "provenance/lineage.json",
+        "provenance/transformations.json",
+        "provenance/checksums.json",
+        "reports/quality_report.html",
+        "reports/methodology.md",
+        "scripts/reproduce.py",
+        "raw_manifest.json",
+        "final/dataset.xlsx"
+      ],
+      "rows": 13002,
+      "cols": 16
+    },
+    "reproduce": {
+      "ok": true,
+      "returncode": 0,
+      "stdout": "verified world_bank\\SL.UEM.1524.ZS\\v1\\world_bank_SL.UEM.1524.ZS.json 3d0b8b11813f…\nverified world_bank\\NY.GDP.PCAP.CD\\v1\\world_bank_NY.GDP.PCAP.CD.json 1f1627cd35d5…\nreproduce OK: rows=13002 cols=16 code_version=1.0.0\n",
+      "stderr": ""
+    },
+    "lineage": {
+      "ok": true,
+      "n_fields": 142,
+      "sample": {
+        "final_field": "art_ebef39a9358e46ba8a79.Country Name",
+        "lineage": {
+          "final_field": "art_ebef39a9358e46ba8a79.Country Name",
+          "transforms": [
+            {
+              "operation": "load_input",
+              "operation_id": "op_05ea56ed6a0e4bdcb4b7",
+              "seq": 1
+            },
+            {
+              "operation": "load_input",
+              "operation_id": "op_2a9f25fa7e9a4953a76d",
+              "seq": 2
+            },
+            {
+              "operation": "semantic_alignment_scan",
+              "operation_id": "op_7f0487a4122749928405",
+              "seq": 3
+            },
+            {
+              "operation": "entity_resolution",
+              "operation_id": "op_519887abe2e14b1089bc",
+              "seq": 4
+            },
+            {
+              "operation": "time_alignment",
+              "operation_id": "op_a760274dd1a54e82b666",
+              "seq": 5
+            },
+            {
+              "operation": "reshape_wide_to_long",
+              "operation_id": "op_bd7311339e884e1f9fba",
+              "seq": 6
+            },
+            {
+              "operation": "canonicalize_input",
+              "operation_id": "op_c2d18dd13b33474296b6",
+              "seq": 7
+            },
+            {
+              "operation": "reshape_wide_to_long",
+              "operation_id": "op_c08b58347de2403295c2",
+              "seq": 8
+            },
+            {
+              "operation": "canonicalize_input",
+              "operation_id": "op_9c4f8fa9f8e94693bc15",
+              "seq": 9
+            },
+            {
+              "operation": "join",
+              "operation_id": "op_cfeb648ca4704587ad4e",
+              "seq": 10
+            },
+            {
+              "operation": "missing_policy",
+              "operation_id": "op_b27b1a2347a440fd833b",
+              "seq": 11
+            }
+          ],
+          "source_field": "Country Name",
+          "raw_artifact": "world_bank\\SL.UEM.1524.ZS\\v1\\world_bank_SL.UEM.1524.ZS.json",
+          "provider_dataset": "world_bank:SL.UEM.1524.ZS",
+          "url": "https://provider/world_bank/SL.UEM.1524.ZS",
+          "doi": null,
+          "sha256": "3d0b8b11813fe5df2db3ec6f2103efb4fd0db6b656a39313c4498107c3d38408"
+        }
+      }
+    }
+  },
+  "started": 1789075651.2933536,
+  "result": "PASS",
+  "duration_s": 62.6
+}

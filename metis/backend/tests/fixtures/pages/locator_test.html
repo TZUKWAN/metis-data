@@ -1,0 +1,19 @@
+<html><head><title>Locator Test</title><style>body{font-family:sans-serif;margin:40px} .btn{padding:12px 24px;font-size:18px} input{padding:8px;margin:6px 0;display:block} .msg{color:red}</style></head>
+<body>
+<div id="top"><button id="dl-btn" class="btn" onclick="moveButton()">Download</button></div>
+<div style="height:60px"></div>
+<button id="mover" class="btn" onclick="moveButton()">Move Button Now</button>
+<div id="spacer" style="height:10px"></div>
+<script>
+let moved=false;
+function moveButton(){
+  if(moved) return; moved=true;
+  const b=document.getElementById('dl-btn');
+  b.remove();
+  const d=document.createElement('div'); d.style.marginTop='1400px';
+  d.appendChild(b); document.body.appendChild(d);
+}
+setTimeout(moveButton, 2500);
+</script>
+<div style="height:1600px"></div>
+</body></html>

@@ -1,0 +1,408 @@
+{
+  "date": "2026-09-10",
+  "adapters": [
+    {
+      "provider_id": "data_gouv_fr",
+      "search": "OK",
+      "download": "NO_REF",
+      "notes": [],
+      "n_results": 2
+    },
+    {
+      "provider_id": "data_gov_uk",
+      "search": "OK",
+      "download": "NO_REF",
+      "notes": [],
+      "n_results": 8
+    },
+    {
+      "provider_id": "dryad",
+      "search": "OK",
+      "download": "NO_REF",
+      "notes": [],
+      "n_results": 8
+    },
+    {
+      "provider_id": "eurostat",
+      "search": "OK",
+      "download": "OK",
+      "notes": [],
+      "n_results": 8,
+      "dl_bytes": 508295
+    },
+    {
+      "provider_id": "figshare",
+      "search": "OK",
+      "download": "NO_REF",
+      "notes": [],
+      "n_results": 8
+    },
+    {
+      "provider_id": "harvard_dataverse",
+      "search": "OK",
+      "download": "NO_REF",
+      "notes": [],
+      "n_results": 8
+    },
+    {
+      "provider_id": "huggingface_datasets",
+      "search": "OK",
+      "download": "SKIP",
+      "notes": [],
+      "n_results": 8
+    },
+    {
+      "provider_id": "ilostat",
+      "search": "OK",
+      "download": "OK",
+      "notes": [],
+      "n_results": 8,
+      "dl_bytes": 11957330
+    },
+    {
+      "provider_id": "kaggle",
+      "search": "OK",
+      "download": "SKIP",
+      "notes": [],
+      "n_results": 20
+    },
+    {
+      "provider_id": "nasa_earthdata",
+      "search": "ERROR",
+      "download": "SKIP",
+      "notes": [],
+      "error": "RuntimeError: cmr HTTP 400"
+    },
+    {
+      "provider_id": "nbs_china",
+      "search": "ERROR",
+      "download": "SKIP",
+      "notes": [],
+      "error": "RuntimeError: nbs tree HTTP 403"
+    },
+    {
+      "provider_id": "oecd",
+      "search": "OK",
+      "download": "SKIP",
+      "notes": [],
+      "n_results": 3
+    },
+    {
+      "provider_id": "opendata_swiss",
+      "search": "ERROR",
+      "download": "SKIP",
+      "notes": [],
+      "error": "ValidationError: 1 validation error for DatasetCandidate\npublisher\n  Input should be a valid string [type=string_type, input_value={'en': '', 'de': 'Amt fü...ch', 'fr': '', 'it'"
+    },
+    {
+      "provider_id": "osf",
+      "search": "OK",
+      "download": "NO_REF",
+      "notes": [],
+      "n_results": 8
+    },
+    {
+      "provider_id": "un_comtrade",
+      "search": "OK",
+      "download": "OK",
+      "notes": [],
+      "n_results": 1,
+      "dl_bytes": 196051
+    },
+    {
+      "provider_id": "us_census",
+      "search": "OK",
+      "download": "NO_REF",
+      "notes": [],
+      "n_results": 8
+    },
+    {
+      "provider_id": "usgs",
+      "search": "OK",
+      "download": "NO_REF",
+      "notes": [],
+      "n_results": 8
+    },
+    {
+      "provider_id": "wikidata",
+      "search": "OK",
+      "download": "SKIP",
+      "notes": [],
+      "n_results": 1
+    },
+    {
+      "provider_id": "world_bank",
+      "search": "EMPTY",
+      "download": "OK",
+      "notes": [
+        "search returned 0 candidates"
+      ],
+      "dl_bytes": 140080
+    },
+    {
+      "provider_id": "zenodo",
+      "search": "OK",
+      "download": "NO_REF",
+      "notes": [],
+      "n_results": 8
+    }
+  ],
+  "audits": [
+    {
+      "provider_id": "imf",
+      "homepage_status": "HTTP 403"
+    },
+    {
+      "provider_id": "who_gho",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "faostat",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "un_databases",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "unesco_uis",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "data_gov",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "bls",
+      "homepage_status": "HTTP 403"
+    },
+    {
+      "provider_id": "bea",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "fred",
+      "homepage_status": "HTTP 403"
+    },
+    {
+      "provider_id": "cdc_data",
+      "homepage_status": "HTTP 403"
+    },
+    {
+      "provider_id": "noaa",
+      "homepage_status": "HTTP 403"
+    },
+    {
+      "provider_id": "sec_edgar",
+      "homepage_status": "HTTP 403"
+    },
+    {
+      "provider_id": "fec_data",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "nces",
+      "homepage_status": "HTTP 403"
+    },
+    {
+      "provider_id": "data_europa",
+      "homepage_status": "HTTP 403"
+    },
+    {
+      "provider_id": "ecb_data",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "copernicus",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "ons_uk",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "uk_data_service",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "insee",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "govdata_de",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "destatis_genesis",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "datos_gob_es",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "dati_gov_it",
+      "homepage_status": "HTTP 403"
+    },
+    {
+      "provider_id": "data_overheid_nl",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "canada_open_gov",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "data_gov_au",
+      "homepage_status": "HTTP 403"
+    },
+    {
+      "provider_id": "data_govt_nz",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "e_stat_jp",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "data_go_jp",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "data_go_kr",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "ndsms",
+      "homepage_status": "ConnectError"
+    },
+    {
+      "provider_id": "cn_public_data_registry",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "beijing_data",
+      "homepage_status": "ConnectError"
+    },
+    {
+      "provider_id": "shanghai_data",
+      "homepage_status": "HTTP 412"
+    },
+    {
+      "provider_id": "shenzhen_data",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "wuhan_data",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "national_basic_science",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "cn_earth_system",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "qinghai_tibet_center",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "cas_data_centers",
+      "homepage_status": "ConnectError"
+    },
+    {
+      "provider_id": "sciencedb",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "mendeley_data",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "icpsr",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "openicpsr",
+      "homepage_status": "HTTP 403"
+    },
+    {
+      "provider_id": "gesis",
+      "homepage_status": "HTTP 403"
+    },
+    {
+      "provider_id": "dataverse_network",
+      "homepage_status": "HTTP 403"
+    },
+    {
+      "provider_id": "academic_torrents",
+      "homepage_status": "ConnectError"
+    },
+    {
+      "provider_id": "openml",
+      "homepage_status": "HTTP 500"
+    },
+    {
+      "provider_id": "uci_ml",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "papers_with_code",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "data_world",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "aws_open_data",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "google_dataset_search",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "google_cloud_datasets",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "azure_open_datasets",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "common_crawl",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "wikimedia_dumps",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "tianchi",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "heywhale",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "opendatalab",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "modelscope_datasets",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "baidu_aistudio",
+      "homepage_status": "HTTP 200"
+    },
+    {
+      "provider_id": "datafountain",
+      "homepage_status": "HTTP 200"
+    }
+  ]
+}

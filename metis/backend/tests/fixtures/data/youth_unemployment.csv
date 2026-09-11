@@ -1,0 +1,46 @@
+country,country_code,year,youth_unemployment
+United States,USA,2015,9.7
+United States,USA,2016,7.0
+United States,USA,2017,10.6
+United States,USA,2018,17.7
+United States,USA,2019,12.3
+United States,USA,2020,12.4
+United States,USA,2021,9.2
+United States,USA,2022,10.3
+United States,USA,2023,23.7
+China,CHN,2015,18.0
+China,CHN,2016,17.2
+China,CHN,2017,8.4
+China,CHN,2018,19.6
+China,CHN,2019,8.3
+China,CHN,2020,12.6
+China,CHN,2021,24.8
+China,CHN,2022,17.8
+China,CHN,2023,16.1
+Germany,DEU,2015,18.7
+Germany,DEU,2016,21.9
+Germany,DEU,2017,20.5
+Germany,DEU,2018,9.6
+Germany,DEU,2019,5.6
+Germany,DEU,2020,11.3
+Germany,DEU,2021,10.4
+Germany,DEU,2022,9.2
+Germany,DEU,2023,23.9
+Brazil,BRA,2015,22.5
+Brazil,BRA,2016,11.3
+Brazil,BRA,2017,18.1
+Brazil,BRA,2018,12.9
+Brazil,BRA,2019,23.3
+Brazil,BRA,2020,14.2
+Brazil,BRA,2021,10.3
+Brazil,BRA,2022,9.9
+Brazil,BRA,2023,16.2
+Japan,JPN,2015,10.3
+Japan,JPN,2016,16.7
+Japan,JPN,2017,23.0
+Japan,JPN,2018,13.0
+Japan,JPN,2019,9.4
+Japan,JPN,2020,25.0
+Japan,JPN,2021,15.2
+Japan,JPN,2022,6.8
+Japan,JPN,2023,5.9
