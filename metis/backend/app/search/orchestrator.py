@@ -79,8 +79,34 @@ class SearchOrchestrator:
                     REPO.finish_provider_task(task_id, ProviderTaskStatus.CANCELLED)
                     return
                 if pid not in available_adapters():
-                    REPO.finish_provider_task(task_id, ProviderTaskStatus.ERROR, error_code="PROVIDER_CAPABILITY_MISSING", error_message=f"no search adapter for {pid} (registered only)")
-                    return
+                    # Phase C: BROWSER discovery strategy — no HTTP adapter but a
+                    # browser search recipe exists → drive the real Live Browser
+                    from app.auth.recipes import BROWSER_SEARCH_RECIPES
+
+                    recipe = BROWSER_SEARCH_RECIPES.get(pid)
+                    if recipe is None:
+                        REPO.finish_provider_task(task_id, ProviderTaskStatus.ERROR, error_code="PROVIDER_CAPABILITY_MISSING", error_message=f"no search adapter or browser recipe for {pid} (registered only)")
+                        return
+                    try:
+                        from app.search.browser_worker import BrowserSearchWorker
+                        from app.providers.registry import get_registry
+
+                        home = get_registry().get(pid).homepage
+                        worker = BrowserSearchWorker(pid, recipe, base_url=home if str(home).startswith("http") else None)
+                        session = await worker._ensure_session() if hasattr(worker, "_ensure_session") else None
+                        results = []
+                        for q in (query_plan.get(pid) or [query])[:2]:
+                            results.extend(await worker.search(q, limit=10))
+                        for c in results[:12]:
+                            REPO.save_candidate(run_id, c)
+                        REPO.finish_provider_task(task_id, ProviderTaskStatus.DONE, result_count=len(results))
+                        return
+                    except MetisError as e:
+                        REPO.finish_provider_task(task_id, ProviderTaskStatus.ERROR, error_code=e.code, error_message=e.message)
+                        return
+                    except Exception as e:  # noqa: BLE001
+                        REPO.finish_provider_task(task_id, ProviderTaskStatus.ERROR, error_code="PROVIDER_HTTP_ERROR", error_message=f"browser search: {e}"[:200])
+                        return
                 REPO.upsert_provider_task(task_id, run_id, pid, ProviderTaskStatus.RUNNING, started_at=True)
                 try:
                     await RATE_LIMITER.acquire(pid, min_interval_s=0.2)

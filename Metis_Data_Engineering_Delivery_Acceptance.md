@@ -1,5 +1,9 @@
 # Metis Data 工程交付验收报告（Engineering Delivery Acceptance）
 
+> RC 轮更新（2026-09-12，第二轮：主链接通）：PlanningBundle 主链、BROWSER 搜索策略、
+> 登录自动续下载、AcquisitionService 唯一路径、Build Planner 接生产、entity/time 泛化。
+> 现实审计基线见 docs/reality-audit.md。
+
 > 日期：2026-09-11 · 仓库：TZUKWAN/metis-data · 依据：`Metis_Data_Productization_Task_List.md` + `Metis_Data_Engineering_Agent_Prompt.md`
 > 原则：每项给 PASS / FAIL / BLOCKED + 证据（命令/产物/commit）。旧报告不作为依据。
 
@@ -83,6 +87,13 @@ Phase 0–8、15–19、26–29 已实现并通过任务级验收；Phase 9–14
 - GATE-02：补 UN SDG / UCI adapter + 修 NASA keyword 参数 → 20 个平台真实 Discovery 验证（registry last_verified_at）
 - GATE-23：GS-4 登录恢复 Golden（受控 fixture 真实流程）+ GS-3 科研仓库真实获取 → 5 个场景 PASS
 
-全量验证（本机）：93 pytest 0 failed · ruff 0.16 clean · secrets scan 0 · node --check js · 3 个 Golden 脚本 PASS（覆盖 5 场景）。CI 四 job（lint/security/frontend/unit-integration）配置已修正（gen_fixtures + timeout 30min）并随本次 push 运行。
+全量验证（本机）：126 pytest 0 failed（junit：126/0/0/0）· ruff 0.16 clean · secrets scan 0 · node --check js · 3 个 Golden 脚本 PASS（覆盖 5 场景）。CI 全部 job 绿：**run 34709156904 — unit-integration 116 passed/7 skipped；performance 3 passed**（push 后自动运行）。
+
+RC 轮主链接通验证：
+- PlanningBundle：/api/agent/planning → /api/search/runs{planning_id} → run COMPLETED 且 planning_source 落库（词典外需求 LLM 路径 + fallback 路径均有测试）
+- BROWSER 策略：orchestrator 对无 HTTP adapter 平台自动走 BrowserSearchWorker
+- Access 自动续下：login SUCCESS → AUTHORIZED → RESUME_COORDINATOR.resume_access_job → ACQUISITION.acquire（幂等，失败持久化）
+- AcquisitionService：/api/downloads 与 resume 均走唯一路径（v2 descriptor 优先，legacy 兜底记事件）
+- Build Planner：/api/builds/plan（plan_build_sync/plan_build）→ from_build_plan → 执行；blocking review → 用户 approve；前端 country/year 硬编码已删
 
 证据均可复验：commit 历史、metis/artifacts/{providers,golden*.json,productization}、metis/backend/tests。
