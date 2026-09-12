@@ -207,7 +207,11 @@ def test_browser_download_capture(browser_session, fixture_server, temp_workspac
         from app.browser.runtime import LocatorTarget
 
         await browser_session.click(LocatorTarget(role="link", name="Download"))
-        await asyncio.sleep(1.5)
+        # poll instead of fixed sleep — under full-suite load the event may lag
+        for _ in range(40):
+            if any(dl.get("download_job_id") == job.download_job_id for dl in browser_session.downloads):
+                break
+            await asyncio.sleep(0.25)
         results = await MANAGER.collect_browser_downloads(job, browser_session)
         assert results and results[0]["sha256"]
         assert results[0]["size"] > 0
