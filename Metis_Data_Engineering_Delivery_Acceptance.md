@@ -72,7 +72,7 @@ Phase 0–8、15–19、26–29 已实现并通过任务级验收；Phase 9–14
 | 19 Reproduce 一致 | **PASS** | GS 内实际执行 |
 | 20 重启状态真实 | **PASS** | 恢复测试组 |
 | 21 安全 | **PASS** | scan 0 + 无绕过代码 |
-| 22 CI 绿 | **PASS** | lint / security / frontend-smoke 三 job 绿；unit-integration 含 gen_fixtures + headless 测试（本次 push 后运行；本地同命令 0 failed） |
+| 22 CI 绿 | **PASS** | run 34683609872（commit `ci: add psutil to unit-integration deps`）：unit-integration 93 passed/7 skipped、performance 3 passed、lint/security/frontend-smoke success |
 | 23 ≥5 Golden 通过 | **PASS（5/6）** | GS-1（双组织 3 源 566 行面板）· GS-3（Zenodo DOI）· GS-4（登录→持久化→重启→恢复→真实下载）· GS-5（3 输入合成）· GS-6（reproduce 一致）全部 PASS；GS-2 BLOCKED（中国官方源对本网络 403，registry audit 有证据） |
 
 ## 5. 最终结论

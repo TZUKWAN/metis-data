@@ -1,7 +1,7 @@
 # Engineering Progress — Metis Data Productization
 
 ## Current Phase
-全部 Phase 完成 — 全量验证通过，待 CI 确认
+完成 — 工程交付验收 PASS（CI 绿）
 
 ## Current Task
 无
@@ -235,7 +235,11 @@ Acceptance: [x] 真实前端点击"新会话"返回 200 [x] 不依赖手工修�
 - metis/backend/app/api/main.py, metis/backend/app/browser/runtime.py, metis/frontend/static/app.js
 - metis/backend/tests/test_p00_productization.py
 
-## Tests Executed
+## Tests Executed（最终）
+- 本机：`python -m pytest metis/backend/tests -q` — 100 collected，93 passed / 7 skipped（DPAPI 平台跳过）/ 0 failed
+- CI（run 34683609872，commit ci: add psutil）：unit-integration **93 passed, 7 skipped**；performance **3 passed**；lint/security/frontend-smoke success → **GATE-22 PASS**
+- Golden：GS-1+GS-5+GS-6 PASS（140s）· GS-3 PASS（29s）· GS-4 PASS（5.6s）
+- secrets scan 0 findings；ruff 0.16 clean；node --check js OK
 - `python -m pytest metis/backend/tests/test_p01_agent.py -q` — 14 passed
 - `python -m pytest metis/backend/tests/test_p00_productization.py -q` — 2 passed
 - `python -m pytest metis/backend/tests --tb=no -q` → 55 passed（baseline）
