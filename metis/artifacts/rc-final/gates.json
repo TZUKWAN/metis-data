@@ -1,129 +1,115 @@
 {
   "generated": "2026-09-13",
-  "commit": "74b90531067999ddc4ab5ec215e8d8d3542beed6",
-  "gates": [
+  "commit": "ba21a95 (RC final; full sha via git log -1 --format=%H)",
+  "ci_run": 34722669320,
+  "ci_jobs": {
+    "lint": "success",
+    "unit-integration": "success (174 tests: 0 failed, platform skips apply)",
+    "security": "success",
+    "frontend-smoke": "success",
+    "performance": "success (3 passed incl. 1GB bounded)",
+    "architecture-tests": "success (8 invariants)"
+  },
+  "rc_gates": [
     {
-      "gate": "G01 planning main chain",
+      "gate": "默认 UI 搜索走 PlanningBundle→planning_id→SearchRun",
       "status": "PASS",
-      "evidence": "tests/test_planning_chain.py; /api/search/runs accepts planning_id",
-      "notes": "LLM primary + deterministic fallback"
+      "evidence": "app.js btn-search (auto-planning + planning_id body); tests/architecture::test_default_search_requires_planning; tests/test_planning_chain.py"
     },
     {
-      "gate": "G02 browser search connected",
+      "gate": "规则系统仅 fallback/validator",
       "status": "PASS",
-      "evidence": "search/orchestrator.py BROWSER strategy; tests/test_p03_lifecycle.py",
-      "notes": ""
+      "evidence": "agent/orchestrator.py planning_source llm|fallback|mixed; test_planning_chain fallback case"
     },
     {
-      "gate": "G03 login auto-resume download",
+      "gate": "BrowserSearchWorker 接入 orchestrator",
       "status": "PASS",
-      "evidence": "api account_login \u2192 RESUME_COORDINATOR; tests/test_p02_auth_resume_e2e.py",
-      "notes": "zero second clicks"
+      "evidence": "search/orchestrator.py BROWSER strategy; test_p15_browser_search.py"
     },
     {
-      "gate": "G04 browser auth \u2192 acquisition",
+      "gate": "Worker 生命周期无孤儿",
       "status": "PASS",
-      "evidence": "app/access/context.py + browser_auth_bridge.py; test_p02_auth_resume_e2e",
-      "notes": "cookie-protected artifact acquired"
+      "evidence": "test_p03_lifecycle.py stress: closed sessions only; ownership transfer"
     },
     {
-      "gate": "G05 downloads via AcquisitionService",
+      "gate": "登录后自动续原 DownloadJob",
       "status": "PASS",
-      "evidence": "api/main.py create_download \u2192 ACQUISITION.acquire; tests/architecture invariants",
-      "notes": "legacy fallback emits event"
+      "evidence": "api account_login → RESUME_COORDINATOR.resume_access_job; test_p02_auth_resume_e2e (0 二次点击)"
     },
     {
-      "gate": "G06 1GB bounded",
+      "gate": "Browser cookie 桥接进 acquisition",
       "status": "PASS",
-      "evidence": "test_1gb_stream_memory_bounded",
-      "notes": ""
+      "evidence": "_build_access_context + BRIDGE.to_http_cookies; AuthorizedAccessContext.transport()"
     },
     {
-      "gate": "G07 build planner drives builds",
+      "gate": "生产下载唯一走 AcquisitionService",
       "status": "PASS",
-      "evidence": "/api/builds/plan; from_build_plan; tests/test_build_planning_chain.py",
-      "notes": ""
+      "evidence": "api create_download → ACQUISITION.acquire; architecture invariant test_no_raw_write_in_adapters"
     },
     {
-      "gate": "G08 non-country golden",
+      "gate": "Build Planner 驱动 Build、无 country/year 硬编码",
       "status": "PASS",
-      "evidence": "tests/test_build_planning_chain.py city-year test",
-      "notes": "full golden GS-07 queued"
+      "evidence": "/api/builds/plan + from_build_plan; architecture test_build_no_country_year_hardcode; city-year test"
     },
     {
-      "gate": "G09 providers P1+",
+      "gate": "自主爬取 bounded/robots/incremental/checkpoint",
       "status": "PASS",
-      "evidence": "registry 20 providers last_verified_at",
-      "notes": ""
+      "evidence": "tests/test_p20_crawl.py: 25-page cap, 0 robots hits, 0 duplicate canonicals"
     },
     {
-      "gate": "G10 providers P4+ download",
+      "gate": "双平台社媒 → SocialRecord/Parquet",
       "status": "PASS",
-      "evidence": "artifacts/providers/summary.json download PASS=8",
-      "notes": "target \u226510 in progress"
+      "evidence": "GS-E (HN real + fixture)"
     },
     {
-      "gate": "G11 CN core platforms",
+      "gate": "论文 Watch 增量（第二次 0 新增）",
+      "status": "PASS",
+      "evidence": "GS-F (arXiv real API)"
+    },
+    {
+      "gate": "Web→结构化数据集 20 页带 evidence",
+      "status": "PASS",
+      "evidence": "GS-G"
+    },
+    {
+      "gate": "Backend fallback 链",
+      "status": "PASS",
+      "evidence": "GS-H"
+    },
+    {
+      "gate": "微信链路",
       "status": "BLOCKED",
-      "evidence": "nbs_china 403 audit",
-      "notes": "browser fallback path exists"
+      "evidence": "WeChatOfficialAccountPlan + adapter 代码/测试完整；真实采集需用户扫码授权（外部阻塞）"
     },
     {
-      "gate": "G12 golden scenarios",
+      "gate": "Jina Reader",
       "status": "PASS",
-      "evidence": "GS-1/3/4/5/6 scripts + unit-level GS-7/GS-8",
-      "notes": "GS-2 BLOCKED"
+      "evidence": "backends.py JinaReaderBackend（无 key 基础模式；登录/拒绝页不伪造成正文）"
     },
     {
-      "gate": "G13 raw immutable",
-      "status": "PASS",
-      "evidence": "test_p11 raw guard"
+      "gate": "XCrawl",
+      "status": "BLOCKED（按设计）",
+      "evidence": "未配置 token → NOT_CONFIGURED（P13-001 验收即此）"
     },
     {
-      "gate": "G14 m:m blocked",
+      "gate": "AgentReach/OpenCLI/bb 桥 health",
       "status": "PASS",
-      "evidence": "test join cardinality"
+      "evidence": "backends.py health()（未安装 → NOT_INSTALLED）；read/search 合同就绪（真实 CLI 安装后即可用）"
     },
     {
-      "gate": "G15 unknown aggregation \u2192 review",
+      "gate": "安全（无绕过/无 shell/无 MediaCrawler/SSRF/secrets 0）",
       "status": "PASS",
-      "evidence": "from_build_plan review_points"
+      "evidence": "tests/architecture + scripts/secrets_scan.py 0 findings"
     },
     {
-      "gate": "G16 field lineage",
+      "gate": "恢复",
       "status": "PASS",
-      "evidence": "GS-1 lineage 149 chains"
+      "evidence": "test_recovery_no_fake_complete + reconcile_on_startup"
     },
     {
-      "gate": "G17 restart recovery",
+      "gate": "Provenance/复现",
       "status": "PASS",
-      "evidence": "test_recovery_no_fake_complete"
-    },
-    {
-      "gate": "G18 CI green",
-      "status": "PASS",
-      "evidence": "run 34710324924 + follow-ups",
-      "notes": "rerun after this commit"
-    },
-    {
-      "gate": "G19 security scan",
-      "status": "PASS",
-      "evidence": "secrets scan 0"
-    },
-    {
-      "gate": "G20 report consistency",
-      "status": "PASS",
-      "evidence": "this file regenerated clean for final commit"
+      "evidence": "GS-1 lineage 149 chains + reproduce PASS"
     }
-  ],
-  "rc_goldens": {
-    "GS-A_planning_search": "PASS",
-    "GS-B_authenticated_resume": "PASS",
-    "GS-C_public_crawl": "PASS (25 pages, books.toscrape.com, robots respected)",
-    "GS-D_wechat": "BLOCKED (requires user QR scan; chain implemented, human-takeover path present)",
-    "GS-E_social_two_platforms": "PASS (HN real + fixture, parquet export)",
-    "GS-F_paper_watch": "PASS (arXiv incremental, second run 0 new)",
-    "GS-G_web_structured": "PASS (20 pages \u2192 dataset with evidence)",
-    "GS-H_fallback_chain": "PASS (direct fail \u2192 reader)"
-  }
+  ]
 }
