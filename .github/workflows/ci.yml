@@ -33,7 +33,7 @@ jobs:
       - name: Run tests (headless, per-test 180s timeout, verbose)
         env:
           METIS_BROWSER_HEADLESS: "true"
-        run: python -u -m pytest metis/backend/tests -v --tb=short -m "not smoke" --timeout=180 --ignore=metis/backend/tests/test_p16_recovery_perf.py
+        run: python -u -m pytest metis/backend/tests -v --tb=short -m "not smoke" --timeout=180 --timeout-method=thread --ignore=metis/backend/tests/test_p16_recovery_perf.py
 
   performance:
     runs-on: ubuntu-latest

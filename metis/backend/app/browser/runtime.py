@@ -625,7 +625,12 @@ class BrowserManager:
 
             cfg = get_settings()
             self._pw = await async_playwright().start()
-            self._browser = await self._pw.chromium.launch(headless=cfg.browser_headless, args=["--start-maximized"])
+            # container/CI-safe flags: --no-sandbox + --disable-dev-shm-usage prevent
+            # silent hangs where chromium can't create its sandbox or /dev/shm is tiny
+            self._browser = await self._pw.chromium.launch(
+                headless=cfg.browser_headless,
+                args=["--start-maximized", "--no-sandbox", "--disable-dev-shm-usage"],
+            )
             self._loop = current
             return self._browser
 
