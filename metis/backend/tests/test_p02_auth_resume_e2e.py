@@ -7,6 +7,7 @@ ACQUISITION.acquire → verified raw artifact. Restart path re-proves restore.
 from __future__ import annotations
 
 import asyncio
+import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
