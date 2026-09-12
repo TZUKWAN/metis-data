@@ -88,12 +88,11 @@ class SearchOrchestrator:
                         REPO.finish_provider_task(task_id, ProviderTaskStatus.ERROR, error_code="PROVIDER_CAPABILITY_MISSING", error_message=f"no search adapter or browser recipe for {pid} (registered only)")
                         return
                     try:
-                        from app.search.browser_worker import BrowserSearchWorker
                         from app.providers.registry import get_registry
+                        from app.search.browser_worker import BrowserSearchWorker
 
                         home = get_registry().get(pid).homepage
                         worker = BrowserSearchWorker(pid, recipe, base_url=home if str(home).startswith("http") else None)
-                        session = await worker._ensure_session() if hasattr(worker, "_ensure_session") else None
                         results = []
                         for q in (query_plan.get(pid) or [query])[:2]:
                             results.extend(await worker.search(q, limit=10))
