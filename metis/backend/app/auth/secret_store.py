@@ -47,12 +47,10 @@ class UnsupportedPlatformStore(SecretStore):
         raise AssertionError
 
     def exists(self, key: str) -> bool:
-        self._fail()
-        raise AssertionError
+        return False  # nothing is ever stored without a backend
 
     def list_keys(self) -> list[str]:
-        self._fail()
-        raise AssertionError
+        return []
 
 
 def get_secret_store() -> SecretStore:

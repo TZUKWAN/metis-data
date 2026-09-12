@@ -23,10 +23,11 @@ from app.downloads.service import MANAGER
 
 
 async def main() -> None:
-    # loop many downloads so a fast localhost server still gets killed mid-flight
-    for i in range(30):
+    i = 0
+    while True:
         job = MANAGER.create_job("fixture", f"big_crash_{i}", f"{server}/data/big_measurements.csv", license="CC0-1.0")
         await MANAGER.http_download(f"{server}/data/big_measurements.csv", job=job)
+        i += 1
     print("finished (should have been killed before this)")
 
 

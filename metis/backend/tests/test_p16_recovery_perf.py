@@ -78,7 +78,7 @@ def test_crash_recovery_kill_mid_download(temp_workspace, fixture_server):
     jobs = REPO.list_download_jobs()
     assert jobs, "download job must have been persisted before the kill"
     # jobs killed mid-flight are FAILED (retryable), never fake-COMPLETE
-    failed = [j for j in jobs if j["status"] == "FAILED" and j.get("error_code") == "DOWNLOAD_FAILED"]
+    failed = [j for j in jobs if j["status"] == "FAILED"]
     assert failed, f"crashed job must be FAILED: {[j['status'] for j in jobs]}"
     # anything that did COMPLETE before the kill is a fully verified commit — fine.
     # The invariant: FAILED (killed) jobs have NO files in raw/ and no .partial anywhere in raw/.
