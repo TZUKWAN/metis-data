@@ -18,24 +18,39 @@ jobs:
 
   unit-integration:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install deps
-        run: pip install fastapi uvicorn sqlalchemy pandas pyarrow httpx pydantic openpyxl pyreadstat netCDF4 pyshp pycountry playwright pytest pyyaml
+        run: pip install fastapi uvicorn sqlalchemy pandas pyarrow httpx pydantic openpyxl pyreadstat netCDF4 pyshp pycountry playwright pytest pyyaml pytest-timeout
       - name: Generate test fixtures (large files, ~2min)
         run: python scripts/gen_fixtures.py
       - name: Install chromium
-        run: |
-          python -m playwright install chromium || true
-          python -m playwright install-deps chromium || true
-      - name: Run tests (headless)
+        run: python -m playwright install --with-deps chromium
+      - name: Run tests (headless, per-test 180s timeout, verbose)
         env:
           METIS_BROWSER_HEADLESS: "true"
-        run: python -m pytest metis/backend/tests -q --tb=short -m "not smoke"
+        run: python -u -m pytest metis/backend/tests -v --tb=short -m "not smoke" --timeout=180 --ignore=metis/backend/tests/test_p16_recovery_perf.py
+
+  performance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: pip install fastapi uvicorn sqlalchemy pandas pyarrow httpx pydantic openpyxl pyreadstat netCDF4 pyshp pycountry playwright pytest pytest-timeout psutil
+      - name: Generate test fixtures
+        run: python scripts/gen_fixtures.py
+      - name: Run performance + recovery tests
+        env:
+          METIS_BROWSER_HEADLESS: "true"
+        run: python -u -m pytest metis/backend/tests/test_p16_recovery_perf.py -v --tb=short --timeout=600
 
   security:
     runs-on: ubuntu-latest
