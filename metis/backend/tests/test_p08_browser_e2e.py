@@ -9,7 +9,11 @@ import os
 
 import pytest
 
+import sys
+
 from conftest import browser_run
+
+WIN32_ONLY = pytest.mark.skipif(sys.platform != 'win32', reason='DPAPI vault is Windows-only')
 
 
 def _url(fixture_server, page: str) -> str:
@@ -48,6 +52,7 @@ def test_intervention_detection(browser_session, fixture_server, page, kind):
     browser_run(go())
 
 
+@WIN32_ONLY
 def test_login_executor_existing_account(browser_session, fixture_server):
     """A12: wrong password → invalid credentials (no infinite retry); right → session stored."""
 
@@ -101,6 +106,7 @@ def test_login_executor_existing_account(browser_session, fixture_server):
     browser_run(go())
 
 
+@WIN32_ONLY
 def test_registration_executor(browser_session, fixture_server):
     """A13: disabled switch → 0 submits; enabled → success/duplicate/password-rule/verify/captcha classified."""
     from app.auth.accounts import ACCOUNTS, IDENTITY, RegistrationExecutor

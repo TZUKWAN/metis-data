@@ -2,8 +2,12 @@
 from __future__ import annotations
 
 import json
+import sys
 
 import pytest
+
+WIN32_ONLY = pytest.mark.skipif(sys.platform != 'win32', reason='DPAPI vault is Windows-only by policy (no plaintext fallback)')
+import sys  # noqa: E402
 
 from conftest import browser_run
 
@@ -16,6 +20,15 @@ def test_secret_store_interface(temp_workspace):
     assert isinstance(store, SecretStore)
     for m in ("set_secret", "get_secret", "delete_secret", "exists", "list_keys"):
         assert callable(getattr(store, m))
+    if sys.platform != "win32":
+        # unsupported platform: every operation fails loudly, nothing persists
+        from app.core.errors import MetisError
+
+        for call in (lambda: store.set_secret("k", "v"), lambda: store.get_secret("k"), lambda: store.delete_secret("k")):
+            with pytest.raises(MetisError) as e:
+                call()
+            assert e.value.code == "VAULT_UNAVAILABLE"
+        return
     store.set_secret("iface.probe", "value-METIS-TEST-SECRET")
     assert store.exists("iface.probe") and store.get_secret("iface.probe") == "value-METIS-TEST-SECRET"
     assert store.delete_secret("iface.probe") is True
@@ -31,6 +44,7 @@ def test_secret_store_interface(temp_workspace):
             Vault()
 
 
+@WIN32_ONLY
 def test_storage_state_persist_restore_login(temp_workspace, fixture_server, loop):
     """P03-005/006/007: login → REAL storage_state saved → close browser → fresh session
     with restored state → probe logged_in_selector present (still logged in)."""
@@ -95,6 +109,7 @@ def test_storage_state_persist_restore_login(temp_workspace, fixture_server, loo
     loop.run_until_complete(sess2.close())
 
 
+@WIN32_ONLY
 def test_expired_session_detection(temp_workspace, fixture_server, loop):
     """P03-008: stored state without login marker → probe fails → SESSION_EXPIRED marked."""
     from app.browser.runtime import MANAGER
@@ -116,6 +131,7 @@ def test_expired_session_detection(temp_workspace, fixture_server, loop):
     loop.run_until_complete(s2.close())
 
 
+@WIN32_ONLY
 def test_oauth_credential_model(temp_workspace):
     """P03-009/010: oauth tokens in vault, metadata in DB; deletion removes everything."""
     from app.auth.browser_state import OAuthCredential, delete_browser_state

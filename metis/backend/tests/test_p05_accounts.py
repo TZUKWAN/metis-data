@@ -11,7 +11,11 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+import sys
+
 import pytest
+
+WIN32_ONLY = pytest.mark.skipif(sys.platform != 'win32', reason='DPAPI vault is Windows-only')
 
 BACKEND = Path(__file__).resolve().parents[1]
 
@@ -58,6 +62,7 @@ def api_client(monkeypatch, loop, fixture_server, temp_workspace):
     return Portal(), fixture_server
 
 
+@WIN32_ONLY
 def test_register_api_and_login_api_flow(api_client):
     """P05-003/005/007/011: register (password policy) → login → storage_state → resume."""
     client, base = api_client

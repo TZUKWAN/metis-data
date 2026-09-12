@@ -6,7 +6,11 @@ import logging
 
 import pytest
 
+import sys
+
 from conftest import browser_run
+
+WIN32_ONLY = pytest.mark.skipif(sys.platform != 'win32', reason='DPAPI vault is Windows-only')
 
 
 def test_secrets_scan_rules_trigger():
@@ -79,6 +83,7 @@ def test_browser_event_never_contains_secret(browser_session, fixture_server):
     browser_run(go())
 
 
+@WIN32_ONLY
 def test_vault_delete_and_unique_passwords(temp_workspace):
     """A10/A11: vault delete → unreadable; per-provider passwords unique & strong."""
     from app.auth.passwords import check_policy, generate_password

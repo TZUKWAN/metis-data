@@ -71,19 +71,9 @@ class _RangeHandler(BaseHTTPRequestHandler):
 
 
 def _peak_rss_mb() -> float:
-    import ctypes
+    import psutil
 
-    class PMC(ctypes.Structure):
-        _fields_ = [("cb", ctypes.c_ulong), ("PageFaultCount", ctypes.c_ulong),
-                    ("PeakWorkingSetSize", ctypes.c_size_t), ("WorkingSetSize", ctypes.c_size_t),
-                    ("QuotaPeakPagedPoolUsage", ctypes.c_size_t), ("QuotaPagedPoolUsage", ctypes.c_size_t),
-                    ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t), ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
-                    ("PagefileUsage", ctypes.c_size_t), ("PeakPagefileUsage", ctypes.c_size_t)]
-
-    pmc = PMC()
-    pmc.cb = ctypes.sizeof(PMC)
-    ctypes.windll.psapi.GetProcessMemoryInfo(ctypes.windll.kernel32.GetCurrentProcess(), ctypes.byref(pmc), pmc.cb)
-    return pmc.PeakWorkingSetSize / (1024 * 1024)
+    return psutil.Process().memory_info().rss / (1024 * 1024)
 
 
 def test_resume_and_progress_payload(temp_workspace):

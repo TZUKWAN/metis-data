@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install deps
-        run: pip install fastapi uvicorn sqlalchemy pandas pyarrow httpx pydantic openpyxl pyreadstat netCDF4 pyshp pycountry playwright pytest pyyaml pytest-timeout
+        run: pip install fastapi uvicorn sqlalchemy pandas pyarrow httpx pydantic openpyxl pyreadstat netCDF4 pyshp pycountry playwright pytest pyyaml pytest-timeout lxml
       - name: Generate test fixtures (large files, ~2min)
         run: python scripts/gen_fixtures.py
       - name: Install chromium
