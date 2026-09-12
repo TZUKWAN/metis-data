@@ -1,0 +1,18 @@
+..F.F                                                                    [100%]
+================================== FAILURES ===================================
+___________________________ test_bounded_crawl_e2e ____________________________
+metis\backend\tests\test_p20_crawl.py:111: in test_bounded_crawl_e2e
+    assert 0 < len(visited) <= 25, f"visited {len(visited)}"
+E   AssertionError: visited 0
+E   assert 0 < 0
+E    +  where 0 = len([])
+------------------------------ Captured log call ------------------------------
+WARNING  crawl:logging.py:107 crawl fetch crashed
+____________________________ test_incremental_skip ____________________________
+metis\backend\tests\test_p20_crawl.py:139: in test_incremental_skip
+    assert svc.should_skip("http://x/a", etag="E1") is True
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: IncrementalCrawlService.should_skip() missing 1 required positional argument: 'last_modified'
+=========================== short test summary info ===========================
+FAILED metis\backend\tests\test_p20_crawl.py::test_bounded_crawl_e2e - Assert...
+FAILED metis\backend\tests\test_p20_crawl.py::test_incremental_skip - TypeErr...

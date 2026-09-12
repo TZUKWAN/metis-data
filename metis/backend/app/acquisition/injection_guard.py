@@ -13,6 +13,7 @@ class UntrustedContent:
     text: str
     source_url: str = ""
     backend: str = ""
+    raw_html: str = ""  # for structural parsing (link discovery); still untrusted
 
     def as_prompt_block(self) -> str:
         """Wrapped form for LLM prompts with explicit data-only framing."""

@@ -1,0 +1,43 @@
+FFFFF                                                                    [100%]
+================================== FAILURES ===================================
+___________________________ test_url_canonicalizer ____________________________
+metis\backend\tests\test_p20_crawl.py:75: in test_url_canonicalizer
+    from app.acquisition.crawl_engine import canonicalize_url
+metis\backend\app\acquisition\crawl_engine.py:120: in <module>
+    _LINK_HREF_RE = re.compile(r'<a[^>]+href="([^"]+)"', re.I)
+                    ^^
+E   NameError: name 're' is not defined. Did you forget to import 're'?
+_____________________________ test_sitemap_parse ______________________________
+metis\backend\tests\test_p20_crawl.py:87: in test_sitemap_parse
+    from app.acquisition.crawl_engine import parse_sitemap
+metis\backend\app\acquisition\crawl_engine.py:120: in <module>
+    _LINK_HREF_RE = re.compile(r'<a[^>]+href="([^"]+)"', re.I)
+                    ^^
+E   NameError: name 're' is not defined. Did you forget to import 're'?
+___________________________ test_bounded_crawl_e2e ____________________________
+metis\backend\tests\test_p20_crawl.py:96: in test_bounded_crawl_e2e
+    from app.acquisition.crawl_engine import CrawlJobRunner
+metis\backend\app\acquisition\crawl_engine.py:120: in <module>
+    _LINK_HREF_RE = re.compile(r'<a[^>]+href="([^"]+)"', re.I)
+                    ^^
+E   NameError: name 're' is not defined. Did you forget to import 're'?
+______________________ test_crawl_state_machine_illegal _______________________
+metis\backend\tests\test_p20_crawl.py:126: in test_crawl_state_machine_illegal
+    from app.acquisition.crawl_engine import CrawlState, assert_crawl_transition
+metis\backend\app\acquisition\crawl_engine.py:120: in <module>
+    _LINK_HREF_RE = re.compile(r'<a[^>]+href="([^"]+)"', re.I)
+                    ^^
+E   NameError: name 're' is not defined. Did you forget to import 're'?
+____________________________ test_incremental_skip ____________________________
+metis\backend\tests\test_p20_crawl.py:135: in test_incremental_skip
+    from app.acquisition.crawl_engine import IncrementalCrawlService
+metis\backend\app\acquisition\crawl_engine.py:120: in <module>
+    _LINK_HREF_RE = re.compile(r'<a[^>]+href="([^"]+)"', re.I)
+                    ^^
+E   NameError: name 're' is not defined. Did you forget to import 're'?
+=========================== short test summary info ===========================
+FAILED metis\backend\tests\test_p20_crawl.py::test_url_canonicalizer - NameEr...
+FAILED metis\backend\tests\test_p20_crawl.py::test_sitemap_parse - NameError:...
+FAILED metis\backend\tests\test_p20_crawl.py::test_bounded_crawl_e2e - NameEr...
+FAILED metis\backend\tests\test_p20_crawl.py::test_crawl_state_machine_illegal
+FAILED metis\backend\tests\test_p20_crawl.py::test_incremental_skip - NameErr...
