@@ -77,6 +77,7 @@ def auth_server():
     srv.shutdown()
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="cookie vault persistence is DPAPI-backed (Windows); no plaintext fallback by policy")
 def test_cookie_gated_download_auto_resume(temp_workspace, auth_server, loop):
     from app.auth.browser_state import save_browser_state
     from app.auth.recipes import PROVIDER_RECIPES
