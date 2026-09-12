@@ -83,3 +83,21 @@ jobs:
           python-version: "3.12"
       - run: pip install fastapi uvicorn sqlalchemy pandas pyarrow httpx pydantic openpyxl pyreadstat netCDF4 pyshp pycountry pytest
       - run: python scripts/provider_smoke.py --search-only
+
+  architecture-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install fastapi uvicorn sqlalchemy pandas pyarrow httpx pydantic openpyxl pyreadstat netCDF4 pyshp pycountry playwright pytest pytest-timeout lxml psutil pyyaml
+      - name: Generate fixtures
+        run: python scripts/gen_fixtures.py
+      - name: Install chromium
+        run: python -m playwright install --with-deps chromium || true
+      - name: Architecture invariants
+        env:
+          METIS_BROWSER_HEADLESS: "true"
+        run: python -u -m pytest metis/backend/tests/architecture -v --tb=short --timeout=120

@@ -1,0 +1,34 @@
+..F....F.F..                                                             [100%]
+================================== FAILURES ===================================
+____________________ test_mediacrawler_reference_only_gate ____________________
+metis\backend\tests\test_p15_p26_collectors.py:43: in test_mediacrawler_reference_only_gate
+    assert "mediacrawler" not in f.read_text(encoding="utf-8").lower(), f"MediaCrawler leaked into {f.name}"
+E   AssertionError: MediaCrawler leaked into collectors_ext.py
+E   assert 'mediacrawler' not in '"""p15/p16/... text_hash\n'
+E     
+E     'mediacrawler' is contained here:
+E       p16-002), mediacrawler reference_only gate data (p16-001 in ci)
+E     ?           ++++++++++++
+E       - p17 opennews/opentwitter backends (token → vault; not_configured without)
+E       - p19 webcliptemplate + clip service
+E       - p21 metadata/table/structured extractors...
+E     
+E     ...Full output truncated (225 lines hidden), use '-vv' to show
+___________________ test_clip_template_matching_and_export ____________________
+metis\backend\tests\test_p15_p26_collectors.py:100: in test_clip_template_matching_and_export
+    templates = [WebClipTemplate(name="docs", match_domains=["docs.example.com"])]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   pydantic.errors.PydanticUserError: `WebClipTemplate` is not fully defined; you should define `Literal`, then call `WebClipTemplate.model_rebuild()`.
+E   
+E   For further information visit https://errors.pydantic.dev/2.11/u/class-not-fully-defined
+_________________________ test_watch_change_detector __________________________
+metis\backend\tests\test_p15_p26_collectors.py:145: in test_watch_change_detector
+    job = WatchJob(plan_id="p1", cadence="daily")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   pydantic.errors.PydanticUserError: `WatchJob` is not fully defined; you should define `Literal`, then call `WatchJob.model_rebuild()`.
+E   
+E   For further information visit https://errors.pydantic.dev/2.11/u/class-not-fully-defined
+=========================== short test summary info ===========================
+FAILED metis\backend\tests\test_p15_p26_collectors.py::test_mediacrawler_reference_only_gate
+FAILED metis\backend\tests\test_p15_p26_collectors.py::test_clip_template_matching_and_export
+FAILED metis\backend\tests\test_p15_p26_collectors.py::test_watch_change_detector

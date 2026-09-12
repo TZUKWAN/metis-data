@@ -442,3 +442,23 @@ $("btn-chat-ask").onclick = async () => {
     ${r.needs_confirmation ? `<div class="event warn">⛔ 需要确认的操作（未执行）：${esc(JSON.stringify(r.confirm_action || {}))}</div>` : ""}`;
 };
 refreshProjects();
+
+
+/* ---------- P24: acquisition tasks + backend health ---------- */
+$("btn-backend-health").onclick = async () => {
+  // diagnosis only: registry reports NOT_INSTALLED/NOT_CONFIGURED; never auto-installs
+  const rows = await api("/api/providers");
+  $("backend-health").innerHTML = rows.slice(0, 8).map((p) =>
+    `<div class="event"><span class="badge ${p.integration_level >= 1 ? "ok" : ""}">${p.integration_level >= 1 ? "已接入" : "仅登记"}</span> ${esc(p.name)}
+     ${p.blocking_reason ? `<div class="limits">⛔ ${esc(p.blocking_reason)}</div>` : ""}</div>`).join("");
+};
+// acquisition task panel live state (search runs as tasks proxy)
+setInterval(async () => {
+  try {
+    const runs = await api("/api/search/runs");
+    if (runs.length) {
+      $("acq-tasks").innerHTML = runs.slice(0, 5).map((r) =>
+        `<div class="event"><b>${esc(r.status)}</b> ${esc(r.requirement_id)} <span class="ts">${esc(r.created_at || "")}</span></div>`).join("");
+    }
+  } catch (e) { /* server may be down */ }
+}, 8000);
