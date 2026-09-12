@@ -8,14 +8,15 @@ P18-005 watch 调度。P22 fetch/extraction provenance 记录器。
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
-from typing import Literal
-
+from dataclasses import dataclass
+from datetime import UTC
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
 from app.acquisition.fabric import PaperRecord, SocialPost, _utcnow
+
 
 # ---------------- P14-001: SocialSourceAdapter contract ----------------
 class SocialSourceAdapter:
@@ -54,7 +55,6 @@ class HackerNewsAdapter(SocialSourceAdapter):
     platform = "hackernews"
 
     async def search(self, query, *, max_records=20, since=None, until=None, cursor=None):
-        import httpx
 
         from app.providers.http_client import get
 
@@ -91,9 +91,9 @@ class SocialQueryPlan(BaseModel):
 def plan_social_query(text: str, *, default_days: int = 30) -> SocialQueryPlan:
     """Deterministic bounded planner: near-N-days → time window; platforms from mention."""
     import re
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     days = default_days
     m = re.search(r"(?:近|最近|past|last)\s*(\d+)\s*天", text) or re.search(r"(\d+)\s*days?", text)
     if m:

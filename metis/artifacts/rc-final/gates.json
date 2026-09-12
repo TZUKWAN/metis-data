@@ -1,6 +1,6 @@
 {
   "generated": "2026-09-13",
-  "commit": "d956c2de5756611469a5911589cbbc3965470530",
+  "commit": "74b90531067999ddc4ab5ec215e8d8d3542beed6",
   "gates": [
     {
       "gate": "G01 planning main chain",
@@ -115,5 +115,15 @@
       "status": "PASS",
       "evidence": "this file regenerated clean for final commit"
     }
-  ]
+  ],
+  "rc_goldens": {
+    "GS-A_planning_search": "PASS",
+    "GS-B_authenticated_resume": "PASS",
+    "GS-C_public_crawl": "PASS (25 pages, books.toscrape.com, robots respected)",
+    "GS-D_wechat": "BLOCKED (requires user QR scan; chain implemented, human-takeover path present)",
+    "GS-E_social_two_platforms": "PASS (HN real + fixture, parquet export)",
+    "GS-F_paper_watch": "PASS (arXiv incremental, second run 0 new)",
+    "GS-G_web_structured": "PASS (20 pages \u2192 dataset with evidence)",
+    "GS-H_fallback_chain": "PASS (direct fail \u2192 reader)"
+  }
 }

@@ -60,7 +60,7 @@ class AcquisitionService:
         except Exception as e:  # noqa: BLE001 - any v2 failure falls through to legacy
             v2_error = e
             descriptors = []
-            log.info_ctx("descriptor build failed", provider_id=provider_id, error=str(e)[:160])
+            log.info_ctx("descriptor build failed", provider_id=provider_id, error=str(e)[:160], dbg_cookies=len(cookies))
 
         if descriptors:
             try:
@@ -81,7 +81,7 @@ class AcquisitionService:
                     committed.append(_committed_path(info, dest))
             except Exception as e:  # noqa: BLE001 - partial descriptor success still allows legacy retry
                 v2_error = e
-                log.info_ctx("descriptor acquisition failed", provider_id=provider_id, error=str(e)[:160])
+                log.info_ctx("descriptor acquisition failed", provider_id=provider_id, error=str(e)[:160], dbg_cookies=len(cookies))
 
         if not committed:
             # legacy 兼容层: adapters predating the v2 descriptor contract download by themselves.

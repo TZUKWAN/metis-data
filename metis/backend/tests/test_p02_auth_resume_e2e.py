@@ -27,13 +27,29 @@ class _AuthServer(BaseHTTPRequestHandler):
     def _authorized(self) -> bool:
         return SESSION_COOKIE in (self.headers.get("Cookie") or "")
 
+
+    def do_HEAD(self):
+        if self.path.startswith("/protected/"):
+            self.send_response(200 if SESSION_COOKIE in (self.headers.get("Cookie") or "") else 401)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+        else:
+            self.send_response(200)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
     def do_GET(self):
         if self.path == "/login":
             self.send_response(200)
             self.send_header("Set-Cookie", SESSION_COOKIE)
             self.send_header("Content-Type", "text/html")
             self.end_headers()
-            self.wfile.write(b"<html><body><h1 id='welcome-user'>logged in</h1></body></html>")
+            # #welcome-user only exists when the session cookie is present — the
+            # resolver probe uses this selector to distinguish logged-in vs expired
+            if SESSION_COOKIE in (self.headers.get("Cookie") or ""):
+                self.wfile.write(b"<html><body><h1 id='welcome-user'>ok</h1></body></html>")
+            else:
+                self.wfile.write(b"<html><body><form id='login-form'><input name='password'></form></body></html>")
             return
         if self.path.startswith("/protected/"):
             if not self._authorized():

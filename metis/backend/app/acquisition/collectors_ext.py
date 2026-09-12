@@ -14,14 +14,15 @@ Each module is small and self-contained; the orchestration fabric owns policy/ro
 from __future__ import annotations
 
 import json
-import time
 import re
-from typing import Any, Literal
+import time
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
 from app.acquisition.fabric import SocialPost, _utcnow
 from app.core.errors import MetisError
+
 
 # ---------------- P15: WeChat ----------------
 class WeChatOfficialAccountPlan(BaseModel):
@@ -94,7 +95,7 @@ class OpenNewsBackend(_TokenBackend):
         token = self._token()
         from app.providers.http_client import get
 
-        r = await get(f"https://api.6551.dev/opennews/search", params={"keyword": keyword, **params}, timeout=60, headers={"Authorization": f"Bearer {token}"})
+        r = await get("https://api.6551.dev/opennews/search", params={"keyword": keyword, **params}, timeout=60, headers={"Authorization": f"Bearer {token}"})
         if r.status != 200:
             raise MetisError("PROVIDER_HTTP_ERROR", f"opennews HTTP {r.status}")
         items = r.json() or []
@@ -111,7 +112,7 @@ class OpenTwitterBackend(_TokenBackend):
         token = self._token()
         from app.providers.http_client import get
 
-        r = await get(f"https://api.6551.dev/opentwitter/search", params={"query": query, "limit": max_records}, timeout=60, headers={"Authorization": f"Bearer {token}"})
+        r = await get("https://api.6551.dev/opentwitter/search", params={"query": query, "limit": max_records}, timeout=60, headers={"Authorization": f"Bearer {token}"})
         if r.status != 200:
             raise MetisError("PROVIDER_HTTP_ERROR", f"opentwitter HTTP {r.status}")
         out = []

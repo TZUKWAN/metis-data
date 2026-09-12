@@ -1,0 +1,83 @@
+{
+  "scenarios": {
+    "GS-A_planning_search": {
+      "status": "PASS",
+      "evidence": {
+        "planning_id": "plan_1dea044cdad94a548471",
+        "planning_source": "fallback",
+        "unit_of_analysis": "prefecture",
+        "time_range": {
+          "start": 2012,
+          "end": 2024
+        },
+        "concepts": [],
+        "n_query_plans": 8,
+        "search_run": "run_53cb9f1ddbe94ab6",
+        "run_status": "COMPLETED",
+        "bundle_consumed_by_search": true
+      }
+    },
+    "GS-B_authenticated_resume": {
+      "status": "PASS",
+      "evidence": {
+        "result": {
+          "resumed": true,
+          "files": 1
+        },
+        "artifact_bytes": 45
+      }
+    },
+    "GS-C_public_crawl": {
+      "status": "PASS",
+      "evidence": {
+        "visited": 25,
+        "stats": {
+          "fetched": 25,
+          "skipped_robots": 0,
+          "skipped_unchanged": 0,
+          "errors": 0
+        },
+        "robots": "respect"
+      }
+    },
+    "GS-E_social_two_platforms": {
+      "status": "PASS",
+      "evidence": {
+        "hn": 10,
+        "fixture": 1,
+        "parquet_rows": 11,
+        "dedupe_flags": 0
+      }
+    },
+    "GS-F_paper_watch": {
+      "status": "PASS",
+      "evidence": {
+        "run1_total": 8,
+        "run1_new": 8,
+        "run2_new": 0
+      }
+    },
+    "GS-G_web_structured": {
+      "status": "PASS",
+      "evidence": {
+        "pages_fetched": 21,
+        "dataset_rows": 20
+      }
+    },
+    "GS-H_fallback_chain": {
+      "status": "PASS",
+      "evidence": {
+        "chain": [
+          "direct_http",
+          "reader",
+          "reader"
+        ]
+      }
+    }
+  },
+  "started": "2026-09-12T21:22:25.390197+00:00",
+  "summary": {
+    "pass": 7,
+    "total": 7
+  }
+}

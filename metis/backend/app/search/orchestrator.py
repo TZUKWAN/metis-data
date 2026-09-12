@@ -61,6 +61,28 @@ class SearchOrchestrator:
         persisted_plan = dict(query_plan)
         if bundle:
             persisted_plan["planning_bundle"] = bundle
+        # bundle-driven runs may carry a PlanningBundle requirement without an id —
+        # synthesize + persist one so the run stays traceable to the requirement
+        if not requirement.get("requirement_id"):
+            # synthesize a minimal persisted requirement from bundle fields only
+            from app.domain.schemas import DataRequirement
+
+            br = (bundle or {}).get("requirement") or {}
+            fallback_req = {
+                "raw_request": br.get("research_goal") or br.get("research_question") or json.dumps(br, ensure_ascii=False)[:300],
+                "unit_of_analysis": br.get("unit_of_analysis") or "unknown",
+                "geography": br.get("geography") or [],
+                "time_range": tuple(br["time_range"].values()) if br.get("time_range") and all(br["time_range"].values()) else None,
+                "frequency": br.get("frequency") or "unknown",
+                "assumptions": br.get("assumptions") or [],
+                "notes": "derived from planning bundle",
+            }
+            if fallback_req["time_range"] is None:
+                fallback_req.pop("time_range")
+            req_obj = DataRequirement(**fallback_req)
+            requirement = dict(requirement)
+            requirement["requirement_id"] = req_obj.requirement_id
+            REPO.save_requirement(req_obj)
         REPO.save_search_run(run_id, requirement["requirement_id"], SearchRunStatus.PROVIDERS_SELECTED, query_plan=persisted_plan, provider_ids=provider_ids)
         self._cancelled.discard(run_id)
 

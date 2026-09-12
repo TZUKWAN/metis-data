@@ -6,9 +6,7 @@ injection guard (output is DATA). Third-party CLIs are never vendored.
 """
 from __future__ import annotations
 
-import json
 import shutil
-from typing import Any
 
 from app.acquisition.fabric import BackendCapability, BackendDescriptor, BackendStatus
 from app.acquisition.fabric_core import BackendAdapter, SafeCommandRunner

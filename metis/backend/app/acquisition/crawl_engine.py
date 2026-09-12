@@ -3,7 +3,6 @@ link discovery / sitemap / fetch router / incremental / checkpoint / bounded E2E
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 import re
 import time
@@ -185,7 +184,7 @@ def _default_robots():
 class CrawlFetchRouter:
     """Choose backend per URL: policy → robots → direct reader; fallback quality-based."""
 
-    def __init__(self, reader, robots=None, policy: "CrawlPolicyEngine | None" = None, rate_limiter: "DomainRateLimiter | None" = None) -> None:
+    def __init__(self, reader, robots=None, policy: CrawlPolicyEngine | None = None, rate_limiter: DomainRateLimiter | None = None) -> None:
         import app.acquisition.fabric_core as _fc
 
         self.reader = reader
@@ -194,7 +193,6 @@ class CrawlFetchRouter:
         self.limiter = rate_limiter or DomainRateLimiter(default_interval=0.2)
 
     async def fetch(self, url: str, *, respect_robots: bool = True) -> tuple[WebDocumentArtifact, UntrustedContent]:
-        from app.providers.http_client import RATE_LIMITER, get
 
         if respect_robots:
             allowed, why = await self.robots.allowed(url)
@@ -288,7 +286,6 @@ class CrawlJobRunner:
                 if not allowed:
                     self.stats["skipped_robots"] += 1
                     continue
-                from app.providers.http_client import get
 
                 artifact, content = await self.router.reader.read(item.url)
                 self.transition(CrawlState.EXTRACTING, item.url[:60])

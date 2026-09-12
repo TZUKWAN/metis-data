@@ -1,0 +1,18 @@
+DBG ctx auth_type=browser_session cookies=['metis_session'] n_sessions=1
+[GS-A_planning_search] PASS: {"planning_id": "plan_1dea044cdad94a548471", "planning_source": "fallback", "unit_of_analysis": "prefecture", "time_range": {"start": 2012, "end": 2024}, "concepts": [], "n_query_plans": 8, "search_run": "run_53cb9f1ddbe
+[GS-B_authenticated_resume] PASS: {"result": {"resumed": true, "files": 1}, "artifact_bytes": 45}
+[GS-C_public_crawl] PASS: {"visited": 25, "stats": {"fetched": 25, "skipped_robots": 0, "skipped_unchanged": 0, "errors": 0}, "robots": "respect"}
+[GS-E_social_two_platforms] PASS: {"hn": 10, "fixture": 1, "parquet_rows": 11, "dedupe_flags": 0}
+[GS-F_paper_watch] PASS: {"run1_total": 8, "run1_new": 8, "run2_new": 0}
+[GS-G_web_structured] PASS: {"pages_fetched": 21, "dataset_rows": 20}
+[GS-H_fallback_chain] PASS: {"chain": ["direct_http", "reader", "reader"]}
+
+RC GOLDEN: 7/7 scenarios PASS -> D:\数据智能体\metis\artifacts\rc-final\golden\rc-report.json
+Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x000001CC474358A0>
+Traceback (most recent call last):
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 130, in __del__
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 107, in close
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 109, in close
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 833, in call_soon
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 556, in _check_closed
+RuntimeError: Event loop is closed

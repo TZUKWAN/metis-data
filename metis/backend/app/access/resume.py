@@ -8,8 +8,8 @@ AcquisitionService. Idempotent: a download job already COMPLETED is never re-acq
 from __future__ import annotations
 
 from app.access.machine import AccessJob, AccessState
-from app.auth.browser_auth_bridge import BRIDGE
 from app.acquisition.service import ACQUISITION  # module attribute: tests monkeypatch app.access.resume.ACQUISITION
+from app.auth.browser_auth_bridge import BRIDGE
 from app.core import paths
 from app.core.errors import MetisError
 from app.core.logging import get_logger
@@ -57,12 +57,12 @@ class AccessResumeCoordinator:
             from app.access.resolver import AUTH_RESOLVER, RESOLVER
 
             session, reason = await RESOLVER.resolve(job.provider_id, job.browser_session_id, _make_session)
-            if session is None and "SESSION_EXPIRED" in reason:
-                transition(job, AccessState.SESSION_EXPIRED, reason)
-                transition(job, AccessState.LOGIN_REQUIRED, "restored session expired")
-                transition(job, AccessState.AUTHORIZED, "session restored via fresh user login probe") if False else None
-                return {"resumed": False, "reason": reason}
             access_ctx = await _build_access_context(session, job.provider_id, AUTH_RESOLVER)
+            import sys as _sys
+            print(f"DBG ctx auth_type={access_ctx.auth_type} cookies={sorted(access_ctx.transient_cookies.keys())} n_sessions={len(session.context.pages if session else [])}", file=_sys.stderr)
+            log.info_ctx("resume context built", provider_id=job.provider_id,
+                         auth_type=access_ctx.auth_type,
+                         cookie_names=sorted(access_ctx.transient_cookies.keys()))
             access_payload["access_context"] = access_ctx.transport()
             files = await ACQUISITION.acquire(access_payload, download_job, staging)
         except Exception as e:  # noqa: BLE001 - persist failure state, then re-raise

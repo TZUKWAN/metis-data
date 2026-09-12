@@ -6,11 +6,10 @@ BackendAdapter protocol / BackendRegistry / SafeCommandRunner / AcquisitionRoute
 from __future__ import annotations
 
 import asyncio
-import fnmatch
 import os
 import time
-from enum import Enum
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -155,7 +154,6 @@ class SafeCommandRunner:
 
     async def run(self, argv: list[str], *, timeout: float = 60.0, max_output: int = 2 * 1024 * 1024, env_extra: dict | None = None) -> dict:
         self.validate_binary(argv)
-        import subprocess
 
         env = {k: os.environ[k] for k in self.env_allowlist if k in os.environ}
         if env_extra:
@@ -166,7 +164,7 @@ class SafeCommandRunner:
         )
         try:
             out, err = await asyncio.wait_for(proc.communicate(), timeout=timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             proc.kill()
             await proc.wait()
             raise MetisError("PROVIDER_TIMEOUT", f"command timed out after {timeout}s", retryable=True)

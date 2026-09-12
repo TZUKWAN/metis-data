@@ -7,9 +7,8 @@ time; expiry checked; values never logged or persisted.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from app.auth.browser_auth_bridge import BRIDGE
 from app.auth.browser_state import restore_browser_storage
 from app.auth.secret_store import get_secret_store
 from app.core.errors import MetisError
@@ -63,7 +62,7 @@ class AuthContextResolver:
         if cred.expires_at:
             try:
                 exp = datetime.fromisoformat(cred.expires_at.replace("Z", "+00:00"))
-                if exp <= datetime.now(timezone.utc):
+                if exp <= datetime.now(UTC):
                     return {}
             except ValueError:
                 pass

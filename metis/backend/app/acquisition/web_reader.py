@@ -95,7 +95,6 @@ def _html_to_text_markdown(html: str) -> tuple[str, str]:
 
 
 def _save_raw(url: str, html: str) -> str:
-    from app.core import paths
 
     host = (urlparse(url).hostname or "site").replace(".", "_")
     digest = hashlib.sha256(html.encode("utf-8")).hexdigest()[:16]
@@ -107,7 +106,6 @@ def _save_raw(url: str, html: str) -> str:
 
 
 def _save_markdown(url: str, markdown: str) -> str:
-    from app.core import paths
 
     host = (urlparse(url).hostname or "site").replace(".", "_")
     digest = hashlib.sha256(markdown.encode("utf-8")).hexdigest()[:16]

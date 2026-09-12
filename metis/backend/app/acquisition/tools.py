@@ -1,8 +1,7 @@
 """P25 agent tools（严格 schema，无 run_shell）+ P27-003 SSRF guard 扩展（redirect 后复验）+ P28-004 quota。"""
 from __future__ import annotations
 
-import asyncio
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
