@@ -1,0 +1,54 @@
+F.                                                                       [100%]Task was destroyed but it is pending!
+task: <Task pending name='Task-22' coro=<Connection.run() running at C:\Users\lauze\miniconda3\Lib\site-packages\playwright\_impl\_connection.py:314> wait_for=<Future pending cb=[Task.task_wakeup()]>>
+C:\Users\lauze\miniconda3\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function _ProactorBasePipeTransport.__del__ at 0x00000161F1BE7600>
+
+Traceback (most recent call last):
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 116, in __del__
+    _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+                               ^^^^^^^^
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 80, in __repr__
+    info.append(f'fd={self._sock.fileno()}')
+                      ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\windows_utils.py", line 102, in fileno
+    raise ValueError("I/O operation on closed pipe")
+ValueError: I/O operation on closed pipe
+
+Enable tracemalloc to get traceback where the object was allocated.
+See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+  warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+C:\Users\lauze\miniconda3\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x00000161F1BE5B20>
+
+Traceback (most recent call last):
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 129, in __del__
+    _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+                               ^^^^^^^^
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 73, in __repr__
+    info.append(f'stdin={stdin.pipe}')
+                        ^^^^^^^^^^^^
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 80, in __repr__
+    info.append(f'fd={self._sock.fileno()}')
+                      ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\windows_utils.py", line 102, in fileno
+    raise ValueError("I/O operation on closed pipe")
+ValueError: I/O operation on closed pipe
+
+Enable tracemalloc to get traceback where the object was allocated.
+See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+  warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+================================== FAILURES ===================================
+E   AssertionError: orphan browser sessions: [{'session_id': 'bs_a3b02bcb3582422d', 'task_label': 'browser-search:fixture_catalog', 'owner': 'agent', 'state': 'CLOSED', 'url': 'http://127.0.0.1:61998/pages/dataset_a.html', 'intervention': None, 'task_binding': {'provider_id': None, 'task_id': None, 'access_job_id': None, 'download_job_id': None}, 'downloads': 0}, {'session_id': 'bs_81159b27f2b14a0d', 'task_label': 'browser-search:fixture_catalog', 'owner': 'agent', 'state': 'CLOSED', 'url': 'http://127.0.0.1:61998/pages/dataset_a.html', 'intervention': None, 'task_binding': {'provider_id': None, 'task_id': None, 'access_job_id': None, 'download_job_id': None}, 'downloads': 0}, {'session_id': 'bs_0c533ac60d214e87', 'task_label': 'browser-search:fixture_catalog', 'owner': 'agent', 'state': 'CLOSED', 'url': 'http://127.0.0.1:61998/pages/dataset_a.html', 'intervention': None, 'task_binding': {'provider_id': None, 'task_id': None, 'access_job_id': None, 'download_job_id': None}, 'downloads': 0}, {'session_id': 'bs_a9821796e3f34884', 'task_label': 'browser-search:fixture_catalog', 'owner': 'agent', 'state': 'CLOSED', 'url': 'http://127.0.0.1:61998/pages/dataset_a.html', 'intervention': None, 'task_binding': {'provider_id': None, 'task_id': None, 'access_job_id': None, 'download_job_id': None}, 'downloads': 0}, {'session_id': 'bs_37bf8f797d9343b2', 'task_label': 'browser-search:fixture_catalog', 'owner': 'agent', 'state': 'CLOSED', 'url': 'http://127.0.0.1:61998/pages/dataset_a.html', 'intervention': None, 'task_binding': {'provider_id': None, 'task_id': None, 'access_job_id': None, 'download_job_id': None}, 'downloads': 0}, {'session_id': 'bs_d866ce43cc614f52', 'task_label': 'browser-search:fixture_catalog', 'owner': 'agent', 'state': 'CLOSED', 'url': 'http://127.0.0.1:61998/pages/dataset_a.html', 'intervention': None, 'task_binding': {'provider_id': None, 'task_id': None, 'access_job_id': None, 'download_job_id': None}, 'downloads': 0}]
+    assert not [{'downloads': 0, 'intervention': None, 'owner': 'agent', 'session_id': 'bs_a3b02bcb3582422d', ...}, {'downloads': 0, ...f797d9343b2', ...}, {'downloads': 0, 'intervention': None, 'owner': 'agent', 'session_id': 'bs_d866ce43cc614f52', ...}]
+D:\数据智能体\metis\backend\tests\test_p03_lifecycle.py:53: AssertionError: orphan browser sessions: [{'session_id': 'bs_a3b02bcb3582422d', 'task_label': 'browser-search:fixture_catalog', 'owner': 'agent', 'state': 'CLOSED', 'url': 'http://127.0.0.1:61998/pages/dataset_a.html', 'intervention': None, 'task_binding': {'provider_id': None, 'task_id': None, 'access_job_id': None, 'download_job_id': None}, 'downloads': 0}, {'session_id': 'bs_81159b27f2b14a0d', 'task_label': 'browser-search:fixture_catalog', 'owner': 'agent', 'state': 'CLOSED', 'url': 'http://127.0.0.1:61998/pages/dataset_a.html', 'intervention': None, 'task_binding': {'provider_id': None, 'task_id': None, 'access_job_id': None, 'download_job_id': None}, 'downloads': 0}, {'session_id': 'bs_0c533ac60d214e87', 'task_label': 'browser-search:fixture_catalog', 'owner': 'agent', 'state': 'CLOSED', 'url': 'http://127.0.0.1:61998/pages/dataset_a.html', 'intervention': None, 'task_binding': {'provider_id': None, 'task_id': None, 'access_job_id': None, 'download_job_id': None}, 'downloads': 0}, {'session_id': 'bs_a9821796e3f34884', 'task_label': 'browser-search:fixture_catalog', 'owner': 'agent', 'state': 'CLOSED', 'url': 'http://127.0.0.1:61998/pages/dataset_a.html', 'intervention': None, 'task_binding': {'provider_id': None, 'task_id': None, 'access_job_id': None, 'download_job_id': None}, 'downloads': 0}, {'session_id': 'bs_37bf8f797d9343b2', 'task_label': 'browser-search:fixture_catalog', 'owner': 'agent', 'state': 'CLOSED', 'url': 'http://127.0.0.1:61998/pages/dataset_a.html', 'intervention': None, 'task_binding': {'provider_id': None, 'task_id': None, 'access_job_id': None, 'download_job_id': None}, 'downloads': 0}, {'session_id': 'bs_d866ce43cc614f52', 'task_label': 'browser-search:fixture_catalog', 'owner': 'agent', 'state': 'CLOSED', 'url': 'http://127.0.0.1:61998/pages/dataset_a.html', 'intervention': None, 'task_binding': {'provider_id': None, 'task_id': None, 'access_job_id': None, 'download_job_id': None}, 'downloads': 0}]
+=========================== short test summary info ===========================
+FAILED metis\backend\tests\test_p03_lifecycle.py::test_concurrent_browser_search_no_orphans
+Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x00000161F1BE5B20>
+Traceback (most recent call last):
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 130, in __del__
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 107, in close
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 109, in close
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 833, in call_soon
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 556, in _check_closed
+RuntimeError: Event loop is closed
+Task was destroyed but it is pending!
+task: <Task pending name='Task-25' coro=<Connection.run() running at C:\Users\lauze\miniconda3\Lib\site-packages\playwright\_impl\_connection.py:314> wait_for=<Future pending cb=[Task.task_wakeup()]>>

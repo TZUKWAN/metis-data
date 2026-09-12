@@ -87,25 +87,35 @@ class SearchOrchestrator:
                     if recipe is None:
                         REPO.finish_provider_task(task_id, ProviderTaskStatus.ERROR, error_code="PROVIDER_CAPABILITY_MISSING", error_message=f"no search adapter or browser recipe for {pid} (registered only)")
                         return
-                    try:
-                        from app.providers.registry import get_registry
-                        from app.search.browser_worker import BrowserSearchWorker
+                    # P03-002: try/finally guarantees session reclamation on
+                    # success/timeout/cancel/error alike; user takeover transfers
+                    # ownership and keeps the window alive.
+                    from app.providers.registry import get_registry
+                    from app.search.browser_worker import BrowserSearchWorker
 
-                        home = get_registry().get(pid).homepage
-                        worker = BrowserSearchWorker(pid, recipe, base_url=home if str(home).startswith("http") else None)
+                    home = get_registry().get(pid).homepage
+                    worker = BrowserSearchWorker(pid, recipe, base_url=home if str(home).startswith("http") else None)
+                    try:
                         results = []
                         for q in (query_plan.get(pid) or [query])[:2]:
                             results.extend(await worker.search(q, limit=10))
                         for c in results[:12]:
                             REPO.save_candidate(run_id, c)
                         REPO.finish_provider_task(task_id, ProviderTaskStatus.DONE, result_count=len(results))
-                        return
                     except MetisError as e:
+                        if e.code == "USER_INTERVENTION_REQUIRED" and worker.session is not None:
+                            worker.transfer_ownership("user")  # keep the window for the user
+                            REPO.upsert_provider_task(task_id, run_id, pid, ProviderTaskStatus.RUNNING, browser_session_id=worker.session.session_id)
+                            REPO.add_ui_event("browser.search_handover", "WARNING", task_id=run_id, provider_id=pid, payload={"session_id": worker.session.session_id})
                         REPO.finish_provider_task(task_id, ProviderTaskStatus.ERROR, error_code=e.code, error_message=e.message)
-                        return
+                    except asyncio.CancelledError:
+                        REPO.finish_provider_task(task_id, ProviderTaskStatus.CANCELLED)
+                        raise
                     except Exception as e:  # noqa: BLE001
                         REPO.finish_provider_task(task_id, ProviderTaskStatus.ERROR, error_code="PROVIDER_HTTP_ERROR", error_message=f"browser search: {e}"[:200])
-                        return
+                    finally:
+                        await worker.close()  # P03-002: worker-owned sessions always reclaimed
+                    return
                 REPO.upsert_provider_task(task_id, run_id, pid, ProviderTaskStatus.RUNNING, started_at=True)
                 try:
                     await RATE_LIMITER.acquire(pid, min_interval_s=0.2)

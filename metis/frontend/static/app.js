@@ -10,7 +10,10 @@ const api = async (path, opts) => {
 const esc = (s) => String(s ?? "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
 const ts = (iso) => (iso || "").replace("T", " ").slice(11, 19);
 
-let STATE = { requirement: null, runId: null, sessionId: null, builds: [], artifacts: [] };
+let STATE = {
+  requirement: null, runId: null, sessionId: null, builds: [], artifacts: [],
+  planningId: null, planningBundle: null, planningSource: null, planningHistory: [], // P01-001
+};
 
 /* ---------- status / events ---------- */
 function pushEvent(kind, sev, payload) {
@@ -58,13 +61,28 @@ function renderRequirement(r) {
 }
 
 /* ---------- search (A3) ---------- */
+// P01-004: default UI search ALWAYS goes through PlanningBundle (planning_id).
 $("btn-search").onclick = async () => {
-  if (!STATE.requirement) return alert("先解析需求");
-  const r = await api("/api/search/runs", { method: "POST", body: { requirement_id: STATE.requirement.requirement_id } });
+  const text = STATE.requirement?.raw_request || $("req-text").value.trim();
+  if (!text && !STATE.planningId) return alert("先输入研究/数据需求");
+  if (!STATE.planningId) await runPlanning(text); // auto-planning, never rule-only by default
+  const body = { planning_id: STATE.planningId };
+  if (STATE.requirement) body.requirement_id = STATE.requirement.requirement_id;
+  const r = await api("/api/search/runs", { method: "POST", body });
   STATE.runId = r.run_id;
-  pushEvent("search.started", "INFO", { message: `并行搜索 ${r.providers.length} 个 Provider：${r.providers.join(", ")}` });
+  pushEvent("search.started", "INFO", { message: `Planning(${STATE.planningSource}) → 并行搜索 ${r.providers.length} 个 Provider：${r.providers.join(", ")}` });
   pollSearch();
 };
+
+// P01-002: one-shot planning entry
+async function runPlanning(text) {
+  const r = await api("/api/agent/planning", { method: "POST", body: { text } });
+  STATE.planningId = r.planning_id;
+  STATE.planningBundle = r.bundle;
+  STATE.planningSource = r.planning_source;
+  STATE.planningHistory.push({ planning_id: r.planning_id, source: r.planning_source, ts: new Date().toISOString() }); // P01-003 revision history
+  return r;
+}
 $("btn-cancel-search").onclick = async () => { if (STATE.runId) await api(`/api/search/runs/${STATE.runId}/cancel`, { method: "POST" }); };
 
 let polling = null;
@@ -306,6 +324,23 @@ function renderAgentPlan() {
     <button id="ap-replan" class="primary" style="margin-top:6px">重新计算搜索计划</button>
     <div id="ap-source-plan"></div>`;
   $("ap-replan").onclick = recomputeSourcePlan;
+
+// P01-003: any key-field edit creates a NEW planning revision (never overwrite in place)
+async function replanFromEdits() {
+  const p = STATE.agentPlan || STATE.planningBundle?.requirement && STATE.planningBundle.requirement || {};
+  p.unit_of_analysis = $("ap-unit") ? $("ap-unit").value : p.unit_of_analysis;
+  p.frequency = $("ap-freq") ? $("ap-freq").value : p.frequency;
+  if ($("ap-start") && $("ap-end")) p.time_range = { start: +$("ap-start").value || null, end: +$("ap-end").value || null };
+  if ($("ap-geo")) p.geography = $("ap-geo").value.split(",").map(x => x.trim()).filter(Boolean);
+  if ($("ap-vars")) p.variables = $("ap-vars").value.split("\n").map(l => l.trim()).filter(Boolean).map(line => { const [concept, role] = line.split("|").map(x => x.trim()); return { concept, role: role || "control", description: "" }; });
+  const r = await api("/api/agent/planning", { method: "POST", body: { text: JSON.stringify({ revision_of: STATE.planningId, requirement: p }) } });
+  STATE.planningId = r.planning_id;
+  STATE.planningBundle = r.bundle;
+  STATE.planningSource = r.planning_source;
+  STATE.planningHistory.push({ planning_id: r.planning_id, source: r.planning_source, ts: new Date().toISOString() });
+  pushEvent("planning.revision", "INFO", { message: `新 planning 修订 ${r.planning_id}（旧 ${STATE.planningHistory[STATE.planningHistory.length - 2]?.planning_id || "n/a"} 保留可审计）` });
+}
+document.addEventListener("change", (e) => { if (["ap-unit", "ap-freq", "ap-start", "ap-end", "ap-geo", "ap-vars"].includes(e.target.id)) replanFromEdits(); });
 }
 
 async function recomputeSourcePlan() {

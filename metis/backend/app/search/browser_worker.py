@@ -34,11 +34,13 @@ log = get_logger("search.browser")
 class BrowserSearchWorker:
     """Drives one real browser session through a declarative search recipe."""
 
-    def __init__(self, provider_id: str, recipe: dict, base_url: str = "") -> None:
+    def __init__(self, provider_id: str, recipe: dict, base_url: str = "", ownership: str = "worker") -> None:
         self.provider_id = provider_id
         self.recipe = dict(recipe or {})
         self.base_url = (base_url or "").rstrip("/")
         self.session: BrowserSession | None = None
+        self.ownership: str = ownership  # P03-001: worker | task | user
+        self._closed = False
 
     # ---------- session lifecycle ----------
     async def _ensure_session(self) -> BrowserSession:
@@ -47,9 +49,19 @@ class BrowserSearchWorker:
         return self.session
 
     async def close(self) -> None:
+        """P03-001: idempotent close; never closes a user-owned session."""
+        if self._closed or self.ownership == "user":
+            return
+        self._closed = True
         if self.session is not None:
             sess, self.session = self.session, None
             await sess.close()
+
+    def transfer_ownership(self, to: str) -> None:
+        """P03-002: e.g. the user takes over mid-search — worker must NOT auto-close."""
+        self.ownership = to
+        if to == "user":
+            self._closed = True  # keep session alive, worker no longer owns it
 
     # ---------- helpers ----------
     def _abs(self, path_or_url: str) -> str:

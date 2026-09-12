@@ -1,0 +1,20 @@
+FF                                                                       [100%]
+================================== FAILURES ===================================
+__________________ test_concurrent_browser_search_no_orphans __________________
+metis\backend\tests\test_p03_lifecycle.py:45: in test_concurrent_browser_search_no_orphans
+    results = browser_run(run_all())
+              ^^^^^^^^^^^^^^^^^^^^^^
+metis\backend\tests\conftest.py:83: in browser_run
+    return _LOOP.run_until_complete(coro)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'run_until_complete'
+______________________ test_user_takeover_prevents_close ______________________
+metis\backend\tests\test_p03_lifecycle.py:73: in test_user_takeover_prevents_close
+    browser_run(flow())
+metis\backend\tests\conftest.py:83: in browser_run
+    return _LOOP.run_until_complete(coro)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'run_until_complete'
+=========================== short test summary info ===========================
+FAILED metis\backend\tests\test_p03_lifecycle.py::test_concurrent_browser_search_no_orphans
+FAILED metis\backend\tests\test_p03_lifecycle.py::test_user_takeover_prevents_close

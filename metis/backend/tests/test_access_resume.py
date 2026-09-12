@@ -62,8 +62,9 @@ def test_resume_authorized_then_idempotent(temp_workspace, monkeypatch):
     res = asyncio.run(RESUME_COORDINATOR.resume_access_job(acc_id))
     assert res == {"resumed": True, "files": 1}
     assert len(fake.calls) == 1
-    # access_context is empty at this stage (cookie bridging is a later phase)
-    assert fake.calls[0][0].get("access_context") == {}
+    # P02-003: access_context now carries resolved transport cookies/headers
+    # (empty dicts in the no-session unit case; real values in the bridge E2E)
+    assert fake.calls[0][0].get("access_context") is not None
     saved = REPO.get_download_job(dl["download_job_id"])
     assert saved["status"] == "COMPLETED"
 

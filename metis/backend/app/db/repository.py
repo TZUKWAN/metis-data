@@ -165,6 +165,7 @@ class Repository:
                     "provider_id": r.provider_id,
                     "status": r.status,
                     "result_count": r.result_count,
+                    "browser_session_id": r.browser_session_id,
                     "error_code": r.error_code,
                     "error_message": r.error_message,
                     "started_at": r.started_at.isoformat() if r.started_at else None,

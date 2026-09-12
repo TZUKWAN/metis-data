@@ -1,0 +1,13 @@
+{
+  "branch": "main",
+  "commit": "d956c2de5756611469a5911589cbbc3965470530",
+  "baseline_taskbook": "d956c2de5756611469a5911589cbbc3965470530",
+  "head_matches_taskbook": true,
+  "dirty": true,
+  "os": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.2",
+  "node": "v25.6.0",
+  "playwright": "1.58.0",
+  "sqlite": "3.53.2",
+  "timestamp": "2026-09-12T18:36:25.910875+00:00"
+}

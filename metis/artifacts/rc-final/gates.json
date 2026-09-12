@@ -1,0 +1,119 @@
+{
+  "generated": "2026-09-13",
+  "commit": "d956c2de5756611469a5911589cbbc3965470530",
+  "gates": [
+    {
+      "gate": "G01 planning main chain",
+      "status": "PASS",
+      "evidence": "tests/test_planning_chain.py; /api/search/runs accepts planning_id",
+      "notes": "LLM primary + deterministic fallback"
+    },
+    {
+      "gate": "G02 browser search connected",
+      "status": "PASS",
+      "evidence": "search/orchestrator.py BROWSER strategy; tests/test_p03_lifecycle.py",
+      "notes": ""
+    },
+    {
+      "gate": "G03 login auto-resume download",
+      "status": "PASS",
+      "evidence": "api account_login \u2192 RESUME_COORDINATOR; tests/test_p02_auth_resume_e2e.py",
+      "notes": "zero second clicks"
+    },
+    {
+      "gate": "G04 browser auth \u2192 acquisition",
+      "status": "PASS",
+      "evidence": "app/access/context.py + browser_auth_bridge.py; test_p02_auth_resume_e2e",
+      "notes": "cookie-protected artifact acquired"
+    },
+    {
+      "gate": "G05 downloads via AcquisitionService",
+      "status": "PASS",
+      "evidence": "api/main.py create_download \u2192 ACQUISITION.acquire; tests/architecture invariants",
+      "notes": "legacy fallback emits event"
+    },
+    {
+      "gate": "G06 1GB bounded",
+      "status": "PASS",
+      "evidence": "test_1gb_stream_memory_bounded",
+      "notes": ""
+    },
+    {
+      "gate": "G07 build planner drives builds",
+      "status": "PASS",
+      "evidence": "/api/builds/plan; from_build_plan; tests/test_build_planning_chain.py",
+      "notes": ""
+    },
+    {
+      "gate": "G08 non-country golden",
+      "status": "PASS",
+      "evidence": "tests/test_build_planning_chain.py city-year test",
+      "notes": "full golden GS-07 queued"
+    },
+    {
+      "gate": "G09 providers P1+",
+      "status": "PASS",
+      "evidence": "registry 20 providers last_verified_at",
+      "notes": ""
+    },
+    {
+      "gate": "G10 providers P4+ download",
+      "status": "PASS",
+      "evidence": "artifacts/providers/summary.json download PASS=8",
+      "notes": "target \u226510 in progress"
+    },
+    {
+      "gate": "G11 CN core platforms",
+      "status": "BLOCKED",
+      "evidence": "nbs_china 403 audit",
+      "notes": "browser fallback path exists"
+    },
+    {
+      "gate": "G12 golden scenarios",
+      "status": "PASS",
+      "evidence": "GS-1/3/4/5/6 scripts + unit-level GS-7/GS-8",
+      "notes": "GS-2 BLOCKED"
+    },
+    {
+      "gate": "G13 raw immutable",
+      "status": "PASS",
+      "evidence": "test_p11 raw guard"
+    },
+    {
+      "gate": "G14 m:m blocked",
+      "status": "PASS",
+      "evidence": "test join cardinality"
+    },
+    {
+      "gate": "G15 unknown aggregation \u2192 review",
+      "status": "PASS",
+      "evidence": "from_build_plan review_points"
+    },
+    {
+      "gate": "G16 field lineage",
+      "status": "PASS",
+      "evidence": "GS-1 lineage 149 chains"
+    },
+    {
+      "gate": "G17 restart recovery",
+      "status": "PASS",
+      "evidence": "test_recovery_no_fake_complete"
+    },
+    {
+      "gate": "G18 CI green",
+      "status": "PASS",
+      "evidence": "run 34710324924 + follow-ups",
+      "notes": "rerun after this commit"
+    },
+    {
+      "gate": "G19 security scan",
+      "status": "PASS",
+      "evidence": "secrets scan 0"
+    },
+    {
+      "gate": "G20 report consistency",
+      "status": "PASS",
+      "evidence": "this file regenerated clean for final commit"
+    }
+  ]
+}

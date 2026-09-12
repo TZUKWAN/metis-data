@@ -1,0 +1,12 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+___________________ test_cookie_gated_download_auto_resume ____________________
+metis\backend\tests\test_p02_auth_resume_e2e.py:113: in test_cookie_gated_download_auto_resume
+    browser_run(flow())
+metis\backend\tests\conftest.py:83: in browser_run
+    return _LOOP.run_until_complete(coro)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'run_until_complete'
+=========================== short test summary info ===========================
+FAILED metis\backend\tests\test_p02_auth_resume_e2e.py::test_cookie_gated_download_auto_resume
+<sys>:0: RuntimeWarning: coroutine 'test_cookie_gated_download_auto_resume.<locals>.flow' was never awaited

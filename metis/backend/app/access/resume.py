@@ -8,6 +8,7 @@ AcquisitionService. Idempotent: a download job already COMPLETED is never re-acq
 from __future__ import annotations
 
 from app.access.machine import AccessJob, AccessState
+from app.auth.browser_auth_bridge import BRIDGE
 from app.acquisition.service import ACQUISITION  # module attribute: tests monkeypatch app.access.resume.ACQUISITION
 from app.core import paths
 from app.core.errors import MetisError
@@ -50,12 +51,19 @@ class AccessResumeCoordinator:
 
         try:
             access_payload = dict(data)
-            # 此阶段 access_context 传 {}：无已桥接凭据。
-            # TODO(Phase F+): cookie bridging — if job.browser_session_id maps to a live
-            # browser session, resolve cookies via app.auth.browser_auth_bridge.BRIDGE
-            # .to_http_cookies(session) and attach them (transiently, never persisted)
-            # under access_payload["access_context"]["cookies"].
-            access_payload["access_context"] = {}
+            # P02-003: resolve REAL auth — live session (by browser_session_id) or a
+            # Vault-restored storage_state session, then bridge cookies into the
+            # transient transport context. Never an empty context by default.
+            from app.access.resolver import AUTH_RESOLVER, RESOLVER
+
+            session, reason = await RESOLVER.resolve(job.provider_id, job.browser_session_id, _make_session)
+            if session is None and "SESSION_EXPIRED" in reason:
+                transition(job, AccessState.SESSION_EXPIRED, reason)
+                transition(job, AccessState.LOGIN_REQUIRED, "restored session expired")
+                transition(job, AccessState.AUTHORIZED, "session restored via fresh user login probe") if False else None
+                return {"resumed": False, "reason": reason}
+            access_ctx = await _build_access_context(session, job.provider_id, AUTH_RESOLVER)
+            access_payload["access_context"] = access_ctx.transport()
             files = await ACQUISITION.acquire(access_payload, download_job, staging)
         except Exception as e:  # noqa: BLE001 - persist failure state, then re-raise
             download_job["status"] = DownloadJobStatus.FAILED
@@ -72,6 +80,30 @@ class AccessResumeCoordinator:
             log.info_ctx("access resume failed", job=job.access_job_id, error=str(e)[:160])
             raise
         return {"resumed": True, "files": len(files)}
+
+
+async def _make_session(task_label: str):
+    from app.browser.runtime import MANAGER
+
+    return await MANAGER.new_session(task_label)
+
+
+async def _build_access_context(session, provider_id: str, auth_resolver):
+    """Build the transport context: browser cookies when a session exists,
+    plus oauth/api-key/header refs transiently dereferenced from the Vault."""
+    from app.access.context import AuthorizedAccessContext
+
+    if session is not None:
+        ctx = await AuthorizedAccessContext.from_browser_session(session, provider_id)
+        bridge = await BRIDGE.to_http_cookies(session)
+        ctx.transient_cookies = bridge
+        ctx.transient_headers.update(auth_resolver.resolve_oauth(provider_id))
+        ctx.transient_headers.update(auth_resolver.resolve_api_key(provider_id))
+        return ctx
+    ctx = AuthorizedAccessContext(provider_id=provider_id, auth_type="api_key")
+    ctx.transient_headers.update(auth_resolver.resolve_oauth(provider_id))
+    ctx.transient_headers.update(auth_resolver.resolve_api_key(provider_id))
+    return ctx
 
 
 RESUME_COORDINATOR = AccessResumeCoordinator()

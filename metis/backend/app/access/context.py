@@ -32,6 +32,22 @@ class AuthorizedAccessContext(BaseModel):
 
     model_config = {"extra": "forbid"}
 
+    # ---- P02-001: transient transport material (NEVER persisted to DB/logs) ----
+    transient_cookies: dict[str, str] = Field(default_factory=dict)
+    transient_headers: dict[str, str] = Field(default_factory=dict)
+
+    def safe_dump(self) -> dict:
+        """DB/log-safe serialization: strips ALL transient secret material."""
+        d = self.model_dump()
+        d.pop("transient_cookies", None)
+        d.pop("transient_headers", None)
+        return d
+
+    def transport(self) -> dict:
+        """Resolved transport material for the HTTP client (in-memory only)."""
+        return {"cookies": dict(self.transient_cookies), "headers": dict(self.transient_headers)}
+
+
     @classmethod
     async def from_browser_session(
         cls, session, provider_id: str, account_id: str | None = None

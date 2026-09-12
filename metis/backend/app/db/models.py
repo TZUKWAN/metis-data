@@ -43,6 +43,7 @@ class ProviderTaskRow(Base):
     status: Mapped[str] = mapped_column(String(16), index=True)  # queued/running/done/error/timeout/cancelled
     query: Mapped[str] = mapped_column(Text, default="")
     result_count: Mapped[int] = mapped_column(Integer, default=0)
+    browser_session_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

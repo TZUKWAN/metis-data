@@ -1,0 +1,9 @@
+.........F...                                                            [100%]
+================================== FAILURES ===================================
+__________________ test_safe_command_runner_blocks_injection __________________
+metis\backend\tests\test_p05_p07_fabric.py:298: in test_safe_command_runner_blocks_injection
+    r = asyncio.new_event_loop().run_until_complete(runner.run([sys.executable, "-c", "print('hi')"], timeout=20))
+                                                                ^^^
+E   NameError: name 'sys' is not defined. Did you forget to import 'sys'?
+=========================== short test summary info ===========================
+FAILED metis\backend\tests\test_p05_p07_fabric.py::test_safe_command_runner_blocks_injection

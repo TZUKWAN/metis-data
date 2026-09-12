@@ -1,0 +1,30 @@
+..................                                                       [100%]
+Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x00000185D5C41B20>
+Traceback (most recent call last):
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 130, in __del__
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 107, in close
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 109, in close
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 833, in call_soon
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 556, in _check_closed
+RuntimeError: Event loop is closed
+--- Logging error ---
+--- Logging error ---
+Exception ignored in: <bound method BaseEventLoop.call_exception_handler of <ProactorEventLoop running=False closed=True debug=False>>
+Traceback (most recent call last):
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 1904, in call_exception_handler
+  File "C:\Users\lauze\miniconda3\Lib\logging\__init__.py", line 1548, in error
+  File "C:\Users\lauze\miniconda3\Lib\logging\__init__.py", line 1664, in _log
+  File "C:\Users\lauze\miniconda3\Lib\logging\__init__.py", line 1680, in handle
+  File "C:\Users\lauze\miniconda3\Lib\logging\__init__.py", line 1736, in callHandlers
+  File "C:\Users\lauze\miniconda3\Lib\logging\__init__.py", line 1026, in handle
+  File "C:\Users\lauze\miniconda3\Lib\logging\__init__.py", line 1158, in emit
+  File "C:\Users\lauze\miniconda3\Lib\logging\__init__.py", line 1075, in handleError
+  File "C:\Users\lauze\miniconda3\Lib\traceback.py", line 129, in print_exception
+  File "C:\Users\lauze\miniconda3\Lib\traceback.py", line 1044, in __init__
+  File "C:\Users\lauze\miniconda3\Lib\traceback.py", line 492, in _extract_from_extended_frame_gen
+  File "C:\Users\lauze\miniconda3\Lib\traceback.py", line 369, in line
+  File "C:\Users\lauze\miniconda3\Lib\traceback.py", line 350, in _set_lines
+  File "C:\Users\lauze\miniconda3\Lib\linecache.py", line 25, in getline
+  File "C:\Users\lauze\miniconda3\Lib\linecache.py", line 41, in getlines
+  File "C:\Users\lauze\miniconda3\Lib\linecache.py", line 91, in updatecache
+ImportError: sys.meta_path is None, Python is likely shutting down

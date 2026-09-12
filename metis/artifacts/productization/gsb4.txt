@@ -1,0 +1,16 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+E   PermissionError: [Errno 13] Permission denied: 'C:\\Users\\lauze\\AppData\\Local\\Temp\\pytest-of-lauze\\pytest-2130\\test_cookie_gated_download_aut0\\workspace\\raw\\fixture_auth\\secret.csv'
+C:\Users\lauze\miniconda3\Lib\pathlib\_local.py:537: PermissionError: [Errno 13] Permission denied: 'C:\\Users\\lauze\\AppData\\Local\\Temp\\pytest-of-lauze\\pytest-2130\\test_cookie_gated_download_aut0\\workspace\\raw\\fixture_auth\\secret.csv'
+=========================== short test summary info ===========================
+FAILED metis\backend\tests\test_p02_auth_resume_e2e.py::test_cookie_gated_download_auto_resume
+Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x0000020D48BA1B20>
+Traceback (most recent call last):
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 130, in __del__
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 107, in close
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 109, in close
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 833, in call_soon
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 556, in _check_closed
+RuntimeError: Event loop is closed
+Task was destroyed but it is pending!
+task: <Task pending name='Task-2' coro=<Connection.run() running at C:\Users\lauze\miniconda3\Lib\site-packages\playwright\_impl\_connection.py:314> wait_for=<Future pending cb=[Task.task_wakeup()]>>
