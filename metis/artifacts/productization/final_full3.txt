@@ -1,0 +1,209 @@
+.........................................................F.............. [ 69%]
+...............................                                          [100%]
+============================== warnings summary ===============================
+tests/test_p00_productization.py::test_create_browser_session_with_task_binding
+  C:\Users\lauze\miniconda3\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function _ProactorBasePipeTransport.__del__ at 0x0000020712853600>
+  
+  Traceback (most recent call last):
+    File "C:\Users\lauze\miniconda3\Lib\site-packages\sqlalchemy\sql\elements.py", line 1518, in __getattr__
+      return getattr(self.comparator, key)
+  AttributeError: 'Comparator' object has no attribute '_slots_dispatch'
+  
+  The above exception was the direct cause of the following exception:
+  
+  Traceback (most recent call last):
+    File "C:\Users\lauze\miniconda3\Lib\site-packages\sqlalchemy\orm\attributes.py", line 475, in __getattr__
+      return getattr(self.comparator, key)
+    File "C:\Users\lauze\miniconda3\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 1313, in __getattr__
+      return self._fallback_getattr(key)
+             ~~~~~~~~~~~~~~~~~~~~~~^^^^^
+    File "C:\Users\lauze\miniconda3\Lib\site-packages\sqlalchemy\orm\properties.py", line 474, in _fallback_getattr
+      return getattr(self.__clause_element__(), key)
+    File "C:\Users\lauze\miniconda3\Lib\site-packages\sqlalchemy\sql\elements.py", line 1520, in __getattr__
+      raise AttributeError(
+      ...<6 lines>...
+      ) from err
+  AttributeError: Neither 'AnnotatedColumn' object nor 'Comparator' object has an attribute '_slots_dispatch'
+  
+  During handling of the above exception, another exception occurred:
+  
+  Traceback (most recent call last):
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 116, in __del__
+      _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+                                 ^^^^^^^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 80, in __repr__
+      info.append(f'fd={self._sock.fileno()}')
+                        ~~~~~~~~~~~~~~~~~^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\windows_utils.py", line 102, in fileno
+      raise ValueError("I/O operation on closed pipe")
+  ValueError: I/O operation on closed pipe
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+tests/test_p00_productization.py::test_create_browser_session_with_task_binding
+  C:\Users\lauze\miniconda3\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x0000020712851B20>
+  
+  Traceback (most recent call last):
+    File "C:\Users\lauze\miniconda3\Lib\site-packages\sqlalchemy\sql\elements.py", line 1518, in __getattr__
+      return getattr(self.comparator, key)
+  AttributeError: 'Comparator' object has no attribute '_slots_dispatch'
+  
+  The above exception was the direct cause of the following exception:
+  
+  Traceback (most recent call last):
+    File "C:\Users\lauze\miniconda3\Lib\site-packages\sqlalchemy\orm\attributes.py", line 475, in __getattr__
+      return getattr(self.comparator, key)
+    File "C:\Users\lauze\miniconda3\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 1313, in __getattr__
+      return self._fallback_getattr(key)
+             ~~~~~~~~~~~~~~~~~~~~~~^^^^^
+    File "C:\Users\lauze\miniconda3\Lib\site-packages\sqlalchemy\orm\properties.py", line 474, in _fallback_getattr
+      return getattr(self.__clause_element__(), key)
+    File "C:\Users\lauze\miniconda3\Lib\site-packages\sqlalchemy\sql\elements.py", line 1520, in __getattr__
+      raise AttributeError(
+      ...<6 lines>...
+      ) from err
+  AttributeError: Neither 'AnnotatedColumn' object nor 'Comparator' object has an attribute '_slots_dispatch'
+  
+  During handling of the above exception, another exception occurred:
+  
+  Traceback (most recent call last):
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 129, in __del__
+      _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+                                 ^^^^^^^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 73, in __repr__
+      info.append(f'stdin={stdin.pipe}')
+                          ^^^^^^^^^^^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 80, in __repr__
+      info.append(f'fd={self._sock.fileno()}')
+                        ~~~~~~~~~~~~~~~~~^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\windows_utils.py", line 102, in fileno
+      raise ValueError("I/O operation on closed pipe")
+  ValueError: I/O operation on closed pipe
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+tests/test_p11_downloads.py::test_raw_immutable_guard
+  C:\Users\lauze\miniconda3\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function _ProactorBasePipeTransport.__del__ at 0x0000020712853600>
+  
+  Traceback (most recent call last):
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 116, in __del__
+      _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+                                 ^^^^^^^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 80, in __repr__
+      info.append(f'fd={self._sock.fileno()}')
+                        ~~~~~~~~~~~~~~~~~^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\windows_utils.py", line 102, in fileno
+      raise ValueError("I/O operation on closed pipe")
+  ValueError: I/O operation on closed pipe
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+tests/test_p11_downloads.py::test_raw_immutable_guard
+  C:\Users\lauze\miniconda3\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x0000020712851B20>
+  
+  Traceback (most recent call last):
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 129, in __del__
+      _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+                                 ^^^^^^^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 73, in __repr__
+      info.append(f'stdin={stdin.pipe}')
+                          ^^^^^^^^^^^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 80, in __repr__
+      info.append(f'fd={self._sock.fileno()}')
+                        ~~~~~~~~~~~~~~~~~^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\windows_utils.py", line 102, in fileno
+      raise ValueError("I/O operation on closed pipe")
+  ValueError: I/O operation on closed pipe
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+tests/test_p12_p14_data_plane.py::test_format_parsers_all_fixtures
+  <frozen importlib._bootstrap>:488: RuntimeWarning: numpy.ndarray size changed, may indicate binary incompatibility. Expected 16 from C header, got 96 from PyObject
+
+tests/test_p16_recovery_perf.py::test_profile_100mb_memory_bounded
+  C:\Users\lauze\miniconda3\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x0000020712851B20>
+  
+  Traceback (most recent call last):
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 130, in __del__
+      self.close()
+      ~~~~~~~~~~^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 107, in close
+      proto.pipe.close()
+      ~~~~~~~~~~~~~~~~^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 109, in close
+      self._loop.call_soon(self._call_connection_lost, None)
+      ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 833, in call_soon
+      self._check_closed()
+      ~~~~~~~~~~~~~~~~~~^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 556, in _check_closed
+      raise RuntimeError('Event loop is closed')
+  RuntimeError: Event loop is closed
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))C:\Users\lauze\miniconda3\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x0000020712851B20>
+
+Traceback (most recent call last):
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 130, in __del__
+    self.close()
+    ~~~~~~~~~~^^
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 107, in close
+    proto.pipe.close()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 109, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 833, in call_soon
+    self._check_closed()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 556, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+
+Enable tracemalloc to get traceback where the object was allocated.
+See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+  warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+{"ts": "2026-09-12T08:08:27.656766+00:00", "level": "ERROR", "logger": "asyncio", "message": "Task was destroyed but it is pending!\ntask: <Task pending name='Task-170' coro=<Connection.run() running at C:\\Users\\lauze\\miniconda3\\Lib\\site-packages\\playwright\\_impl\\_connection.py:314> wait_for=<Future pending cb=[Task.task_wakeup()]>>"}
+
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED metis\backend\tests\test_p08_browser_e2e.py::test_browser_download_capture
+Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x0000020712851B20>
+Traceback (most recent call last):
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 130, in __del__
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 107, in close
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 109, in close
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 833, in call_soon
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 556, in _check_closed
+RuntimeError: Event loop is closed
+--- Logging error ---
+--- Logging error ---
+Exception ignored in: <bound method BaseEventLoop.call_exception_handler of <ProactorEventLoop running=False closed=True debug=False>>
+Traceback (most recent call last):
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 1904, in call_exception_handler
+  File "C:\Users\lauze\miniconda3\Lib\logging\__init__.py", line 1548, in error
+  File "C:\Users\lauze\miniconda3\Lib\logging\__init__.py", line 1664, in _log
+  File "C:\Users\lauze\miniconda3\Lib\logging\__init__.py", line 1680, in handle
+  File "C:\Users\lauze\miniconda3\Lib\logging\__init__.py", line 1736, in callHandlers
+  File "C:\Users\lauze\miniconda3\Lib\logging\__init__.py", line 1026, in handle
+  File "C:\Users\lauze\miniconda3\Lib\logging\__init__.py", line 1158, in emit
+  File "C:\Users\lauze\miniconda3\Lib\logging\__init__.py", line 1075, in handleError
+  File "C:\Users\lauze\miniconda3\Lib\traceback.py", line 129, in print_exception
+  File "C:\Users\lauze\miniconda3\Lib\traceback.py", line 1044, in __init__
+  File "C:\Users\lauze\miniconda3\Lib\traceback.py", line 492, in _extract_from_extended_frame_gen
+  File "C:\Users\lauze\miniconda3\Lib\traceback.py", line 369, in line
+  File "C:\Users\lauze\miniconda3\Lib\traceback.py", line 350, in _set_lines
+  File "C:\Users\lauze\miniconda3\Lib\linecache.py", line 25, in getline
+  File "C:\Users\lauze\miniconda3\Lib\linecache.py", line 41, in getlines
+  File "C:\Users\lauze\miniconda3\Lib\linecache.py", line 91, in updatecache
+ImportError: sys.meta_path is None, Python is likely shutting down

@@ -1,0 +1,25 @@
+......F..                                                                [100%]
+================================== FAILURES ===================================
+__________________ test_storage_state_persist_restore_login ___________________
+metis\backend\tests\test_p03_session.py:94: in test_storage_state_persist_restore_login
+    sess2 = loop.run_until_complete(flow())
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+metis\backend\tests\test_p03_session.py:83: in flow
+    assert "metis_logged_in" in joined or any(c["name"] for c in state["cookies"])
+E   assert ('metis_logged_in' in '{"cookies": [], "origins": []}' or False)
+E    +  where False = any(<generator object test_storage_state_persist_restore_login.<locals>.flow.<locals>.<genexpr> at 0x000001494EEE5FF0>)
+=========================== short test summary info ===========================
+FAILED metis\backend\tests\test_p03_session.py::test_storage_state_persist_restore_login
+Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x000001496A9F1B20>
+Traceback (most recent call last):
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 130, in __del__
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 107, in close
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 109, in close
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 833, in call_soon
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 556, in _check_closed
+RuntimeError: Event loop is closed
+Task was destroyed but it is pending!
+task: <Task pending name='Task-14' coro=<Connection.run() running at C:\Users\lauze\miniconda3\Lib\site-packages\playwright\_impl\_connection.py:314> wait_for=<Future pending cb=[Task.task_wakeup()]>>

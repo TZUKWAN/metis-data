@@ -35,6 +35,12 @@ class BrowserStateRecord(BaseModel):
 # ---------------- P03-005: save real storage_state ----------------
 async def save_browser_state(session, provider_id: str, account_id: str | None = None, expires_hint: str | None = None) -> BrowserStateRecord:
     """Serialize the real Playwright context storage_state into the OS vault."""
+    # let client-side redirects/localStorage writes settle before snapshotting
+    try:
+        await session.page.wait_for_load_state("domcontentloaded")
+        await session.page.wait_for_timeout(300)
+    except Exception:  # noqa: BLE001
+        pass
     state = await session.context.storage_state()  # cookies + localStorage
     vault_key = f"{provider_id}.storage_state"
     get_secret_store().set_secret(vault_key, json.dumps(state))

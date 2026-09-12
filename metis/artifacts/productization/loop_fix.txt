@@ -1,0 +1,114 @@
+.........F..                                                             [100%]Task was destroyed but it is pending!
+task: <Task pending name='Task-23' coro=<Connection.run() running at C:\Users\lauze\miniconda3\Lib\site-packages\playwright\_impl\_connection.py:314> wait_for=<Future pending cb=[Task.task_wakeup()]>>
+C:\Users\lauze\miniconda3\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x0000023789E01B20>
+
+Traceback (most recent call last):
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 129, in __del__
+    _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+                               ^^^^^^^^
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 73, in __repr__
+    info.append(f'stdin={stdin.pipe}')
+                        ^^^^^^^^^^^^
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 80, in __repr__
+    info.append(f'fd={self._sock.fileno()}')
+                      ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\windows_utils.py", line 102, in fileno
+    raise ValueError("I/O operation on closed pipe")
+ValueError: I/O operation on closed pipe
+
+Enable tracemalloc to get traceback where the object was allocated.
+See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+  warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+C:\Users\lauze\miniconda3\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function _ProactorBasePipeTransport.__del__ at 0x0000023789E03600>
+
+Traceback (most recent call last):
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 116, in __del__
+    _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+                               ^^^^^^^^
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 80, in __repr__
+    info.append(f'fd={self._sock.fileno()}')
+                      ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\windows_utils.py", line 102, in fileno
+    raise ValueError("I/O operation on closed pipe")
+ValueError: I/O operation on closed pipe
+
+Enable tracemalloc to get traceback where the object was allocated.
+See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+  warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+============================== warnings summary ===============================
+tests/test_p02_browser.py::test_visible_cursor_and_click_feedback
+  C:\Users\lauze\miniconda3\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function _ProactorBasePipeTransport.__del__ at 0x0000023789E03600>
+  
+  Traceback (most recent call last):
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 116, in __del__
+      _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+                                 ^^^^^^^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 80, in __repr__
+      info.append(f'fd={self._sock.fileno()}')
+                        ~~~~~~~~~~~~~~~~~^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\windows_utils.py", line 102, in fileno
+      raise ValueError("I/O operation on closed pipe")
+  ValueError: I/O operation on closed pipe
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+tests/test_p02_browser.py::test_visible_cursor_and_click_feedback
+  C:\Users\lauze\miniconda3\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x0000023789E01B20>
+  
+  Traceback (most recent call last):
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 130, in __del__
+      self.close()
+      ~~~~~~~~~~^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 107, in close
+      proto.pipe.close()
+      ~~~~~~~~~~~~~~~~^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 109, in close
+      self._loop.call_soon(self._call_connection_lost, None)
+      ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 833, in call_soon
+      self._check_closed()
+      ~~~~~~~~~~~~~~~~~~^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 556, in _check_closed
+      raise RuntimeError('Event loop is closed')
+  RuntimeError: Event loop is closed
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+tests/test_p02_browser.py::test_visible_cursor_and_click_feedback
+  C:\Users\lauze\miniconda3\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x0000023789E01B20>
+  
+  Traceback (most recent call last):
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 129, in __del__
+      _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+                                 ^^^^^^^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 73, in __repr__
+      info.append(f'stdin={stdin.pipe}')
+                          ^^^^^^^^^^^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 80, in __repr__
+      info.append(f'fd={self._sock.fileno()}')
+                        ~~~~~~~~~~~~~~~~~^^
+    File "C:\Users\lauze\miniconda3\Lib\asyncio\windows_utils.py", line 102, in fileno
+      raise ValueError("I/O operation on closed pipe")
+  ValueError: I/O operation on closed pipe
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED metis\backend\tests\test_p03_session.py::test_storage_state_persist_restore_login
+Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x0000023789E01B20>
+Traceback (most recent call last):
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 129, in __del__
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 73, in __repr__
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 80, in __repr__
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\windows_utils.py", line 102, in fileno
+ValueError: I/O operation on closed pipe
+Task was destroyed but it is pending!
+task: <Task pending name='Task-40' coro=<Connection.run() running at C:\Users\lauze\miniconda3\Lib\site-packages\playwright\_impl\_connection.py:314> wait_for=<Future pending cb=[Task.task_wakeup()]>>

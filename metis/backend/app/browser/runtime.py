@@ -613,14 +613,30 @@ class BrowserManager:
                 connected = False
             if connected:
                 return self._browser
-            # stale browser from a dead/different loop: drop it and relaunch
+            # stale browser from a dead/different loop: detach WITHOUT awaiting on
+            # this loop (cross-loop await on a playwright connection deadlocks) and
+            # close it from a throwaway thread with its own loop.
             if self._browser is not None:
-                try:
-                    await self._browser.close()
-                except Exception:  # noqa: BLE001
-                    pass
+                stale_browser, stale_pw = self._browser, self._pw
                 self._browser = None
+                self._pw = None
                 self._sessions.clear()
+                import threading
+
+                def _close_stale() -> None:
+                    async def _c() -> None:
+                        for closer in (stale_browser.close, stale_pw.stop):
+                            try:
+                                await closer()
+                            except Exception:  # noqa: BLE001
+                                pass
+
+                    try:
+                        asyncio.run(_c())
+                    except Exception:  # noqa: BLE001
+                        pass
+
+                threading.Thread(target=_close_stale, daemon=True).start()
             from playwright.async_api import async_playwright
 
             cfg = get_settings()

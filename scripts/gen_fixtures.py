@@ -70,17 +70,18 @@ setTimeout(moveButton, 2500);
     # A12 login fixture
     w("login.html", f"""<html><head><title>Fixture Login</title>{style}</head><body>
 <h2>Sign in</h2>
-<form onsubmit="return doLogin()">
+<form id="login-form" onsubmit="return doLogin()">
 <input id="email" placeholder="email"><input id="password" type="password" placeholder="password">
 <button id="login-btn" type="submit">Sign in</button><p id="err" class="msg"></p></form>
 <script>
 function doLogin(){{
   const e=document.getElementById('email').value, p=document.getElementById('password').value;
-  if(e==='researcher@example.edu' && p==='Corr3ct-Passw0rd!'){{ location.href='login_success.html'; return false; }}
+  if(e==='researcher@example.edu' && p==='Corr3ct-Passw0rd!'){{ localStorage.setItem('metis_logged_in','1'); location.href='login_success.html'; return false; }}
   document.getElementById('err').textContent='Invalid credentials'; return false;
 }}
 </script></body></html>""")
-    w("login_success.html", f"<html><head><title>My Account</title>{style}</head><body><h1>Welcome back, researcher</h1><a href='downloads.html'>Downloads</a></body></html>")
+    w("login_success.html", f"""<html><head><title>My Account</title>{style}</head><body onload="if(!localStorage.getItem('metis_logged_in')){{location.href='login.html'}}else{{document.getElementById('welcome-user').textContent='researcher@example.edu'}}">
+<h1>Welcome back, <span id="welcome-user"></span></h1><a href='downloads.html'>Downloads</a></body></html>""")
 
     # A13 registration fixture
     w("register.html", f"""<html><head><title>Fixture Register</title>{style}</head><body>
@@ -219,7 +220,8 @@ def gen_data() -> None:
 
     # SQLite
     con = sqlite3.connect(DATA / "sample.db")
-    con.execute("CREATE TABLE IF NOT EXISTS observations (country TEXT, year INT, value REAL)")
+    con.execute("DROP TABLE IF EXISTS observations")
+    con.execute("CREATE TABLE observations (country TEXT, year INT, value REAL)")
     con.executemany("INSERT INTO observations VALUES (?,?,?)", [("USA", 2020, 1.1), ("CHN", 2020, 6.5), ("DEU", 2021, 3.2)])
     con.commit()
     con.close()
@@ -239,7 +241,7 @@ def gen_data() -> None:
         z.writestr("../evil.txt", "pwned")
         z.writestr("ok.txt", "fine")
     with zipfile.ZipFile(DATA / "bomb.zip", "w", compression=zipfile.ZIP_DEFLATED) as z:
-        z.writestr("bomb.csv", "0\n" * 6_000_000)  # high compression ratio ~ 12MB text
+        z.writestr("bomb.csv", b"0\n" * (512 * 1024 * 1024 // 2))  # 512MB uncompressed -> bomb guard
     with zipfile.ZipFile(DATA / "many_files.zip", "w") as z:
         for i in range(3000):
             z.writestr(f"f{i}.txt", "x")
