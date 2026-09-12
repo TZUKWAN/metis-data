@@ -1,0 +1,9 @@
+F..                                                                      [100%]
+================================== FAILURES ===================================
+______________________ test_profile_100mb_memory_bounded ______________________
+metis\backend\tests\test_p16_recovery_perf.py:24: in test_profile_100mb_memory_bounded
+    class PMC(ctypes.Structure):
+              ^^^^^^
+E   NameError: name 'ctypes' is not defined. Did you forget to import 'ctypes'?
+=========================== short test summary info ===========================
+FAILED metis\backend\tests\test_p16_recovery_perf.py::test_profile_100mb_memory_bounded

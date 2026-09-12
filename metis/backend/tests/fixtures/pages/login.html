@@ -1,12 +1,12 @@
 <html><head><title>Fixture Login</title><style>body{font-family:sans-serif;margin:40px} .btn{padding:12px 24px;font-size:18px} input{padding:8px;margin:6px 0;display:block} .msg{color:red}</style></head><body>
 <h2>Sign in</h2>
-<form id='login-form' onsubmit="return doLogin()">
+<form onsubmit="return doLogin()">
 <input id="email" placeholder="email"><input id="password" type="password" placeholder="password">
 <button id="login-btn" type="submit">Sign in</button><p id="err" class="msg"></p></form>
 <script>
 function doLogin(){
   const e=document.getElementById('email').value, p=document.getElementById('password').value;
-  if(e==='researcher@example.edu' && p==='Corr3ct-Passw0rd!'){ localStorage.setItem('metis_logged_in','1'); location.href='login_success.html'; return false; }
+  if(e==='researcher@example.edu' && p==='Corr3ct-Passw0rd!'){ location.href='login_success.html'; return false; }
   document.getElementById('err').textContent='Invalid credentials'; return false;
 }
 </script></body></html>
