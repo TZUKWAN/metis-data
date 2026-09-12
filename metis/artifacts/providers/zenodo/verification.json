@@ -1,0 +1,20 @@
+{
+  "provider_id": "zenodo",
+  "capabilities": {
+    "search": "PASS",
+    "metadata": "PASS",
+    "access": "PASS",
+    "download": "PASS"
+  },
+  "level": 1,
+  "verified_at": "2026-09-12T05:10:37.693148+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {},
+  "notes": {
+    "search": "candidates=5 first_title='Government Expenditure and Unemployment Rate in Nigeria: An Empirical Analysis'",
+    "metadata": "ref='6985271' title='Government Expenditure and Unemployment Rate in Nigeria: An Empirical Analysis'",
+    "access": "keys=['access_mode', 'license', 'notes', 'requires_login', 'restricted']",
+    "download": "files=['070722068 Nwamuo.pdf'] first_size=355576"
+  }
+}

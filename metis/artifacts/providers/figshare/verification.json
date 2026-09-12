@@ -1,0 +1,20 @@
+{
+  "provider_id": "figshare",
+  "capabilities": {
+    "search": "PASS",
+    "metadata": "PASS",
+    "access": "PASS",
+    "download": "PASS"
+  },
+  "level": 1,
+  "verified_at": "2026-09-12T05:12:14.439504+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {},
+  "notes": {
+    "search": "candidates=5 first_title='Monthly thunderstorm frequency and meteorological data for Sylhet, Sreemangal, a'",
+    "metadata": "ref='33476035' title='Monthly thunderstorm frequency and meteorological data for Sylhet, Sreemangal, a'",
+    "access": "keys=['access_mode', 'license', 'notes', 'requires_login', 'restricted']",
+    "download": "files=['S1_Dataset.xlsx'] first_size=93625"
+  }
+}

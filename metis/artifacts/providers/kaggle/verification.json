@@ -1,0 +1,21 @@
+{
+  "provider_id": "kaggle",
+  "capabilities": {
+    "search": "PASS",
+    "metadata": "PASS",
+    "access": "PASS",
+    "download": "BLOCKED"
+  },
+  "level": 1,
+  "verified_at": "2026-09-12T05:12:43.062070+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {
+    "download": "PermissionError: Kaggle credentials not configured in Vault; bind an existing account first (download requires login) | expected: requires Kaggle API credentials (account bind / Vault)"
+  },
+  "notes": {
+    "search": "candidates=20 first_title='Unemployment dataset'",
+    "metadata": "ref='pantanjali/unemployment-dataset' title='Unemployment dataset'",
+    "access": "keys=['access_mode', 'license', 'notes', 'requires_login', 'restricted']"
+  }
+}

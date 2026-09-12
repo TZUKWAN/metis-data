@@ -1,0 +1,20 @@
+{
+  "provider_id": "eurostat",
+  "capabilities": {
+    "search": "FAIL",
+    "metadata": "FAIL",
+    "access": "FAIL",
+    "download": "FAIL"
+  },
+  "level": 0,
+  "verified_at": "2026-09-12T05:15:00.086541+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {},
+  "notes": {
+    "search": "asyncio.wait_for timed out after 60s (TimeoutError)",
+    "metadata": "skipped: search failed",
+    "access": "skipped: search failed",
+    "download": "skipped: search failed"
+  }
+}

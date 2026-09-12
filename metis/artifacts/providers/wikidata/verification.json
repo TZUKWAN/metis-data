@@ -1,0 +1,21 @@
+{
+  "provider_id": "wikidata",
+  "capabilities": {
+    "search": "PASS",
+    "metadata": "PASS",
+    "access": "PASS",
+    "download": "BLOCKED"
+  },
+  "level": 1,
+  "verified_at": "2026-09-12T05:12:49.849320+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {
+    "download": "RuntimeError: wikidata acquire requires a SPARQL query in access_context['sparql'] | expected: no direct file download (SPARQL/linked-data API only)"
+  },
+  "notes": {
+    "search": "candidates=1 first_title='Wikidata SPARQL query: country'",
+    "metadata": "ref='country' title='Wikidata SPARQL query: country'",
+    "access": "keys=['access_mode', 'license', 'notes', 'requires_login', 'restricted']"
+  }
+}

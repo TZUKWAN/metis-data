@@ -1,0 +1,20 @@
+{
+  "provider_id": "uci_ml",
+  "capabilities": {
+    "search": "PASS",
+    "metadata": "FAIL",
+    "access": "PASS",
+    "download": "FAIL"
+  },
+  "level": 1,
+  "verified_at": "2026-09-12T05:12:45.754612+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {},
+  "notes": {
+    "search": "candidates=2 first_title='Wine'",
+    "metadata": "RuntimeError: uci dataset HTTP 404",
+    "access": "keys=['access_mode', 'license', 'notes', 'requires_login', 'restricted']",
+    "download": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+  }
+}

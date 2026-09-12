@@ -18,15 +18,16 @@ jobs:
 
   unit-integration:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install deps
-        run: |
-          pip install fastapi uvicorn sqlalchemy pandas pyarrow httpx pydantic openpyxl pyreadstat netCDF4 pyshp pycountry playwright pytest
-          pip install shapefile || true
+        run: pip install fastapi uvicorn sqlalchemy pandas pyarrow httpx pydantic openpyxl pyreadstat netCDF4 pyshp pycountry playwright pytest pyyaml
+      - name: Generate test fixtures (large files, ~2min)
+        run: python scripts/gen_fixtures.py
       - name: Install chromium
         run: |
           python -m playwright install chromium || true

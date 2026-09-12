@@ -1,0 +1,20 @@
+{
+  "provider_id": "ilostat",
+  "capabilities": {
+    "search": "PASS",
+    "metadata": "PASS",
+    "access": "PASS",
+    "download": "FAIL"
+  },
+  "level": 1,
+  "verified_at": "2026-09-12T05:06:03.995854+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {},
+  "notes": {
+    "search": "candidates=5 first_title='Unemployment by sex and marital status'",
+    "metadata": "ref='DF_UNE_TUNE_SEX_MTS_NB' title='Unemployment by sex and marital status'",
+    "access": "keys=['access_mode', 'license', 'notes', 'requires_login', 'restricted']",
+    "download": "MetisError: payload 37695160 bytes exceeds small-payload cap 33554432; use DownloadManager streaming"
+  }
+}

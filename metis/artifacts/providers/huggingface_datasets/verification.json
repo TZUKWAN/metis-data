@@ -1,0 +1,20 @@
+{
+  "provider_id": "huggingface_datasets",
+  "capabilities": {
+    "search": "PASS",
+    "metadata": "PASS",
+    "access": "PASS",
+    "download": "PASS"
+  },
+  "level": 1,
+  "verified_at": "2026-09-12T05:12:26.575110+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {},
+  "notes": {
+    "search": "candidates=5 first_title='ai-forever/kinopoisk-sentiment-classification'",
+    "metadata": "ref='ai-forever/kinopoisk-sentiment-classification' title='ai-forever/kinopoisk-sentiment-classification'",
+    "access": "keys=['access_mode', 'license', 'notes', 'requires_login', 'restricted']",
+    "download": "files=['default_test_0000.parquet', 'default_train_0000.parquet', 'default_validation_0000.parquet'] first_size=2759187"
+  }
+}

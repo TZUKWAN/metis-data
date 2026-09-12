@@ -46,6 +46,30 @@ PROVIDER_RECIPES: dict[str, dict] = {
 }
 
 
+# ---- browser search recipes (P15): platforms without an HTTP API ----
+# DATA only; execution lives in app/search/browser_worker.py (BrowserSearchWorker).
+# URLs may be relative — the worker resolves them against its `base_url` argument.
+# Schema (all selectors are CSS):
+#   home_url    search page to open (required unless `search_url` template given)
+#   search_url  optional direct-result template with {query} placeholder (skips typing)
+#   search_box  query input selector
+#   submit      optional submit button selector (falls back to pressing Enter)
+#   result_card selector matching result links inside one result card
+#   description optional per-card description selector (reserved for richer cards)
+#   next_page   optional next-page selector (P15-003 pagination)
+#   max_pages   pagination cap (default 1)
+BROWSER_SEARCH_RECIPES: dict[str, dict] = {
+    # ---- CI fixture (real search flow against local pages) ----
+    "fixture_catalog": {
+        "home_url": "/pages/search.html",
+        "search_box": "#q",
+        "submit": "#search-btn",
+        "result_card": "#results a",
+        "max_pages": 1,
+    },
+}
+
+
 def resolve_url(base: str, path_or_url: str) -> str:
     if path_or_url.startswith("http"):
         return path_or_url

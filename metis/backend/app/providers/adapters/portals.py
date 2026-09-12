@@ -177,8 +177,8 @@ class UsCensusAdapter(ProviderAdapter):
         base = f"https://api.census.gov/data/{dataset_ref}" if "/" not in dataset_ref else dataset_ref
         async with httpx.AsyncClient(timeout=180, follow_redirects=True) as client:
             r = await client.get(base if base.endswith(".json") else base + "/geo.json")
-        if r.status != 200:
-            raise RuntimeError(f"census download HTTP {r.status}")
+        if r.status_code != 200:
+            raise RuntimeError(f"census download HTTP {r.status_code}")
         p = Path(dest_dir) / f"us_census_{dataset_ref.replace('/', '_')}.json"
         write_small_payload(p, r.content)
         return [str(p)]

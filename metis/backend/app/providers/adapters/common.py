@@ -138,3 +138,16 @@ def write_small_payload(path, content: bytes, *, max_bytes: int = SMALL_PAYLOAD_
 
         raise MetisError("DOWNLOAD_TOO_LARGE", f"payload {len(content)} bytes exceeds small-payload cap {max_bytes}; use DownloadManager streaming")
     Path(path).write_bytes(content)
+
+
+async def download_to_file(url: str, dest, *, timeout: float = 300.0, max_bytes: int | None = None) -> dict:
+    """P06-005: stream any adapter payload to disk (memory-bounded) instead of
+    whole-body reads. Use for dataset downloads that may exceed SMALL_PAYLOAD_CAP."""
+    import httpx
+
+    from app.providers.download_helper import AcquisitionDescriptor, stream_to_file
+
+    dest = Path(dest)
+    desc = AcquisitionDescriptor(url=str(url), filename=dest.name)
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+        return await stream_to_file(client, desc, dest, max_bytes=max_bytes)

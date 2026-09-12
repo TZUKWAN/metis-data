@@ -1,0 +1,21 @@
+{
+  "provider_id": "nbs_china",
+  "capabilities": {
+    "search": "FAIL",
+    "metadata": "BLOCKED",
+    "access": "BLOCKED",
+    "download": "BLOCKED"
+  },
+  "level": 0,
+  "verified_at": "2026-09-12T05:17:00.106123+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {
+    "metadata": "not exercised: search itself blocked by platform (RuntimeError: nbs tree HTTP 403); expected: data.stats.gov.cn EasyQuery expected 403 / anti-bot for anonymous HTTP",
+    "access": "not exercised: search itself blocked by platform (RuntimeError: nbs tree HTTP 403); expected: data.stats.gov.cn EasyQuery expected 403 / anti-bot for anonymous HTTP",
+    "download": "not exercised: search itself blocked by platform (RuntimeError: nbs tree HTTP 403); expected: data.stats.gov.cn EasyQuery expected 403 / anti-bot for anonymous HTTP"
+  },
+  "notes": {
+    "search": "RuntimeError: nbs tree HTTP 403"
+  }
+}

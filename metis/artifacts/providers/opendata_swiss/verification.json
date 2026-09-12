@@ -1,0 +1,20 @@
+{
+  "provider_id": "opendata_swiss",
+  "capabilities": {
+    "search": "PASS",
+    "metadata": "PASS",
+    "access": "PASS",
+    "download": "PASS"
+  },
+  "level": 1,
+  "verified_at": "2026-09-12T05:08:23.867401+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {},
+  "notes": {
+    "search": "candidates=5 first_title='Arbeitslose [Anz.]'",
+    "metadata": "ref='f2b15a2d-8d3d-413d-8d0d-e21553e997e4' title='Arbeitslose [Anz.]'",
+    "access": "keys=['access_mode', 'license', 'notes', 'requires_login', 'restricted']",
+    "download": "files=['KANTON_ZUERICH_107.csv'] first_size=831869"
+  }
+}

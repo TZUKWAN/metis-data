@@ -1,0 +1,74 @@
+{
+  "counts": {
+    "search": {
+      "PASS": 19,
+      "FAIL": 3
+    },
+    "metadata": {
+      "PASS": 17,
+      "FAIL": 4,
+      "BLOCKED": 1
+    },
+    "access": {
+      "PASS": 19,
+      "FAIL": 2,
+      "BLOCKED": 1
+    },
+    "download": {
+      "PASS": 8,
+      "FAIL": 9,
+      "BLOCKED": 5
+    }
+  },
+  "download_pass": [
+    "world_bank",
+    "un_comtrade",
+    "opendata_swiss",
+    "data_gouv_fr",
+    "zenodo",
+    "harvard_dataverse",
+    "figshare",
+    "huggingface_datasets"
+  ],
+  "blocked": [
+    {
+      "provider_id": "us_census",
+      "capability": "download",
+      "reason": "AttributeError: 'Response' object has no attribute 'status' | expected: no direct file download implemented (API query endpoints only)"
+    },
+    {
+      "provider_id": "nasa_earthdata",
+      "capability": "download",
+      "reason": "MetisError: acquire not implemented for nasa_earthdata | expected: granule download requires Earthdata login"
+    },
+    {
+      "provider_id": "kaggle",
+      "capability": "download",
+      "reason": "PermissionError: Kaggle credentials not configured in Vault; bind an existing account first (download requires login) | expected: requires Kaggle API credentials (account bind / Vault)"
+    },
+    {
+      "provider_id": "wikidata",
+      "capability": "download",
+      "reason": "RuntimeError: wikidata acquire requires a SPARQL query in access_context['sparql'] | expected: no direct file download (SPARQL/linked-data API only)"
+    },
+    {
+      "provider_id": "nbs_china",
+      "capability": "metadata",
+      "reason": "not exercised: search itself blocked by platform (RuntimeError: nbs tree HTTP 403); expected: data.stats.gov.cn EasyQuery expected 403 / anti-bot for anonymous HTTP"
+    },
+    {
+      "provider_id": "nbs_china",
+      "capability": "access",
+      "reason": "not exercised: search itself blocked by platform (RuntimeError: nbs tree HTTP 403); expected: data.stats.gov.cn EasyQuery expected 403 / anti-bot for anonymous HTTP"
+    },
+    {
+      "provider_id": "nbs_china",
+      "capability": "download",
+      "reason": "not exercised: search itself blocked by platform (RuntimeError: nbs tree HTTP 403); expected: data.stats.gov.cn EasyQuery expected 403 / anti-bot for anonymous HTTP"
+    }
+  ],
+  "verified_at": "2026-09-12T05:17:00.155374+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "total_providers": 22
+}

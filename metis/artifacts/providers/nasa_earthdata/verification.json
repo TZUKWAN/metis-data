@@ -1,0 +1,21 @@
+{
+  "provider_id": "nasa_earthdata",
+  "capabilities": {
+    "search": "PASS",
+    "metadata": "PASS",
+    "access": "PASS",
+    "download": "BLOCKED"
+  },
+  "level": 1,
+  "verified_at": "2026-09-12T05:07:52.564912+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {
+    "download": "MetisError: acquire not implemented for nasa_earthdata | expected: granule download requires Earthdata login"
+  },
+  "notes": {
+    "search": "candidates=5 first_title='GHRSST Level 4 OSTIA Global Historical Reprocessed Foundation Sea Surface Temper'",
+    "metadata": "ref='C2586786218-POCLOUD' title='GHRSST Level 4 OSTIA Global Historical Reprocessed Foundation Sea Surface Temper'",
+    "access": "keys=['access_mode', 'license', 'notes', 'requires_login', 'restricted']"
+  }
+}

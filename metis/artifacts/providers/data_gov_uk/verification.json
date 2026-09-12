@@ -1,0 +1,20 @@
+{
+  "provider_id": "data_gov_uk",
+  "capabilities": {
+    "search": "PASS",
+    "metadata": "PASS",
+    "access": "PASS",
+    "download": "FAIL"
+  },
+  "level": 1,
+  "verified_at": "2026-09-12T05:07:55.105996+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {},
+  "notes": {
+    "search": "candidates=5 first_title='Unemployment Rate, Region'",
+    "metadata": "ref='448923c0-6224-492a-b4d8-db239cdc7724' title='Unemployment Rate, Region'",
+    "access": "keys=['access_mode', 'license', 'notes', 'requires_login', 'restricted']",
+    "download": "RuntimeError: data_gov_uk: no downloadable resource"
+  }
+}

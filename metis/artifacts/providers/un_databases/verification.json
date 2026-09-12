@@ -1,0 +1,20 @@
+{
+  "provider_id": "un_databases",
+  "capabilities": {
+    "search": "PASS",
+    "metadata": "PASS",
+    "access": "PASS",
+    "download": "FAIL"
+  },
+  "level": 1,
+  "verified_at": "2026-09-12T05:06:41.470956+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {},
+  "notes": {
+    "search": "candidates=5 first_title='Proportion of population below international poverty line (%)'",
+    "metadata": "ref='SI_POV_DAY1' title='Proportion of population below international poverty line (%)'",
+    "access": "keys=['access_mode', 'license', 'notes', 'requires_login', 'restricted']",
+    "download": "RuntimeError: unsdg no data rows"
+  }
+}

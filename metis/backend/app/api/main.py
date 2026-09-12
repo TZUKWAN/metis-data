@@ -734,6 +734,208 @@ async def health():
     return {"status": "ok", "time": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()}
 
 
+# ---------------- projects / tasks (P24-001) ----------------
+class ProjectIn(BaseModel):
+    title: str
+
+
+class TaskLinkIn(BaseModel):
+    kind: str  # requirement|search_run|download_job|access_job|build
+    ref_id: str = ""
+    status: str = "OPEN"
+
+
+class TaskStatusIn(BaseModel):
+    status: str
+
+
+@app.post("/api/projects")
+async def create_project(body: ProjectIn):
+    from app.domain.schemas import new_id
+
+    pid = new_id("proj")
+    REPO.upsert_project({"project_id": pid, "title": body.title})
+    return REPO.get_project(pid)
+
+
+@app.get("/api/projects")
+async def list_projects():
+    return REPO.list_projects()
+
+
+@app.get("/api/projects/{pid}")
+async def get_project_detail(pid: str):
+    p = REPO.get_project(pid)
+    if not p:
+        raise HTTPException(404, "project not found")
+    return p
+
+
+@app.post("/api/projects/{pid}/tasks")
+async def add_project_task(pid: str, body: TaskLinkIn):
+    if not REPO.get_project(pid):
+        raise HTTPException(404, "project not found")
+    return REPO.add_task(pid, body.kind, body.ref_id, body.status)
+
+
+@app.patch("/api/tasks/{tid}")
+async def patch_task(tid: str, body: TaskStatusIn):
+    t = REPO.set_task_status(tid, body.status)
+    if not t:
+        raise HTTPException(404, "task not found")
+    return t
+
+
+# ---------------- agent chat (P25: deterministic core, answers only from real DB state) ----------------
+class AgentChatIn(BaseModel):
+    question: str
+    task_id: str | None = None
+    project_id: str | None = None
+    action: dict | None = None  # proposed action; gated by requires_confirmation (P25-003), never executed here
+
+
+CONFIRMABLE_KINDS = {"register_account", "delete_account", "allow_mm_join", "missing_policy_not_none"}
+
+
+def requires_confirmation(action: dict) -> bool:
+    """P25-003: destructive / policy-changing actions always need explicit user confirmation."""
+    if not action:
+        return False
+    return action.get("kind") in CONFIRMABLE_KINDS
+
+
+def _chat_progress(project_id: str | None = None) -> dict:
+    """Summarize REAL pipeline state from the DB (ids quoted verbatim, nothing fabricated)."""
+    evidence: list[str] = []
+    parts: list[str] = []
+
+    reqs = REPO.list_requirements()
+    if reqs:
+        req = reqs[0]
+        rid = str(req.get("requirement_id", "?"))
+        evidence.append(rid)
+        tr = req.get("time_range")
+        tr_txt = f"{tr[0]}—{tr[1]}" if isinstance(tr, (list, tuple)) and len(tr) == 2 else "未识别"
+        assumptions = req.get("assumptions") or []
+        unit = req.get("unit_of_analysis") or "未识别"
+        parts.append(f"最近需求 {rid}：研究单位 {unit}，时间范围 {tr_txt}，假设 {len(assumptions)} 条")
+
+    runs = REPO.list_search_runs()
+    if runs:
+        run = runs[0]
+        tasks = REPO.list_provider_tasks(run["run_id"])
+        done = sum(1 for t in tasks if t["status"] == "done")
+        running = sum(1 for t in tasks if t["status"] in ("queued", "running"))
+        results = sum(int(t.get("result_count") or 0) for t in tasks)
+        evidence.append(run["run_id"])
+        parts.append(f"最近搜索 {run['run_id']} 状态 {run['status']}：provider 任务 {done}/{len(tasks)} 完成、{running} 进行中，共 {results} 条结果")
+
+    jobs = REPO.list_download_jobs()
+    if jobs:
+        dist: dict[str, int] = {}
+        for j in jobs:
+            st = str(j.get("status", "?"))
+            dist[st] = dist.get(st, 0) + 1
+        for j in jobs[:5]:
+            if j.get("download_job_id"):
+                evidence.append(str(j["download_job_id"]))
+        dist_txt = "、".join(f"{k} {v}" for k, v in sorted(dist.items()))
+        parts.append(f"下载任务 {len(jobs)} 个（{dist_txt}）")
+
+    builds = REPO.list_builds()
+    if builds:
+        b = builds[0]
+        bid = str(b.get("build_id", "?"))
+        evidence.append(bid)
+        parts.append(f"最近 Build {bid} 状态 {b.get('status', '?')}")
+
+    if project_id:
+        tasks = REPO.list_tasks(project_id)
+        for t in tasks:
+            evidence.append(t["task_id"])
+        if tasks:
+            detail = "、".join(f"{t['kind']}:{t['ref_id'] or t['task_id']}({t['status']})" for t in tasks)
+            parts.append(f"项目 {project_id} 关联任务 {len(tasks)} 个：{detail}")
+
+    answer = "当前进度（真实数据库状态）：" + "；".join(parts) if parts else "数据库中暂无需求 / 搜索 / 下载 / Build 记录。"
+    return {"answer": answer, "evidence": evidence, "needs_confirmation": False}
+
+
+def _chat_recommendation(question: str) -> dict:
+    """Explain a recommendation from the most recent run that has candidates (title substring match)."""
+    needle = question.replace("为什么推荐", "").replace("推荐理由", "").strip().lower().translate(str.maketrans("", "", "？?。.！!，,；;"))
+    match = None
+    fallback: list[dict] = []
+    for run in REPO.list_search_runs():
+        cands = REPO.list_candidates(run["run_id"])
+        if not fallback:
+            fallback = cands
+        if not needle:
+            continue
+        for c in cands:
+            if needle in str(c.get("title", "")).lower():
+                match = (run, c)
+                break
+        if match:
+            break
+    if match:
+        run, c = match
+        rec = c.get("recommendation") or {}
+        rec_txt = "、".join(f"{k} {float(v) * 100:.0f}" for k, v in rec.items() if isinstance(v, (int, float)) and v) or "无分项评分"
+        reasons = [str(x) for x in (c.get("reasons") or [])]
+        limitations = [str(x) for x in (c.get("limitations") or [])]
+        unknowns = [str(x) for x in (c.get("unknowns") or [])]
+        answer = (
+            f"推荐《{c.get('title', '?')}》（{c.get('provider_id', '?')}，候选 {c.get('candidate_id', '?')}，来自搜索 {run['run_id']}）："
+            f"推荐分项 {rec_txt}；理由：{'；'.join(reasons) or '无'}；限制：{'；'.join(limitations) or '无'}；未知：{'；'.join(unknowns) or '无'}。"
+        )
+        return {"answer": answer, "evidence": [str(e) for e in [c.get("candidate_id", ""), run["run_id"], *reasons] if e], "needs_confirmation": False}
+    names = [str(c.get("title", "")) for c in fallback][:5]
+    answer = "未找到与问题匹配的候选数据集。" + (f"当前可用候选：{'、'.join(names)}" if names else "数据库中还没有候选数据集。")
+    return {"answer": answer, "evidence": [], "needs_confirmation": False}
+
+
+def _chat_build_explain() -> dict:
+    """Explain the most recent build's synthesis plan: keys / missing_policy / aggregations / operations."""
+    builds = REPO.list_builds()
+    if not builds:
+        return {"answer": "数据库中还没有 Build，无法解释合成方案。", "evidence": [], "needs_confirmation": False}
+    b = builds[0]
+    bid = str(b.get("build_id", "?"))
+    ops = REPO.list_build_operations(bid)
+    keys = [str(k) for k in (b.get("keys") or [])]
+    mp = str(b.get("missing_policy", "none"))
+    aggs = b.get("aggregations") or []
+    agg_txt = "、".join(f"{a.get('field', '?')}→{a.get('method', '?')}" for a in aggs) if aggs else "无"
+    op_txt = " → ".join(str(o["operation_type"]) for o in ops) if ops else "尚无操作记录"
+    answer = (
+        f"Build {bid}（状态 {b.get('status', '?')}）的合成方案：键 {('/'.join(keys)) or '未设置'}；"
+        f"缺失策略 missing_policy={mp}（none 表示含缺失的键组合不插补、不静默填充，缺失将显式保留）；"
+        f"聚合：{agg_txt}；m:m 连接默认{'允许' if b.get('allow_mm_join') else '阻止'}；"
+        f"操作序列：{op_txt}。"
+    )
+    return {"answer": answer, "evidence": [bid] + [str(o["operation_id"]) for o in ops[:5]], "needs_confirmation": False}
+
+
+@app.post("/api/agent/chat")
+async def agent_chat(body: AgentChatIn):
+    """P25-003: a proposed confirmable action is NEVER executed — it is echoed back for user confirmation."""
+    if body.action and requires_confirmation(body.action):
+        kind = str(body.action.get("kind", ""))
+        return {
+            "answer": f"操作 {kind} 属于需确认动作（注册/删除账号、放宽 m:m 连接、非 none 缺失策略），需您确认后才会执行。",
+            "evidence": [kind],
+            "needs_confirmation": True,
+            "confirm_action": body.action,
+        }
+    q = body.question or ""
+    if "为什么推荐" in q or "推荐理由" in q:
+        return _chat_recommendation(q)
+    if "join" in q.lower() or "聚合" in q or "缺失" in q or "怎么合成" in q:
+        return _chat_build_explain()
+    return _chat_progress(body.project_id)  # progress / status questions + deterministic fallback
+
+
 # ---------------- websocket event bus ----------------
 CLIENTS: set[WebSocket] = set()
 

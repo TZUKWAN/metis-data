@@ -1,0 +1,21 @@
+{
+  "provider_id": "us_census",
+  "capabilities": {
+    "search": "PASS",
+    "metadata": "PASS",
+    "access": "PASS",
+    "download": "BLOCKED"
+  },
+  "level": 1,
+  "verified_at": "2026-09-12T05:06:50.455025+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {
+    "download": "AttributeError: 'Response' object has no attribute 'status' | expected: no direct file download implemented (API query endpoints only)"
+  },
+  "notes": {
+    "search": "candidates=5 first_title='1990 Population Estimates - 1990-2000 Intercensal Estimates: County Estimates by'",
+    "metadata": "ref='id' title='1999 Nonemployer Statistics: Non Employer Statistics'",
+    "access": "keys=['access_mode', 'license', 'notes', 'requires_login', 'restricted']"
+  }
+}

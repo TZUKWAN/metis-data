@@ -369,3 +369,35 @@ $("btn-matrix").onclick = async () => {
         ${p.blocking_reason ? `<div class="limits">⛔ ${esc(p.blocking_reason)}</div>` : ""}</div>`;
     }).join("") + "</details>";
 };
+
+
+/* ---------- P24-001 Projects + P25 Agent Chat ---------- */
+STATE.projectId = null;
+async function refreshProjects() {
+  const projects = await api("/api/projects");
+  $("projects").innerHTML = (projects || []).map((p) =>
+    `<div class="event ${STATE.projectId === p.project_id ? "warn" : ""}" style="cursor:pointer" onclick="selectProject('${esc(p.project_id)}')">
+      <b>${esc(p.title)}</b> <span class="ts">${esc(p.project_id)}</span> <span class="pill">${p.task_count ?? 0} tasks</span>
+    </div>`
+  ).join("") || "<p style='color:var(--dim)'>暂无项目</p>";
+}
+window.selectProject = (pid) => { STATE.projectId = pid; refreshProjects(); };
+$("btn-project-create").onclick = async () => {
+  const title = $("proj-title").value.trim();
+  if (!title) return alert("请输入项目标题");
+  const r = await api("/api/projects", { method: "POST", body: { title } });
+  STATE.projectId = r.project?.project_id || STATE.projectId;
+  $("proj-title").value = "";
+  pushEvent("project.created", "INFO", { message: `项目「${r.project?.title || ""}」已创建（${r.tasks?.length ?? 0} 个任务）` });
+  refreshProjects();
+};
+$("btn-chat-ask").onclick = async () => {
+  const question = $("chat-input").value.trim();
+  if (!question) return alert("请输入问题");
+  const r = await api("/api/agent/chat", { method: "POST", body: { question, project_id: STATE.projectId || null } });
+  $("chat-answer").innerHTML = `
+    <div class="event"><b>Agent</b> ${esc(r.answer)}</div>
+    ${(r.evidence || []).map((e) => `<span class="pill">${esc(e)}</span>`).join("")}
+    ${r.needs_confirmation ? `<div class="event warn">⛔ 需要确认的操作（未执行）：${esc(JSON.stringify(r.confirm_action || {}))}</div>` : ""}`;
+};
+refreshProjects();

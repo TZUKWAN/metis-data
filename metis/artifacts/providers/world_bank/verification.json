@@ -1,0 +1,20 @@
+{
+  "provider_id": "world_bank",
+  "capabilities": {
+    "search": "PASS",
+    "metadata": "PASS",
+    "access": "PASS",
+    "download": "PASS"
+  },
+  "level": 1,
+  "verified_at": "2026-09-12T05:04:58.798408+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {},
+  "notes": {
+    "search": "candidates=5 first_title='Ratio of female to male youth unemployment rate (% ages 15-24) (modeled ILO esti'",
+    "metadata": "ref='SL.UEM.1524.FM.ZS' title='Ratio of female to male youth unemployment rate (% ages 15-24) (modeled ILO esti'",
+    "access": "keys=['access_mode', 'license', 'notes', 'requires_login', 'restricted']",
+    "download": "files=['world_bank_SL.UEM.1524.FM.ZS.json'] first_size=85429"
+  }
+}

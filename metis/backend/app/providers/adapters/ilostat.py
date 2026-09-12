@@ -10,7 +10,7 @@ import re
 from xml.etree import ElementTree
 
 from app.domain.schemas import DatasetCandidate
-from app.providers.adapters.common import mk_candidate, write_small_payload
+from app.providers.adapters.common import mk_candidate
 from app.providers.base import ProviderAdapter, register_adapter
 from app.providers.http_client import get
 
@@ -118,20 +118,23 @@ class IlostatAdapter(ProviderAdapter):
         return {"access_mode": "PUBLIC_ANONYMOUS_API", "requires_login": False, "restricted": False, "license": "CC-BY-4.0", "notes": "ILOSTAT SDMX REST"}
 
     async def acquire_dataset(self, dataset_ref: str, dest_dir, access_context: dict | None = None) -> list[str]:
-        """Download via dimension-filter query (NSI v8 supports c[CONCEPT]=val)."""
+        """Stream SDMX CSV via the bounded download helper (payloads can exceed 32MB)."""
         import urllib.parse
         from pathlib import Path
+
+        from app.providers.adapters.common import download_to_file
 
         country = (access_context or {}).get("ref_area", "CHN")
         params = urllib.parse.urlencode({"format": "csv", "startPeriod": (access_context or {}).get("start", "2000"), "c[REF_AREA]": country})
         url = f"{BASE}/data/ILO,{dataset_ref},1.0/all?{params}"
-        r = await get(url, timeout=180, max_retries=1)
-        if r.status != 200:
+        dest = Path(dest_dir) / f"ilostat_{dataset_ref}.csv"
+        try:
+            await download_to_file(url, dest, timeout=300)
+        except __import__("app.core.errors", fromlist=["MetisError"]).MetisError as e:
+            if e.code != "PROVIDER_HTTP_ERROR":
+                raise
             # fallback: all-dims wildcard key
             url2 = f"{BASE}/data/ILO,{dataset_ref},1.0/all?format=csv&startPeriod=2000"
-            r = await get(url2, timeout=300, max_retries=0)
-            if r.status != 200:
-                raise RuntimeError(f"ilostat data HTTP {r.status}")
-        dest = Path(dest_dir) / f"ilostat_{dataset_ref}.csv"
-        write_small_payload(dest, r.content)
+            await download_to_file(url2, dest, timeout=600)
         return [str(dest)]
+

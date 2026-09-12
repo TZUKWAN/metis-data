@@ -15,10 +15,10 @@
         "world_bank",
         "oecd",
         "eurostat",
+        "un_databases",
         "un_comtrade",
         "us_census",
-        "usgs",
-        "data_gov_uk"
+        "nasa_earthdata"
       ],
       "query_plan": {
         "ilostat": [
@@ -45,6 +45,12 @@
           "taux de chômage des jeunes",
           "unemployment rate"
         ],
+        "un_databases": [
+          "youth unemployment rate",
+          "青年失业率",
+          "taux de chômage des jeunes",
+          "unemployment rate"
+        ],
         "un_comtrade": [
           "trade 2023"
         ],
@@ -54,13 +60,7 @@
           "taux de chômage des jeunes",
           "unemployment rate"
         ],
-        "usgs": [
-          "youth unemployment rate",
-          "青年失业率",
-          "taux de chômage des jeunes",
-          "unemployment rate"
-        ],
-        "data_gov_uk": [
+        "nasa_earthdata": [
           "youth unemployment rate",
           "青年失业率",
           "taux de chômage des jeunes",
@@ -70,91 +70,91 @@
     },
     "search": {
       "ok": true,
-      "run_id": "run_2b13244deb7c4d9a",
+      "run_id": "run_7a90a1a4f21f4089",
       "status": "COMPLETED",
       "provider_tasks": [
         {
-          "task_id": "pt_839a254d8add4faaaf6c",
+          "task_id": "pt_b2c495ba592841db82a6",
           "provider_id": "ilostat",
           "status": "done",
           "result_count": 1,
           "error_code": null,
           "error_message": null,
-          "started_at": "2026-09-11T17:24:19.461669",
-          "finished_at": "2026-09-11T17:24:23.430503"
+          "started_at": "2026-09-12T05:28:31.127919",
+          "finished_at": "2026-09-12T05:28:35.152407"
         },
         {
-          "task_id": "pt_b19748d31027445e88be",
+          "task_id": "pt_e6a6bd731290485184bf",
           "provider_id": "world_bank",
           "status": "done",
           "result_count": 20,
           "error_code": null,
           "error_message": null,
-          "started_at": "2026-09-11T17:24:19.533568",
-          "finished_at": "2026-09-11T17:24:21.690258"
+          "started_at": "2026-09-12T05:28:31.213798",
+          "finished_at": "2026-09-12T05:28:33.374392"
         },
         {
-          "task_id": "pt_2358081652b046ad8e99",
+          "task_id": "pt_11792a29ed5c415d8d05",
           "provider_id": "oecd",
           "status": "done",
           "result_count": 1,
           "error_code": null,
           "error_message": null,
-          "started_at": "2026-09-11T17:24:19.553836",
-          "finished_at": "2026-09-11T17:24:21.154592"
+          "started_at": "2026-09-12T05:28:31.235958",
+          "finished_at": "2026-09-12T05:28:32.781163"
         },
         {
-          "task_id": "pt_8491ee96bfa14bb68f1b",
+          "task_id": "pt_68fa569f0e5b41069018",
           "provider_id": "eurostat",
           "status": "timeout",
           "result_count": 0,
           "error_code": "PROVIDER_TIMEOUT",
           "error_message": "provider exceeded 45s",
-          "started_at": "2026-09-11T17:24:19.573551",
-          "finished_at": "2026-09-11T17:25:04.588771"
+          "started_at": "2026-09-12T05:28:31.259219",
+          "finished_at": "2026-09-12T05:29:16.273241"
         },
         {
-          "task_id": "pt_f28a0c2fcb564adf93dc",
+          "task_id": "pt_54b36dc24a52422c9408",
+          "provider_id": "un_databases",
+          "status": "done",
+          "result_count": 20,
+          "error_code": null,
+          "error_message": null,
+          "started_at": "2026-09-12T05:28:31.288075",
+          "finished_at": "2026-09-12T05:28:44.426926"
+        },
+        {
+          "task_id": "pt_4396da8ba8da499ea1ee",
           "provider_id": "un_comtrade",
           "status": "done",
           "result_count": 1,
           "error_code": null,
           "error_message": null,
-          "started_at": "2026-09-11T17:24:19.593214",
-          "finished_at": "2026-09-11T17:24:19.601271"
+          "started_at": "2026-09-12T05:28:31.315563",
+          "finished_at": "2026-09-12T05:28:31.325247"
         },
         {
-          "task_id": "pt_4bc938c132cc4686b50d",
+          "task_id": "pt_155d42d548a54df2a52c",
           "provider_id": "us_census",
           "status": "done",
           "result_count": 13,
           "error_code": null,
           "error_message": null,
-          "started_at": "2026-09-11T17:24:19.604501",
-          "finished_at": "2026-09-11T17:24:41.377117"
+          "started_at": "2026-09-12T05:28:31.328405",
+          "finished_at": "2026-09-12T05:28:43.643170"
         },
         {
-          "task_id": "pt_8b973aaaeac14e4faa2d",
-          "provider_id": "usgs",
+          "task_id": "pt_af13dfba22ac47a8bebe",
+          "provider_id": "nasa_earthdata",
           "status": "done",
           "result_count": 0,
           "error_code": null,
           "error_message": null,
-          "started_at": "2026-09-11T17:24:19.626269",
-          "finished_at": "2026-09-11T17:24:22.836616"
-        },
-        {
-          "task_id": "pt_dbbf0f1fa5ce4cc69fa8",
-          "provider_id": "data_gov_uk",
-          "status": "done",
-          "result_count": 10,
-          "error_code": null,
-          "error_message": null,
-          "started_at": "2026-09-11T17:24:21.157799",
-          "finished_at": "2026-09-11T17:24:30.914380"
+          "started_at": "2026-09-12T05:28:32.784388",
+          "finished_at": "2026-09-12T05:28:36.365276"
         }
       ],
-      "n_candidates": 37
+      "n_candidates": 39
     },
     "acquisition": {
       "ok": true,
@@ -162,21 +162,21 @@
         {
           "provider_id": "world_bank",
           "ref": "SL.UEM.1524.ZS",
-          "artifact_id": "art_f5a5996c3a7949afa3b4",
+          "artifact_id": "art_2c3a7a19feb0410ea182",
           "sha256": "3d0b8b11813fe5df",
           "size": 49004
         },
         {
           "provider_id": "world_bank",
           "ref": "NY.GDP.PCAP.CD",
-          "artifact_id": "art_b564dd75adcc4e7bad2e",
+          "artifact_id": "art_0f3b15e66ebe4c34821c",
           "sha256": "1f1627cd35d56ab6",
           "size": 146714
         },
         {
           "provider_id": "eurostat",
           "ref": "une_rt_a",
-          "artifact_id": "art_f0122122200b40e7bba3",
+          "artifact_id": "art_57cd8b638aa94dd9b69e",
           "sha256": "c7ff55d880a4e070",
           "size": 1283065
         }
@@ -186,17 +186,17 @@
     "profile": {
       "ok": true,
       "artifacts": {
-        "art_f5a5996c3a7949afa3b4": {
+        "art_2c3a7a19feb0410ea182": {
           "rows": 265,
           "cols": 71,
           "format": "ZIP"
         },
-        "art_b564dd75adcc4e7bad2e": {
+        "art_0f3b15e66ebe4c34821c": {
           "rows": 265,
           "cols": 71,
           "format": "ZIP"
         },
-        "art_f0122122200b40e7bba3": {
+        "art_57cd8b638aa94dd9b69e": {
           "rows": 39708,
           "cols": 7,
           "format": "CSV"
@@ -205,7 +205,7 @@
     },
     "build": {
       "ok": true,
-      "build_id": "build_eb723912374b4363a65d",
+      "build_id": "build_7fee2fb994124d4db227",
       "rows": 566,
       "validations": [
         {
@@ -383,78 +383,78 @@
       "ok": true,
       "n_fields": 149,
       "sample": {
-        "final_field": "art_f5a5996c3a7949afa3b4.Country Name",
+        "final_field": "art_2c3a7a19feb0410ea182.Country Name",
         "lineage": {
-          "final_field": "art_f5a5996c3a7949afa3b4.Country Name",
+          "final_field": "art_2c3a7a19feb0410ea182.Country Name",
           "transforms": [
             {
               "operation": "load_input",
-              "operation_id": "op_59509da83beb4cbb88e7",
+              "operation_id": "op_957cd452e34d4b19a7a5",
               "seq": 1
             },
             {
               "operation": "load_input",
-              "operation_id": "op_8d9d299d544f44169bc1",
+              "operation_id": "op_945b0e39e29646c9a6bc",
               "seq": 2
             },
             {
               "operation": "load_input",
-              "operation_id": "op_59e759ffd7ec4943afda",
+              "operation_id": "op_96e49a68481f48aa8c11",
               "seq": 3
             },
             {
               "operation": "semantic_alignment_scan",
-              "operation_id": "op_1990db314d5d40d29376",
+              "operation_id": "op_86b9a7f1294d4df78481",
               "seq": 4
             },
             {
               "operation": "entity_resolution",
-              "operation_id": "op_c927fdd31e8944719075",
+              "operation_id": "op_cddbf05c7dd646cd8296",
               "seq": 5
             },
             {
               "operation": "time_alignment",
-              "operation_id": "op_b41e16c69bc64261b92a",
+              "operation_id": "op_2bc246d87c154b409041",
               "seq": 6
             },
             {
               "operation": "reshape_wide_to_long",
-              "operation_id": "op_abd6e8ff7a2c41efbda2",
+              "operation_id": "op_348521d8fd1f4380a1d5",
               "seq": 7
             },
             {
               "operation": "canonicalize_input",
-              "operation_id": "op_39ede672b87647959db5",
+              "operation_id": "op_57f071a6e1584ddf8a20",
               "seq": 8
             },
             {
               "operation": "reshape_wide_to_long",
-              "operation_id": "op_1854e32024b54d8d8255",
+              "operation_id": "op_f40c50ac5d6747a581a3",
               "seq": 9
             },
             {
               "operation": "canonicalize_input",
-              "operation_id": "op_f59d157225074dc7b56e",
+              "operation_id": "op_07a2e7a12df044b78765",
               "seq": 10
             },
             {
               "operation": "canonicalize_input",
-              "operation_id": "op_c936d75d3d7d40649f96",
+              "operation_id": "op_bc2783e6291446a2ad0d",
               "seq": 11
             },
             {
               "operation": "join",
-              "operation_id": "op_4c84e45f5e9e417f910a",
+              "operation_id": "op_ea52d8b40c6c462cb7e0",
               "seq": 12
             },
             {
               "operation": "join",
-              "operation_id": "op_9d87d62d35814a78afdf",
+              "operation_id": "op_6fe1894d991344b59604",
               "seq": 13
             },
             {
               "operation": "missing_policy",
-              "operation_id": "op_5f82ecd50cfb4c96905a",
+              "operation_id": "op_db6f8081509b4f8ea5ac",
               "seq": 14
             }
           ],
@@ -468,7 +468,7 @@
       }
     }
   },
-  "started": 1789147459.1157186,
+  "started": 1789190910.7009122,
   "result": "PASS",
-  "duration_s": 58.4
+  "duration_s": 140.1
 }

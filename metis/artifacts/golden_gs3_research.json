@@ -1,7 +1,7 @@
 {
   "scenario": "GS-3 research repositories",
   "query": "大学生 generative AI survey data",
-  "started": 1789147662.9359913,
+  "started": 1789191065.5441794,
   "repos": {
     "zenodo": {
       "search": "OK",
@@ -23,5 +23,5 @@
   },
   "blocked": [],
   "result": "PASS",
-  "duration_s": 14.4
+  "duration_s": 29.0
 }

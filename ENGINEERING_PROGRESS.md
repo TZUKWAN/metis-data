@@ -1,12 +1,39 @@
 # Engineering Progress — Metis Data Productization
 
 ## Current Phase
-Phase 8+（Provider Matrix / 前端产品化 / 聚合语义 / CI / Golden）
+全部 Phase 完成 — 全量验证通过，待 CI 确认
 
 ## Current Task
-P18-001 用户选择接入 Build
+无
 
 ## Completed
+
+### Task P15-001..006（Browser Search Worker，agent A）
+Status: PASS
+Files: metis/backend/app/search/browser_worker.py、metis/backend/app/auth/recipes.py（BROWSER_SEARCH_RECIPES）、metis/backend/tests/test_p15_browser_search.py
+Tests: `python -m pytest metis/backend/tests/test_p15_browser_search.py metis/backend/tests/test_p02_browser.py -q` — 9 passed
+Acceptance: [x] search/extract/next_page/open_result/extract_metadata 合同 [x] 动态页 [x] login-aware（WAITING_USER → USER_INTERVENTION_REQUIRED）[x] 归一化 [x] 事件证据
+
+### Task P24-001 + P25-001..006（agent B）
+Status: PASS
+Files: db/models.py（ProjectRow/TaskRow）、db/repository.py（7 方法）、api/main.py（5 端点 + /api/agent/chat + requires_confirmation）、frontend（Project/Agent Chat 面板）、tests/test_p24_p25.py
+Tests: `python -m pytest metis/backend/tests/test_p24_p25.py metis/backend/tests/test_p00_productization.py -q` — 7 passed；node --check js OK
+Acceptance: [x] 项目/任务模型 [x] chat 基于真实状态回答进度/推荐/合成 [x] 高风险操作确认门
+
+### Task P08-002（Provider Verification Record，agent C）
+Status: PASS（证据产物）
+Files: metis/artifacts/providers/<22 provider>/verification.json + summary.json（只写产物，未改代码）
+结果（真实网络）：search 19 PASS / 3 FAIL（eurostat、osf 为 60s 探测超时——此前多次通过，属瞬时；nbs_china 403）；download 8 PASS / 9 FAIL / 5 BLOCKED（均如实记录）
+暴露并修复的真实 bug：us_census acquire 误用 r.status（httpx 应为 r.status_code）；ilostat 37.7MB payload 超 32MB cap → 改走 download_to_file 流式（common.py 新增）
+Tests: secrets scan 0 findings
+Acceptance: [x] 每 provider 有 verification.json（含 blocker）[x] 不虚报
+
+### 集成与全量验证（主 agent）
+- 全量 pytest：93 tests，0 failed（test_crash_recovery 单次 kill 时序 flake，重跑通过）
+- ruff 0.16：All checks passed；secrets scan 0；node --check js OK
+- GS-1+GS-5+GS-6：PASS（WB+Eurostat 双组织 3 源 566 行面板，reproduce PASS）
+- GS-3：PASS（Zenodo DOI 获取）；GS-4：PASS（登录→持久化→恢复→探测→真实下载）
+- CI 修复：unit-integration 增加 gen_fixtures 步骤 + timeout 30min + 修 pip 行
 
 ### Task P06-001..005 + P07-001..014
 Status: PASS

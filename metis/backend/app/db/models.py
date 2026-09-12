@@ -256,3 +256,26 @@ class AccessJobRow(Base):
     data_json: Mapped[dict] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class ProjectRow(Base):
+    """P24-001: user project grouping tasks that reference real pipeline objects."""
+    __tablename__ = "projects"
+    project_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    title: Mapped[str] = mapped_column(Text, default="")
+    data_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class TaskRow(Base):
+    """P24-001: task linking a project to a real object (requirement|search_run|download_job|access_job|build)."""
+    __tablename__ = "tasks"
+    task_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(String(64), index=True)
+    kind: Mapped[str] = mapped_column(String(32))  # requirement|search_run|download_job|access_job|build
+    ref_id: Mapped[str] = mapped_column(String(64), default="")
+    status: Mapped[str] = mapped_column(String(32), default="OPEN")
+    data_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)

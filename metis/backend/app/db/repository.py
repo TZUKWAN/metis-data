@@ -18,18 +18,20 @@ from app.db.models import (
     CredentialRow,
     DownloadJobRow,
     FieldLineageRow,
+    ProjectRow,
     ProviderHealthRow,
     ProviderTaskRow,
     RequirementRow,
     SearchRunRow,
     SessionRow,
+    TaskRow,
     UiEventRow,
     ValidationRow,
     VariableSemanticRow,
 )
 from app.db.session import new_session
 from app.domain.enums import BUILD_FLOW, SEARCH_RUN_FLOW, assert_transition
-from app.domain.schemas import utcnow
+from app.domain.schemas import new_id, utcnow
 
 T = TypeVar("T")
 
@@ -38,6 +40,19 @@ def _to_json(model: Any) -> Any:
     if hasattr(model, "model_dump"):
         return json.loads(model.model_dump_json())
     return model
+
+
+def _task_to_dict(row: TaskRow) -> dict:
+    return {
+        "task_id": row.task_id,
+        "project_id": row.project_id,
+        "kind": row.kind,
+        "ref_id": row.ref_id,
+        "status": row.status,
+        "data": row.data_json,
+        "created_at": row.created_at.isoformat(),
+        "updated_at": row.updated_at.isoformat(),
+    }
 
 
 class Repository:
@@ -663,6 +678,81 @@ class Repository:
                 }
                 for r in rows
             ]
+
+
+    # ---- projects / tasks (P24-001) ----
+    def upsert_project(self, payload: dict) -> str:
+        with new_session() as s:
+            row = s.get(ProjectRow, payload["project_id"])
+            if row is None:
+                row = ProjectRow(project_id=payload["project_id"], title=payload.get("title", ""), data_json=payload)
+                s.add(row)
+            else:
+                row.title = payload.get("title", row.title)
+                row.data_json = payload
+            s.commit()
+            return payload["project_id"]
+
+    def list_projects(self) -> list[dict]:
+        with new_session() as s:
+            rows = s.scalars(select(ProjectRow).order_by(ProjectRow.created_at.desc())).all()
+            counts: dict[str, int] = {}
+            for pid in s.scalars(select(TaskRow.project_id)).all():
+                counts[pid] = counts.get(pid, 0) + 1
+            return [
+                {
+                    "project_id": r.project_id,
+                    "title": r.title,
+                    "task_count": counts.get(r.project_id, 0),
+                    "data": r.data_json,
+                    "created_at": r.created_at.isoformat(),
+                    "updated_at": r.updated_at.isoformat(),
+                }
+                for r in rows
+            ]
+
+    def get_project(self, project_id: str) -> dict | None:
+        with new_session() as s:
+            row = s.get(ProjectRow, project_id)
+            if row is None:
+                return None
+            tasks = s.scalars(select(TaskRow).where(TaskRow.project_id == project_id).order_by(TaskRow.created_at.desc())).all()
+            return {
+                "project": {
+                    "project_id": row.project_id,
+                    "title": row.title,
+                    "data": row.data_json,
+                    "created_at": row.created_at.isoformat(),
+                    "updated_at": row.updated_at.isoformat(),
+                },
+                "tasks": [_task_to_dict(t) for t in tasks],
+            }
+
+    def add_task(self, project_id: str, kind: str, ref_id: str, status: str = "OPEN") -> dict:
+        with new_session() as s:
+            row = TaskRow(task_id=new_id("task"), project_id=project_id, kind=kind, ref_id=ref_id, status=status)
+            s.add(row)
+            s.commit()
+            return _task_to_dict(row)
+
+    def list_tasks(self, project_id: str) -> list[dict]:
+        with new_session() as s:
+            rows = s.scalars(select(TaskRow).where(TaskRow.project_id == project_id).order_by(TaskRow.created_at.desc())).all()
+            return [_task_to_dict(r) for r in rows]
+
+    def get_task(self, task_id: str) -> dict | None:
+        with new_session() as s:
+            row = s.get(TaskRow, task_id)
+            return _task_to_dict(row) if row else None
+
+    def set_task_status(self, task_id: str, status: str) -> dict | None:
+        with new_session() as s:
+            row = s.get(TaskRow, task_id)
+            if row is None:
+                return None
+            row.status = status
+            s.commit()
+            return _task_to_dict(row)
 
 
 REPO = Repository()

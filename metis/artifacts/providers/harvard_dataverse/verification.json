@@ -1,0 +1,20 @@
+{
+  "provider_id": "harvard_dataverse",
+  "capabilities": {
+    "search": "PASS",
+    "metadata": "PASS",
+    "access": "PASS",
+    "download": "PASS"
+  },
+  "level": 1,
+  "verified_at": "2026-09-12T05:10:50.341629+00:00",
+  "method": "real network",
+  "test": "smoke",
+  "blockers": {},
+  "notes": {
+    "search": "candidates=5 first_title='Weekly Generative AI Market Pulse Survey'",
+    "metadata": "ref='doi:10.7910/DVN/MLTIHE' title='Weekly Generative AI Market Pulse Survey'",
+    "access": "keys=['access_mode', 'license', 'notes', 'requires_login', 'restricted']",
+    "download": "files=['Consumerinsight_Weekly_Generative AI_Market_Pulse(2026-Feb-1th).tab', 'Consumerinsight_Weekly_Generative AI_Market_Pulse(2026-Jan-4th).tab', 'Consumerinsight_Weekly_Generative AI_Market_Pulse_Codebook.xlsx'] first_size=312694"
+  }
+}
