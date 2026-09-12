@@ -62,9 +62,10 @@ class RequirementEdit(BaseModel):
 
 
 class SearchRunIn(BaseModel):
-    requirement_id: str
+    requirement_id: str | None = None  # optional when planning_id carries the requirement
     provider_ids: list[str] | None = None
     max_providers: int = 8
+    planning_id: str | None = None  # Phase B: bundle drives the run when provided
 
 
 class DownloadIn(BaseModel):
@@ -201,27 +202,100 @@ async def provider_detail(pid: str):
 
 
 # ---------------- search (A3) ----------------
+def _bundle_query_plan(bundle: dict) -> dict[str, list[str]]:
+    """Flatten bundle["query_plans"] into the {provider_id: [queries]} mapping."""
+    return {
+        str(qp.get("provider_id")): [str(q) for q in qp.get("queries") or []]
+        for qp in bundle.get("query_plans") or []
+        if isinstance(qp, dict) and qp.get("provider_id")
+    }
+
+
+def _requirement_from_bundle(bundle: dict) -> dict:
+    """Phase B: derive and persist a DataRequirement from a planning bundle.
+
+    unit_of_analysis/geography/time_range/frequency/variables map into the domain
+    schema; raw_request keeps the original text; assumptions come from the bundle.
+    """
+    from app.domain.schemas import DataRequirement, VariableRequest
+
+    reqp = bundle.get("requirement") or {}
+    variables = VariableRequest()
+    role_field = {"outcome": "outcomes", "exposure": "exposures", "mediator": "mediators", "moderator": "moderators", "control": "controls", "identifier": "identifiers"}
+    for v in reqp.get("variables") or []:
+        name = str((v or {}).get("concept", "")).strip()
+        if not name:
+            continue
+        getattr(variables, role_field.get(str((v or {}).get("role", "control")), "controls")).append(name)
+    tr = reqp.get("time_range") or {}
+    start, end = tr.get("start"), tr.get("end")
+    original_text = str(bundle.get("requirement_text") or reqp.get("research_goal") or "")
+    req = DataRequirement(
+        goal=str(reqp.get("research_goal") or ""),
+        research_question=str(reqp.get("research_goal") or ""),
+        raw_request=original_text,
+        unit_of_analysis=str(reqp.get("unit_of_analysis") or "unknown"),
+        geography=[str(g) for g in reqp.get("geography") or []],
+        time_range=(int(start), int(end)) if start and end else None,
+        frequency=str(reqp.get("frequency") or "unknown"),
+        variables=variables,
+        preferred_sources=[str(s) for s in reqp.get("preferred_sources") or []],
+        assumptions=[str(a) for a in bundle.get("assumptions") or []],
+    )
+    payload = req.model_dump(mode="json")
+    REPO.save_requirement(payload)
+    REPO.add_ui_event("requirement.created_from_planning", payload={"requirement_id": req.requirement_id, "planning_id": bundle.get("planning_id", "")})
+    return payload
+
+
 @app.post("/api/search/runs")
 async def start_search(body: SearchRunIn):
     from app.search.orchestrator import ORCHESTRATOR
     from app.search.selector import plan_queries, select_providers
 
-    req = REPO.get_requirement(body.requirement_id)
-    if not req:
-        raise HTTPException(404, "requirement not found")
+    bundle: dict | None = None
+    if body.planning_id:
+        from app.agent.orchestrator import load_bundle
+
+        bundle = load_bundle(body.planning_id)
+        if not bundle:
+            raise HTTPException(404, "planning not found")
+
+    req: dict | None = None
+    if body.requirement_id:
+        req = REPO.get_requirement(body.requirement_id)
+        if not req:
+            raise HTTPException(404, "requirement not found")
+    elif bundle:
+        req = _requirement_from_bundle(bundle)
+    if req is None:
+        raise HTTPException(422, "requirement_id or planning_id is required")
+
     from app.domain.schemas import DataRequirement
 
     req_obj = DataRequirement(**req)
+    provider_ids: list[str]
+    plan: dict[str, list[str]]
     if body.provider_ids:
         from app.providers.registry import get_registry
 
         providers = [get_registry().get(p) for p in body.provider_ids]
+        provider_ids = [p.provider_id for p in providers]
+        plan = plan_queries(req_obj, providers)
+    elif bundle:
+        # planning bundle is the main chain: priorities + queries come from it
+        provider_ids = [p for p in ((bundle.get("source_plan") or {}).get("provider_priorities") or []) if p]
+        plan = _bundle_query_plan(bundle)
     else:
         providers = select_providers(req_obj, max_providers=body.max_providers)
-    provider_ids = [p.provider_id for p in providers]
-    plan = plan_queries(req_obj, providers)
-    run_id = await ORCHESTRATOR.run_search(req, provider_ids, plan)
-    return {"run_id": run_id, "providers": provider_ids, "query_plan": plan}
+        provider_ids = [p.provider_id for p in providers]
+        plan = plan_queries(req_obj, providers)
+
+    run_id = await ORCHESTRATOR.run_search(req, provider_ids, plan, bundle=bundle)
+    resp: dict = {"run_id": run_id, "providers": provider_ids, "query_plan": plan}
+    if bundle:
+        resp["planning_source"] = str(bundle.get("planning_source", "fallback"))
+    return resp
 
 
 @app.get("/api/search/runs")
@@ -276,25 +350,17 @@ async def create_download(body: DownloadIn):
         return err(e)
 
     if access_job.state != "AUTHORIZED":
-        return JSONResponse(status_code=202, content={"download_job": job.model_dump(mode="json"), "access_job": access_job.model_dump(mode="json"), "next": "complete access via Account Center / browser takeover, then resume"})
+        return JSONResponse(status_code=202, content={"download_job": job.model_dump(mode="json"), "access_job": access_job.model_dump(mode="json"), "next": "complete access via Account Center / browser takeover — acquisition auto-resumes after login"})
 
     async def _run():
         from app.access.machine import AccessState, transition
-        from app.providers.base import get_adapter
-
-        adapter = get_adapter(body.provider_id)
+        from app.acquisition.service import ACQUISITION
 
         staging = Path(get_settings().workspace_dir) / "downloads" / job.download_job_id
         staging.mkdir(parents=True, exist_ok=True)
-        files = await adapter.acquire_dataset(body.dataset_ref, staging, {})
-        # commit through verification & raw registration
-        job2 = REPO.get_download_job(job.download_job_id)
-        job2["status"] = "VERIFYING"
-        REPO.save_download_job(job2)
-        from app.downloads.service import MANAGER as M
-
-        for f in files:
-            await M._verify_and_commit(Path(f), job2, Path(f).stat().st_size)
+        # Phase F: the ONLY production acquisition path — AcquisitionService
+        # (v2 descriptor → DownloadManager stream → verify → raw commit)
+        await ACQUISITION.acquire(access_job.model_dump(mode="json"), REPO.get_download_job(job.download_job_id), staging)
         transition(access_job, AccessState.COMPLETE, "acquisition + verification complete")
 
     TASKS[job.download_job_id] = asyncio.create_task(_run())
@@ -375,6 +441,62 @@ async def create_build(body: BuildIn):
     ex.generate_plan(cfg, [])
     REPO.save_build(cfg)
     return cfg.model_dump(mode="json")
+
+
+# ---------------- Phase H: Build Planner → production builds ----------------
+@app.post("/api/builds/plan")
+async def plan_and_create_build(body: BuildPlanIn):
+    """Phase H: selected artifacts → profiles → BuildPlanner → BuildPlan → BuildExecutor.
+
+    No hardcoded country/year: entity strategy, keys, aggregations come from the plan
+    (derived from real asset profiles); review points flag anything unknown.
+    """
+    from app.agent.build_planner import plan_build, plan_build_sync
+    from app.builds.executor import BuildExecutor
+
+    assets = []
+    for inp in body.inputs:
+        art = REPO.get_artifact(inp["artifact_id"])
+        if not art:
+            raise HTTPException(404, f"artifact {inp['artifact_id']} not found")
+        assets.append({"artifact_id": inp["artifact_id"], "profile": art.get("profile") or {}, "variables": []})
+    if not assets:
+        raise HTTPException(422, "no input assets")
+
+    if body.llm_enabled:
+        plan = await plan_build(body.requirement, assets)
+    else:
+        plan = plan_build_sync(body.requirement, assets)
+
+    executor = BuildExecutor.from_build_plan(plan.model_dump(mode="json") if hasattr(plan, "model_dump") else plan, title=body.title or "agent-planned build")
+    review = (REPO.get_build(executor.build_id) or {}).get("plan_snapshot", {}).get("review_points", [])
+    blocking = [r for r in review if r.get("severity") == "blocking"]
+    if blocking and not body.auto_run:
+        return JSONResponse(status_code=202, content={"build_id": executor.build_id, "plan": plan.model_dump(mode="json") if hasattr(plan, "model_dump") else plan, "review_points": review, "next": "blocking review points — edit plan or approve to run"})
+    if body.auto_run or not review:
+        TASKS[f"build_{executor.build_id}"] = asyncio.create_task(_run_build_safe(executor.build_id))
+    return {"build_id": executor.build_id, "plan": plan.model_dump(mode="json") if hasattr(plan, "model_dump") else plan, "review_points": review, "running": body.auto_run or not review}
+
+
+async def _run_build_safe(build_id: str):
+    from app.builds.executor import BuildExecutor
+
+    try:
+        await BuildExecutor(build_id).run()
+    except MetisError as e:
+        REPO.add_ui_event("build.failed", "ERROR", task_id=build_id, payload=e.to_dict())
+    except Exception as e:  # noqa: BLE001
+        REPO.add_ui_event("build.failed", "ERROR", task_id=build_id, payload={"error": str(e)[:300]})
+
+
+@app.post("/api/builds/{build_id}/approve")
+async def approve_build(build_id: str):
+    """User reviewed the blocking plan → run it now."""
+    b = REPO.get_build(build_id)
+    if not b:
+        raise HTTPException(404, "build not found")
+    TASKS[f"build_{build_id}"] = asyncio.create_task(_run_build_safe(build_id))
+    return {"build_id": build_id, "running": True}
 
 
 @app.get("/api/builds")
@@ -621,6 +743,41 @@ async def agent_plan_sources(body: dict):
     }
 
 
+# ---------------- planning chain (Phase B: LLM planning as the search main chain) ----------------
+class PlanningIn(BaseModel):
+    text: str
+
+
+@app.post("/api/agent/planning")
+async def create_planning(body: PlanningIn):
+    """Run the full planning chain (requirement → measurements → sources → queries),
+    persist the bundle and return it. The returned planning_id drives /api/search/runs."""
+    from app.agent.orchestrator import build_planning_bundle, save_bundle
+
+    bundle = await build_planning_bundle(body.text)
+    save_bundle(bundle, requirement_text=body.text)
+    return {
+        "planning_id": bundle.planning_id,
+        "planning_source": bundle.planning_source,
+        "bundle": bundle.model_dump(mode="json"),
+    }
+
+
+@app.get("/api/agent/planning")
+async def list_plannings(limit: int = 20):
+    return REPO.list_planning_runs(limit)
+
+
+@app.get("/api/agent/planning/{planning_id}")
+async def get_planning(planning_id: str):
+    from app.agent.orchestrator import load_bundle
+
+    bundle = load_bundle(planning_id)
+    if not bundle:
+        raise HTTPException(404, "planning not found")
+    return bundle
+
+
 # ---------------- account center: login/register APIs (P05-003/005) ----------------
 class LoginIn(BaseModel):
     base_url: str | None = None  # for fixture/test providers with relative recipe URLs
@@ -667,15 +824,25 @@ async def account_login(provider_id: str, body: LoginIn):
     form = {"email": recipe["login"]["email"], "password": recipe["login"]["password"], "_submit": recipe["login"]["submit"]}
     result = await LoginExecutor(provider_id, driver).login(resolve_url(base, recipe["login_url"]), form)
 
-    # P04-010: resume the most recent pending access job for this provider
+    # P04-010 + Phase D: login success → AUTHORIZED → AUTO-RESUME the original download
     resumed = None
+    acquisition = None
     if result["result"] == "SUCCESS":
         pending = [j for j in REPO.list_access_jobs(provider_id) if j["state"] in ("LOGGING_IN", "LOGIN_REQUIRED", "WAITING_USER", "SESSION_EXPIRED")]
         if pending:
             from app.access.executor import resume_after_user
 
-            resumed = (await resume_after_user(pending[0]["access_job_id"], "success")).model_dump(mode="json")
-    return {"result": result, "access_job": resumed, "session_id": session.session_id}
+            access_job = await resume_after_user(pending[0]["access_job_id"], "success")
+            resumed = access_job.model_dump(mode="json")
+            # Phase D: user must NOT click download twice — auto-resume acquisition
+            if access_job.state == "AUTHORIZED" and access_job.download_job_id:
+                from app.access.resume import RESUME_COORDINATOR
+
+                try:
+                    acquisition = await RESUME_COORDINATOR.resume_access_job(access_job.access_job_id)
+                except Exception as e:  # noqa: BLE001 — surfaced to UI, download job already FAILED
+                    acquisition = {"resumed": False, "error": str(e)[:200]}
+    return {"result": result, "access_job": resumed, "acquisition": acquisition, "session_id": session.session_id}
 
 
 @app.post("/api/accounts/{provider_id}/register")

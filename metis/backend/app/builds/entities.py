@@ -8,13 +8,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Protocol, runtime_checkable
 
 
 @dataclass
 class EntityMatch:
     canonical_id: str
     canonical_name: str
-    kind: str  # country | china_province | china_prefecture
+    kind: str  # country | china_province | china_prefecture | generic
     confidence: float
     method: str  # exact_code | exact_name | alias | fuzzy
     raw_value: str
@@ -42,6 +43,12 @@ _EXTRA_ALIASES = {
     # aggregates (World, Euro area...) are intentionally NOT resolvable to a country:
     # they stay NULL and are reported as unmatched instead of polluting the panel
 }
+
+
+# tolerant column-name hints per geographic level (normalized: lower + spaces->underscores)
+COUNTRY_COLUMN_NAMES = ("country", "country_name", "nation", "country_code", "iso3", "iso2", "geo", "ref_area", "reporter", "partner")
+PROVINCE_COLUMN_NAMES = ("province", "province_name", "province_code", "prov", "geo", "region", "省份")
+CITY_COLUMN_NAMES = ("city", "city_name", "city_code", "prefecture", "prefecture_name", "prefecture_code", "geo", "region", "城市", "地级市")
 
 
 def _load_countries() -> tuple[dict[str, tuple[str, str]], dict[str, str]]:
@@ -137,6 +144,24 @@ class CountryResolver:
 
     def to_iso3(self, iso2: str) -> str:
         return self.by_iso2[iso2][0]
+
+    # ---- EntityResolver protocol (Phase I) ----
+    def detect(self, column_name: str, sample_values: list) -> bool:
+        """True if the column looks like a country column (name hint or majority resolvable)."""
+        n = str(column_name or "").strip().lower().replace(" ", "_")
+        if n in COUNTRY_COLUMN_NAMES:
+            return True
+        vals = [v for v in (sample_values or []) if v is not None and str(v).strip()][:20]
+        if not vals:
+            return False
+        hits = sum(1 for v in vals if self.resolve(v) is not None)
+        return hits / len(vals) >= 0.6
+
+    def normalize(self, value, year: int | None = None) -> EntityMatch | None:
+        return self.resolve(value)  # countries are not year-sensitive
+
+    def canonical_key(self, match: EntityMatch) -> str:
+        return self.to_iso3(match.canonical_id)  # canonical join key is ISO3
 
 
 # ---------------- China admin regions (A24) ----------------
@@ -309,7 +334,8 @@ CN_HISTORICAL = [
 
 
 class ChinaRegionResolver:
-    def __init__(self) -> None:
+    def __init__(self, level: str = "prefecture") -> None:
+        self.level = "province" if str(level or "").strip().lower() == "province" else "prefecture"
         self.provinces: dict[str, tuple[str, int, str]] = {code: (name, vf, vt) for code, name, vf, vt in CN_PROVINCES}
         self.prefectures: dict[str, tuple[str, str, int, str]] = {code: (name, parent, vf, vt) for code, name, parent, vf, vt in CN_PREFECTURES}
         self.name_to_code: dict[str, str] = {name: code for code, name, _vf, _vt in CN_PROVINCES}
@@ -376,3 +402,76 @@ class ChinaRegionResolver:
 
     def historical_names(self, code: str) -> list[tuple[str, int, str]]:
         return self.historical.get(code, [])
+
+    # ---- EntityResolver protocol (Phase I) ----
+    def detect(self, column_name: str, sample_values: list) -> bool:
+        """True if the column looks like a CN province/prefecture column (name hint or majority resolvable)."""
+        n = str(column_name or "").strip().lower().replace(" ", "_")
+        names = PROVINCE_COLUMN_NAMES if self.level == "province" else CITY_COLUMN_NAMES
+        if n in names:
+            return True
+        vals = [v for v in (sample_values or []) if v is not None and str(v).strip()][:20]
+        if not vals:
+            return False
+        hits = sum(1 for v in vals if self.normalize(v) is not None)
+        return hits / len(vals) >= 0.6
+
+    def normalize(self, value, year: int | None = None) -> EntityMatch | None:
+        if self.level == "province":
+            return self.resolve_province(value, year=year)
+        return self.resolve_prefecture(value, year=year)
+
+    def canonical_key(self, match: EntityMatch) -> str:
+        return match.canonical_id  # GB/T 2260 code
+
+
+# ---------------- EntityResolver protocol + generic resolver (Phase I) ----------------
+@runtime_checkable
+class EntityResolver(Protocol):
+    """Uniform resolution interface used by the build executor (Phase I).
+
+    detect() judges whether a column carries entities of this resolver's kind;
+    normalize() maps one raw value to an EntityMatch (None when unresolvable —
+    callers must never silently guess); canonical_key() extracts the join key.
+    """
+
+    def detect(self, column_name: str, sample_values: list) -> bool: ...
+
+    def normalize(self, value, year: int | None = None) -> EntityMatch | None: ...
+
+    def canonical_key(self, match: EntityMatch) -> str: ...
+
+
+class GenericStringEntityResolver:
+    """Exact-match-only resolver for non-geographic entities (firm/university/person/...).
+
+    Identity rule: strip + casefold equality is the same entity. NEVER fuzzy —
+    a typo is a different entity, never a silent correction (A23 spirit).
+    """
+
+    def detect(self, column_name: str, sample_values: list) -> bool:
+        # fallback resolver: applicable to any column that carries non-empty string values
+        return any(v is not None and str(v).strip() for v in (sample_values or []))
+
+    def normalize(self, value, year: int | None = None) -> EntityMatch | None:
+        if value is None:
+            return None
+        s = str(value).strip()
+        if not s:
+            return None
+        return EntityMatch(canonical_id=s.casefold(), canonical_name=s, kind="generic", confidence=1.0, method="exact_name", raw_value=s)
+
+    def canonical_key(self, match: EntityMatch) -> str:
+        return match.canonical_id
+
+
+def get_resolver(target_unit: str):
+    """Factory: map a build target_unit to the appropriate EntityResolver (Phase I)."""
+    u = str(target_unit or "").strip().lower()
+    if u == "country":
+        return CountryResolver()
+    if u == "province":
+        return ChinaRegionResolver(level="province")
+    if u in ("city", "prefecture"):
+        return ChinaRegionResolver(level="prefecture")
+    return GenericStringEntityResolver()

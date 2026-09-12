@@ -147,19 +147,25 @@ window.toggleAsset = (aid, checked) => {
   if (checked) STATE.selectedAssets.add(aid); else STATE.selectedAssets.delete(aid);
 };
 $("btn-build-create").onclick = async () => {
-  // P18-001: build uses EXACTLY what the user selected (no slice() shortcuts)
+  // P18-001 + Phase H: user selection → AI Build Plan (entity/keys/aggregation from real profiles, no country/year hardcode)
   const ids = [...STATE.selectedAssets];
   if (ids.length < 1) return alert("勾选至少一个数据资产（Data Asset）后再合成");
-  const cfg = await api("/api/builds", { method: "POST", body: {
-    title: `panel-${new Date().toISOString().slice(0, 10)}`,
+  const r = await api("/api/builds/plan", { method: "POST", body: {
+    title: `build-${new Date().toISOString().slice(0, 10)}`,
+    requirement: STATE.agentPlan || {},
     inputs: ids.map((aid) => ({ artifact_id: aid })),
-    keys: ["country", "year"],
-    missing_policy: "none",
-    derived_variables: [],
   }});
-  pushEvent("build.created", "INFO", { message: `Build ${cfg.build_id} 已创建（用户选择 ${ids.length} 个输入），计划 ${cfg.plan.length} 步（m:m 默认阻止）` });
-  await api(`/api/builds/${cfg.build_id}/run`, { method: "POST" });
-  pollBuild(cfg.build_id);
+  STATE.pendingBuild = r;
+  const reviewHtml = (r.review_points || []).map((x) => `<span class="pill ${x.severity === "blocking" ? "err" : "warn"}">${esc(x.severity)}: ${esc(x.message || x.topic)}</span>`).join("");
+  $("builds").innerHTML = `<div class="event"><b>AI Build Plan</b> ${esc(r.build_id)}</div>
+    <div class="meta">实体/键/聚合由数据 Profile 推导（无 country/year 硬编码）</div>
+    ${reviewHtml ? `<div class="limits">${reviewHtml}</div>` : ""}
+    <button id="btn-approve-build" class="primary">${(r.review_points || []).some(x => x.severity === "blocking") ? "已阅风险，确认执行" : "执行 Build"}</button>`;
+  $("btn-approve-build").onclick = async () => {
+    await api(`/api/builds/${r.build_id}/approve`, { method: "POST" });
+    pollBuild(r.build_id);
+  };
+  pushEvent("build.planned", "INFO", { message: `AI Build Plan ${r.build_id} 已生成（${ids.length} 输入），等待确认` });
 };
 function pollBuild(bid) {
   const t = setInterval(async () => {

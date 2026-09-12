@@ -249,6 +249,7 @@ class BuildConfig(BaseModel):
     exports: list[str] = ["parquet", "csv", "xlsx"]
     allow_mm_join: bool = False  # m:m blocked by default (A26)
     plan: list[BuildPlanStep] = []
+    plan_snapshot: dict[str, Any] = {}  # original agent BuildPlan (dict) + review points recorded at planning time
     status: str = "BUILD_CREATED"
     stage_checkpoints: dict[str, Any] = {}
     created_at: datetime = Field(default_factory=utcnow)
@@ -275,3 +276,25 @@ class StoredSession(BaseModel):
     status: str = "VALID"  # VALID | EXPIRED | REVOKED
     created_at: datetime = Field(default_factory=utcnow)
     expires_at: datetime | None = None
+
+
+# ---------------- Phase H: build planning request (agent → builds) ----------------
+class BuildPlanInputRef(BaseModel):
+    """One planned input: a registered artifact plus optional column equality filters."""
+
+    artifact_id: str
+    filter: dict[str, Any] = {}  # column equality filters applied at load (e.g. {"sex": "T"})
+
+
+class BuildPlanRequest(BaseModel):
+    """Request to plan a build from a structured requirement + selected assets.
+
+    requirement is the raw requirement JSON (DataRequirement-shaped dict); inputs
+    reference already-registered artifacts. llm_enabled=False forces the
+    deterministic planner (plan_build_sync) — the default for no-LLM environments.
+    """
+
+    title: str = ""
+    requirement: dict[str, Any] = {}
+    inputs: list[BuildPlanInputRef] = []
+    llm_enabled: bool = False

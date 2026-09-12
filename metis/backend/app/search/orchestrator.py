@@ -32,12 +32,36 @@ class SearchOrchestrator:
     async def run_search(
         self,
         requirement: dict,
-        provider_ids: list[str],
-        query_plan: dict[str, list[str]],
+        provider_ids: list[str] | None = None,
+        query_plan: dict[str, list[str]] | None = None,
         run_id: str | None = None,
+        bundle: dict | None = None,
     ) -> str:
+        """Run a parallel multi-provider search.
+
+        Phase B: when `bundle` (a persisted PlanningBundle) is provided it drives
+        the run — provider_ids default to bundle["source_plan"]["provider_priorities"]
+        (when the caller passes none) and queries default to bundle["query_plans"];
+        the bundle is persisted verbatim in the run's query_plan under the key
+        "planning_bundle" (incl. planning_source). Without a bundle the behaviour
+        is exactly as before (backward compatible).
+        """
         run_id = run_id or f"run_{uuid.uuid4().hex[:16]}"
-        REPO.save_search_run(run_id, requirement["requirement_id"], SearchRunStatus.PROVIDERS_SELECTED, query_plan=query_plan, provider_ids=provider_ids)
+        if bundle:
+            if provider_ids is None:
+                provider_ids = [p for p in (bundle.get("source_plan") or {}).get("provider_priorities") or [] if p]
+            bundle_queries = {
+                str(qp.get("provider_id")): [str(q) for q in qp.get("queries") or []]
+                for qp in bundle.get("query_plans") or []
+                if isinstance(qp, dict) and qp.get("provider_id")
+            }
+            query_plan = {**bundle_queries, **(query_plan or {})}
+        provider_ids = list(provider_ids or [])
+        query_plan = dict(query_plan or {})
+        persisted_plan = dict(query_plan)
+        if bundle:
+            persisted_plan["planning_bundle"] = bundle
+        REPO.save_search_run(run_id, requirement["requirement_id"], SearchRunStatus.PROVIDERS_SELECTED, query_plan=persisted_plan, provider_ids=provider_ids)
         self._cancelled.discard(run_id)
 
         # seed provider task rows

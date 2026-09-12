@@ -6,7 +6,7 @@
     "restore_probe": "OK (logged_in_selector present)",
     "acquire": "OK (1207 bytes, sha256 verified)"
   },
-  "started": 1789191095.9682674,
+  "started": 1789235095.9279656,
   "result": "PASS",
-  "duration_s": 5.6
+  "duration_s": 5.4
 }

@@ -114,3 +114,15 @@ def _llm_configured() -> bool:
     import os
 
     return bool(os.environ.get("METIS_LLM_BASE_URL", "").strip()) and bool(os.environ.get("METIS_LLM_MODEL", "").strip())
+
+
+def plan_build_sync(requirement_json: dict, assets: list[dict]) -> BuildPlan:
+    """Synchronous, deterministic planning wrapper (Phase H).
+
+    Directly applies the rule-based planner (_deterministic_plan) without any LLM
+    call, so planning is reproducible in environments without LLM credentials.
+    requirement_json is accepted for signature symmetry with plan_build; the
+    deterministic rules derive the plan from asset profiles alone.
+    assets: [{artifact_id, profile: {columns, ...}, variables: [{canonical_name, ...}]}]
+    """
+    return _deterministic_plan(assets)

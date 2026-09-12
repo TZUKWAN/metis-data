@@ -18,6 +18,7 @@ from app.db.models import (
     CredentialRow,
     DownloadJobRow,
     FieldLineageRow,
+    PlanningRunRow,
     ProjectRow,
     ProviderHealthRow,
     ProviderTaskRow,
@@ -753,6 +754,46 @@ class Repository:
             row.status = status
             s.commit()
             return _task_to_dict(row)
+
+    # ---- planning runs (Phase B: LLM planning chain) ----
+    def save_planning_run(self, planning_id: str, source: str, text: str, data_json: dict) -> str:
+        with new_session() as s:
+            row = s.get(PlanningRunRow, planning_id)
+            if row is None:
+                row = PlanningRunRow(planning_id=planning_id, planning_source=source, requirement_text=text, data_json=data_json)
+                s.add(row)
+            else:
+                row.planning_source = source
+                row.requirement_text = text
+                row.data_json = data_json
+            s.commit()
+            return planning_id
+
+    def get_planning_run(self, planning_id: str) -> dict | None:
+        with new_session() as s:
+            row = s.get(PlanningRunRow, planning_id)
+            if row is None:
+                return None
+            return {
+                "planning_id": row.planning_id,
+                "planning_source": row.planning_source,
+                "requirement_text": row.requirement_text,
+                "data": row.data_json,
+                "created_at": row.created_at.isoformat(),
+            }
+
+    def list_planning_runs(self, limit: int = 20) -> list[dict]:
+        with new_session() as s:
+            rows = s.scalars(select(PlanningRunRow).order_by(PlanningRunRow.created_at.desc()).limit(limit)).all()
+            return [
+                {
+                    "planning_id": r.planning_id,
+                    "planning_source": r.planning_source,
+                    "requirement_text": (r.requirement_text or "")[:200],
+                    "created_at": r.created_at.isoformat(),
+                }
+                for r in rows
+            ]
 
 
 REPO = Repository()

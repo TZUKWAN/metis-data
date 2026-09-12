@@ -279,3 +279,17 @@ class TaskRow(Base):
     data_json: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class PlanningRunRow(Base):
+    """Phase B: persisted LLM planning bundle — the search main chain input.
+
+    data_json holds the full PlanningBundle (requirement, measurements, source
+    plan, query plans, assumptions, review points, planning_source).
+    """
+    __tablename__ = "planning_runs"
+    planning_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    planning_source: Mapped[str] = mapped_column(String(16), default="fallback")  # llm|fallback|mixed
+    requirement_text: Mapped[str] = mapped_column(Text, default="")  # original user text, never mutated
+    data_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

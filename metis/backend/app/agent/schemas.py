@@ -149,3 +149,36 @@ class BuildPlan(BaseModel):
     derived_variables: list[dict[str, Any]] = []
     validations: list[str] = []
     review_points: list[ReviewPoint] = []
+
+
+# ---------------- Phase B: planning chain bundle (LLM planning as the search main chain) ----------------
+class ProviderQueryPlan(BaseModel):
+    """Per-provider search queries + indicator-code hints, produced by the planning chain."""
+    model_config = _STRICT
+    provider_id: str = Field(min_length=1)
+    queries: list[str] = []
+    indicator_code_hints: list[str] = []
+
+
+def _utcnow_iso() -> str:
+    from datetime import UTC, datetime
+
+    return datetime.now(UTC).isoformat()
+
+
+class PlanningBundle(BaseModel):
+    """The complete, persisted output of one planning-chain run.
+
+    requirement → measurements → source_plan → query_plans, plus assumptions,
+    review points and provenance (planning_source: llm | fallback | mixed).
+    """
+    model_config = _STRICT
+    planning_id: str = ""
+    requirement: DataRequirementPlan
+    measurements: list[VariableMeasurementPlan] = []
+    source_plan: SourcePlan = Field(default_factory=SourcePlan)
+    query_plans: list[ProviderQueryPlan] = []
+    assumptions: list[str] = []
+    review_points: list[ReviewPoint] = []
+    planning_source: Literal["llm", "fallback", "mixed"] = "fallback"
+    created_at: str = Field(default_factory=_utcnow_iso)

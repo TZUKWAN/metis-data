@@ -70,88 +70,88 @@
     },
     "search": {
       "ok": true,
-      "run_id": "run_7a90a1a4f21f4089",
+      "run_id": "run_88b0650ecfa34b3e",
       "status": "COMPLETED",
       "provider_tasks": [
         {
-          "task_id": "pt_b2c495ba592841db82a6",
+          "task_id": "pt_39ecac34cbd346b8b9ea",
           "provider_id": "ilostat",
           "status": "done",
           "result_count": 1,
           "error_code": null,
           "error_message": null,
-          "started_at": "2026-09-12T05:28:31.127919",
-          "finished_at": "2026-09-12T05:28:35.152407"
+          "started_at": "2026-09-12T17:41:52.893071",
+          "finished_at": "2026-09-12T17:41:57.869173"
         },
         {
-          "task_id": "pt_e6a6bd731290485184bf",
+          "task_id": "pt_8ffbdfd37ec64716abb0",
           "provider_id": "world_bank",
           "status": "done",
           "result_count": 20,
           "error_code": null,
           "error_message": null,
-          "started_at": "2026-09-12T05:28:31.213798",
-          "finished_at": "2026-09-12T05:28:33.374392"
+          "started_at": "2026-09-12T17:41:53.027900",
+          "finished_at": "2026-09-12T17:41:55.461135"
         },
         {
-          "task_id": "pt_11792a29ed5c415d8d05",
+          "task_id": "pt_d1a0e771f7e343fb802d",
           "provider_id": "oecd",
           "status": "done",
           "result_count": 1,
           "error_code": null,
           "error_message": null,
-          "started_at": "2026-09-12T05:28:31.235958",
-          "finished_at": "2026-09-12T05:28:32.781163"
+          "started_at": "2026-09-12T17:41:53.062828",
+          "finished_at": "2026-09-12T17:41:55.032158"
         },
         {
-          "task_id": "pt_68fa569f0e5b41069018",
+          "task_id": "pt_4607245e27d240fe8c76",
           "provider_id": "eurostat",
           "status": "timeout",
           "result_count": 0,
           "error_code": "PROVIDER_TIMEOUT",
           "error_message": "provider exceeded 45s",
-          "started_at": "2026-09-12T05:28:31.259219",
-          "finished_at": "2026-09-12T05:29:16.273241"
+          "started_at": "2026-09-12T17:41:53.105790",
+          "finished_at": "2026-09-12T17:42:38.112667"
         },
         {
-          "task_id": "pt_54b36dc24a52422c9408",
+          "task_id": "pt_2fdc3ca4da6b45a0a6db",
           "provider_id": "un_databases",
           "status": "done",
           "result_count": 20,
           "error_code": null,
           "error_message": null,
-          "started_at": "2026-09-12T05:28:31.288075",
-          "finished_at": "2026-09-12T05:28:44.426926"
+          "started_at": "2026-09-12T17:41:53.155840",
+          "finished_at": "2026-09-12T17:42:09.896274"
         },
         {
-          "task_id": "pt_4396da8ba8da499ea1ee",
+          "task_id": "pt_553f497ed75d41ab928c",
           "provider_id": "un_comtrade",
           "status": "done",
           "result_count": 1,
           "error_code": null,
           "error_message": null,
-          "started_at": "2026-09-12T05:28:31.315563",
-          "finished_at": "2026-09-12T05:28:31.325247"
+          "started_at": "2026-09-12T17:41:53.200974",
+          "finished_at": "2026-09-12T17:41:53.213628"
         },
         {
-          "task_id": "pt_155d42d548a54df2a52c",
+          "task_id": "pt_e1566b63f53e42e890d8",
           "provider_id": "us_census",
           "status": "done",
           "result_count": 13,
           "error_code": null,
           "error_message": null,
-          "started_at": "2026-09-12T05:28:31.328405",
-          "finished_at": "2026-09-12T05:28:43.643170"
+          "started_at": "2026-09-12T17:41:53.219987",
+          "finished_at": "2026-09-12T17:42:25.088143"
         },
         {
-          "task_id": "pt_af13dfba22ac47a8bebe",
+          "task_id": "pt_27dcab8ea9b84ab6bb4d",
           "provider_id": "nasa_earthdata",
           "status": "done",
           "result_count": 0,
           "error_code": null,
           "error_message": null,
-          "started_at": "2026-09-12T05:28:32.784388",
-          "finished_at": "2026-09-12T05:28:36.365276"
+          "started_at": "2026-09-12T17:41:55.036973",
+          "finished_at": "2026-09-12T17:42:00.773072"
         }
       ],
       "n_candidates": 39
@@ -162,21 +162,21 @@
         {
           "provider_id": "world_bank",
           "ref": "SL.UEM.1524.ZS",
-          "artifact_id": "art_2c3a7a19feb0410ea182",
+          "artifact_id": "art_f186e3598dcb4417ad9d",
           "sha256": "3d0b8b11813fe5df",
           "size": 49004
         },
         {
           "provider_id": "world_bank",
           "ref": "NY.GDP.PCAP.CD",
-          "artifact_id": "art_0f3b15e66ebe4c34821c",
+          "artifact_id": "art_556d0dc8497f4c229310",
           "sha256": "1f1627cd35d56ab6",
           "size": 146714
         },
         {
           "provider_id": "eurostat",
           "ref": "une_rt_a",
-          "artifact_id": "art_57cd8b638aa94dd9b69e",
+          "artifact_id": "art_1c1ddedd24cb443ca5a6",
           "sha256": "c7ff55d880a4e070",
           "size": 1283065
         }
@@ -186,17 +186,17 @@
     "profile": {
       "ok": true,
       "artifacts": {
-        "art_2c3a7a19feb0410ea182": {
+        "art_f186e3598dcb4417ad9d": {
           "rows": 265,
           "cols": 71,
           "format": "ZIP"
         },
-        "art_0f3b15e66ebe4c34821c": {
+        "art_556d0dc8497f4c229310": {
           "rows": 265,
           "cols": 71,
           "format": "ZIP"
         },
-        "art_57cd8b638aa94dd9b69e": {
+        "art_1c1ddedd24cb443ca5a6": {
           "rows": 39708,
           "cols": 7,
           "format": "CSV"
@@ -205,7 +205,7 @@
     },
     "build": {
       "ok": true,
-      "build_id": "build_7fee2fb994124d4db227",
+      "build_id": "build_bae01717f6c04d8c80e6",
       "rows": 566,
       "validations": [
         {
@@ -383,78 +383,78 @@
       "ok": true,
       "n_fields": 149,
       "sample": {
-        "final_field": "art_2c3a7a19feb0410ea182.Country Name",
+        "final_field": "art_f186e3598dcb4417ad9d.Country Name",
         "lineage": {
-          "final_field": "art_2c3a7a19feb0410ea182.Country Name",
+          "final_field": "art_f186e3598dcb4417ad9d.Country Name",
           "transforms": [
             {
               "operation": "load_input",
-              "operation_id": "op_957cd452e34d4b19a7a5",
+              "operation_id": "op_5fb98eed8c3f4eceadc5",
               "seq": 1
             },
             {
               "operation": "load_input",
-              "operation_id": "op_945b0e39e29646c9a6bc",
+              "operation_id": "op_0cf04b26b90d4f0a9a38",
               "seq": 2
             },
             {
               "operation": "load_input",
-              "operation_id": "op_96e49a68481f48aa8c11",
+              "operation_id": "op_ab18c535637c426ebdd2",
               "seq": 3
             },
             {
               "operation": "semantic_alignment_scan",
-              "operation_id": "op_86b9a7f1294d4df78481",
+              "operation_id": "op_8e4f2e87deee49c68a5c",
               "seq": 4
             },
             {
               "operation": "entity_resolution",
-              "operation_id": "op_cddbf05c7dd646cd8296",
+              "operation_id": "op_767455903a604c2baf09",
               "seq": 5
             },
             {
               "operation": "time_alignment",
-              "operation_id": "op_2bc246d87c154b409041",
+              "operation_id": "op_84c22e74aee5417294cb",
               "seq": 6
             },
             {
               "operation": "reshape_wide_to_long",
-              "operation_id": "op_348521d8fd1f4380a1d5",
+              "operation_id": "op_4d4bc2cf3ed34fd19618",
               "seq": 7
             },
             {
               "operation": "canonicalize_input",
-              "operation_id": "op_57f071a6e1584ddf8a20",
+              "operation_id": "op_dc610de241874c9fba1d",
               "seq": 8
             },
             {
               "operation": "reshape_wide_to_long",
-              "operation_id": "op_f40c50ac5d6747a581a3",
+              "operation_id": "op_278e4375666c4bbda329",
               "seq": 9
             },
             {
               "operation": "canonicalize_input",
-              "operation_id": "op_07a2e7a12df044b78765",
+              "operation_id": "op_c563abc900c6489f9a17",
               "seq": 10
             },
             {
               "operation": "canonicalize_input",
-              "operation_id": "op_bc2783e6291446a2ad0d",
+              "operation_id": "op_72488c06b66b4edabe45",
               "seq": 11
             },
             {
               "operation": "join",
-              "operation_id": "op_ea52d8b40c6c462cb7e0",
+              "operation_id": "op_3f7c86590a2c402cb774",
               "seq": 12
             },
             {
               "operation": "join",
-              "operation_id": "op_6fe1894d991344b59604",
+              "operation_id": "op_37464b54d5b840f1a5b4",
               "seq": 13
             },
             {
               "operation": "missing_policy",
-              "operation_id": "op_db6f8081509b4f8ea5ac",
+              "operation_id": "op_091ae95b1c2c48a79acd",
               "seq": 14
             }
           ],
@@ -468,7 +468,7 @@
       }
     }
   },
-  "started": 1789190910.7009122,
+  "started": 1789234912.134691,
   "result": "PASS",
-  "duration_s": 140.1
+  "duration_s": 68.9
 }

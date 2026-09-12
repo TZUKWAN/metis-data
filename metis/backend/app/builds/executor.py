@@ -5,6 +5,7 @@ build resumes from the last safe stage instead of re-running external effects.
 """
 from __future__ import annotations
 
+import copy
 import time
 
 import pandas as pd
@@ -13,11 +14,35 @@ from app.core.errors import MetisError
 from app.core.logging import get_logger
 from app.db.repository import REPO
 from app.domain.enums import BuildStatus
-from app.domain.schemas import BuildConfig, BuildPlanStep, new_id
+from app.domain.schemas import BuildConfig, BuildInputRef, BuildPlanStep, new_id
 
 log = get_logger("build")
 
 MAGIC_RE = None
+
+# canonical join-key column per build target_unit (Phase H/I)
+ENTITY_KEY_COLUMN = {
+    "country": "iso3",
+    "province": "province_code",
+    "city": "city_code",
+    "prefecture": "city_code",
+    "firm": "entity_key",
+    "university": "entity_key",
+    "entity": "entity_key",
+}
+# default keys when the plan carries no joins: geo+year for geo units, none for individual
+PLAN_DEFAULT_KEYS = {
+    "country": ["iso3", "year"],
+    "province": ["province_code", "year"],
+    "city": ["city_code", "year"],
+    "prefecture": ["city_code", "year"],
+    "firm": ["entity_key", "year"],
+    "university": ["entity_key", "year"],
+    "entity": ["entity_key", "year"],
+    "individual": [],
+}
+# strategies without geographic entity resolution (A23: never guess an entity)
+GENERIC_ENTITY_UNITS = ("firm", "university", "entity", "person", "household")
 
 
 class BuildExecutor:
@@ -29,6 +54,87 @@ class BuildExecutor:
         self.data: pd.DataFrame | None = None
         self._ops: list[dict] = []
         self.code_version = "1.0.0"
+
+    # ---------- plan-driven construction (Phase H) ----------
+    @classmethod
+    def from_build_plan(cls, build_plan: dict, title: str, requirement_id: str | None = None) -> BuildExecutor:
+        """Derive a persisted BuildConfig from an agent BuildPlan and return its executor.
+
+        build_plan: agent BuildPlan as a plain dict (a BuildPlan model is accepted too).
+        Derivation: inputs=plan.inputs; keys=joins[0].keys when present, else from
+        entity_strategy (country→iso3, province→province_code, city/prefecture→city_code,
+        individual→no keys/append-only); time_frequency=plan.time_strategy;
+        aggregations=[{field, method, weight_field}] skipping method=="none" (each skipped
+        field recorded as a NEEDS_REVIEW entry in plan_snapshot["review_points"]);
+        missing_policy=plan.missing_policy[0].method or "none"; derived_variables passed
+        through. The original plan is stored verbatim in BuildConfig.plan_snapshot.
+        """
+        from app.agent.schemas import BuildPlan as AgentBuildPlan
+
+        if isinstance(build_plan, AgentBuildPlan):
+            build_plan = build_plan.model_dump()
+        plan = copy.deepcopy(dict(build_plan or {}))
+        inputs = [BuildInputRef(artifact_id=a) for a in (plan.get("inputs") or [])]
+        target_unit = str(plan.get("entity_strategy") or "country").strip().lower() or "country"
+        time_frequency = str(plan.get("time_strategy") or "annual").strip().lower() or "annual"
+
+        joins = [j for j in (plan.get("joins") or []) if isinstance(j, dict)]
+        if joins and (joins[0].get("keys") or []):
+            keys = [str(k) for k in joins[0]["keys"]]
+        else:
+            default = PLAN_DEFAULT_KEYS.get(target_unit)
+            keys = list(default) if default is not None else ["iso3", "year"]  # individual → [] (append-only)
+
+        review_points = [dict(p) for p in (plan.get("review_points") or []) if isinstance(p, dict)]
+        aggregations = []
+        for a in plan.get("aggregations") or []:
+            a = a if isinstance(a, dict) else {}
+            method = str(a.get("method") or "none").strip().lower()
+            if method == "none":
+                review_points.append({
+                    "severity": "warning",
+                    "flag": "NEEDS_REVIEW",
+                    "topic": "aggregation",
+                    "field": a.get("field"),
+                    "message": f"field {a.get('field')}: plan aggregation method=none → passed through unaggregated (NEEDS_REVIEW)",
+                    "remediation": "确认口径后补充聚合方法 (flow=sum / stock|rate=mean|last)",
+                })
+                continue
+            agg = {"field": a.get("field"), "method": method}
+            if a.get("weight_field"):
+                agg["weight_field"] = a.get("weight_field")
+            aggregations.append(agg)
+
+        mp = [m for m in (plan.get("missing_policy") or []) if isinstance(m, dict)]
+        missing_policy = str(mp[0].get("method") or "").strip().lower() if mp else ""
+        if not missing_policy:
+            missing_policy = "none"
+
+        if target_unit == "individual" or target_unit in GENERIC_ENTITY_UNITS:
+            review_points.append({
+                "severity": "warning",
+                "flag": "NEEDS_REVIEW",
+                "topic": "entity_resolution",
+                "field": None,
+                "message": f"entity_strategy={target_unit}: no entity resolution performed — canonical keys left NULL; keyless strategies append inputs without an entity join",
+                "remediation": "提供可解析的实体标识 (ISO3/GB-T 2260 编码) 或人工确认合并键",
+            })
+
+        plan_snapshot = {**plan, "review_points": review_points}
+        cfg = BuildConfig(
+            title=title,
+            requirement_id=requirement_id,
+            inputs=inputs,
+            target_unit=target_unit,
+            keys=keys,
+            time_frequency=time_frequency,
+            aggregations=aggregations,
+            derived_variables=[dict(d) for d in (plan.get("derived_variables") or []) if isinstance(d, dict)],
+            missing_policy=missing_policy,
+            plan_snapshot=plan_snapshot,
+        )
+        REPO.save_build(cfg)
+        return cls(cfg.build_id)
 
     # ---------- plan (P13-022, visible in UI) ----------
     def generate_plan(self, cfg: BuildConfig, input_schemas: list[dict]) -> list[BuildPlanStep]:
@@ -234,15 +340,25 @@ class BuildExecutor:
             self._record_op("canonicalize_input", {"input_index": idx, "artifact_id": inp.artifact_id, "columns": list(map(str, c.columns))}, [], [], None, int(len(c)), None, int(c.shape[1]))
 
         if len(canonicalized) >= 2:
-            merged = canonicalized[0]
-            for idx, right in enumerate(canonicalized[1:], start=2):
-                merged, report = safe_join(merged, right, canon_keys(cfg), how="inner", allow_mm=cfg.allow_mm_join)
+            if not cfg.keys:
+                # keyless strategies (e.g. individual-level plans): append instead of join (无键仅 append)
+                merged = pd.concat(canonicalized, ignore_index=True)
                 self._record_op(
-                    "join",
-                    {"left_input": idx - 1, "right_input": idx, "keys": canon_keys(cfg), "report": report},
-                    [], [], report["row_count_before"], report["row_count_after"], None, int(merged.shape[1]),
-                    warnings=(["join explosion suspected" if report.get("explosion") else None] or []),
+                    "append_inputs",
+                    {"strategy": "keyless_append", "inputs": len(canonicalized)},
+                    [], [], int(sum(len(c) for c in canonicalized)), int(len(merged)), None, int(merged.shape[1]),
+                    warnings=["no join keys in plan — inputs appended, not joined"],
                 )
+            else:
+                merged = canonicalized[0]
+                for idx, right in enumerate(canonicalized[1:], start=2):
+                    merged, report = safe_join(merged, right, canon_keys(cfg), how="inner", allow_mm=cfg.allow_mm_join)
+                    self._record_op(
+                        "join",
+                        {"left_input": idx - 1, "right_input": idx, "keys": canon_keys(cfg), "report": report},
+                        [], [], report["row_count_before"], report["row_count_after"], None, int(merged.shape[1]),
+                        warnings=(["join explosion suspected" if report.get("explosion") else None] or []),
+                    )
             self.data = merged
         elif self.data is None:
             self.data = canonicalized[0].copy() if canonicalized else pd.DataFrame()
@@ -265,8 +381,10 @@ class BuildExecutor:
         REPO.set_build_checkpoint(self.build_id, "TRANSFORM", {"rows": int(len(self.data)), "cols": int(self.data.shape[1]), "done": True})
 
     def _canon_key(self, df: pd.DataFrame, cfg: BuildConfig) -> pd.DataFrame:
-        """Canonicalize one input: reshape wide year columns to long, normalize geo to
-        ISO3 (original kept) and time to year. Records reshape provenance via op log."""
+        """Canonicalize one input: reshape wide year columns to long, normalize time to an
+        integer `year`, then canonicalize the entity column per cfg.target_unit
+        (country→ISO3, province→GB/T province code, city/prefecture→GB/T prefecture code,
+        generic units→NULL key + review point). Records provenance via op log."""
         import re as _re
 
         out = df.copy()
@@ -287,34 +405,137 @@ class BuildExecutor:
                 warnings=["wide year columns reshaped to long; value column named 'value'"],
             )
 
-        # 2) geo column (tolerant name match: spaces->underscores)
+        # 2) time normalization FIRST, so year-aware entity resolvers (CN admin regions)
+        # can validate historical codes against the row's year
+        out = self._normalize_time_column(out)
+
+        # 3) entity canonicalization per target unit (Phase I)
+        out = self._canonicalize_entity(out, cfg)
+        return out
+
+    def _normalize_time_column(self, out: pd.DataFrame) -> pd.DataFrame:
+        """Generalized time normalization (Phase I): recognize year/date/period/quarter/month
+        column names — or values parseable by parse_time_value (YYYY, YYYY-MM, YYYYQ1, dates) —
+        and output a single integer `year` column. Idempotent."""
+        from app.builds.times import parse_time_value
+
+        lower = {c: str(c).lower() for c in out.columns}
+        ycol = next((c for c, lo in lower.items() if lo == "year"), None)
+        if ycol is None:
+            ycol = next((c for c, lo in lower.items() if lo in ("time", "date", "period", "quarter", "month")), None)
+        if ycol is None:
+            # last resort: a column whose non-null sample values all parse as time expressions
+            for c in out.columns:
+                sample = [v for v in out[c].head(20).tolist() if v is not None and str(v).strip()]
+                if sample and all(parse_time_value(v) is not None for v in sample):
+                    ycol = c
+                    break
+        if ycol is None:
+            return out
+        if ycol != "year":
+            out = out.rename(columns={ycol: "year"})
+        out["year"] = _to_int_years(out["year"])
+        return out
+
+    def _canonicalize_entity(self, out: pd.DataFrame, cfg: BuildConfig) -> pd.DataFrame:
+        from app.builds.entities import (
+            CITY_COLUMN_NAMES,
+            COUNTRY_COLUMN_NAMES,
+            PROVINCE_COLUMN_NAMES,
+            get_resolver,
+        )
+
+        target = (cfg.target_unit or "country").strip().lower() or "country"
+        if target == "individual":
+            # append-only unit of analysis: no entity key column at all
+            return out
+        key_col = ENTITY_KEY_COLUMN.get(target, "entity_key")
+        if target in GENERIC_ENTITY_UNITS:
+            # generic entities (firm/university/...): no resolution — key left NULL, flagged
+            out[key_col] = pd.Series([None] * len(out), index=out.index, dtype=object)
+            self._record_op(
+                "entity_resolution",
+                {"strategy": "generic:none", "target_unit": target, "key_column": key_col},
+                [], [], None, int(len(out)), None, int(out.shape[1]),
+                warnings=[f"entity_strategy={target}: no entity resolution performed; {key_col} left NULL (NEEDS_REVIEW)"],
+            )
+            return out
         norm = {c: c.lower().replace(" ", "_") for c in out.columns}
-        geo = next((c for c, n in norm.items() if n in ("country", "country_name", "nation", "country_code", "iso3", "iso2", "geo", "ref_area", "reporter", "partner")), None)
-        if geo is not None and "iso3" not in {n for n in norm.values()}:
-            from app.builds.entities import CountryResolver
-
-            r = CountryResolver()
-            iso3 = []
-            for v in out[geo]:
-                m = r.resolve(v)
-                iso3.append(r.to_iso3(m.canonical_id) if m else None)
-            out["iso3"] = iso3
-            out[f"{geo}_original"] = out[geo]
-        elif "iso3" in out.columns:
-            pass
-
-        # 3) time column normalization
-        if "year" not in {c.lower() for c in out.columns}:
-            t = next((c for c in out.columns if norm[c] in ("year", "time", "date", "period", "quarter", "month")), None)
-            if t:
-                from app.builds.times import parse_time_value
-
-                out = out.rename(columns={t: "year"})
-                out["year"] = [parse_time_value(v).year if parse_time_value(v) else None for v in out["year"]]
+        hints = COUNTRY_COLUMN_NAMES if target == "country" else (PROVINCE_COLUMN_NAMES if target == "province" else CITY_COLUMN_NAMES)
+        geo = next((c for c, n in norm.items() if n in hints), None)
+        if target == "country":
+            if geo is not None and "iso3" not in set(norm.values()):
+                r = get_resolver("country")
+                iso3 = []
+                for v in out[geo]:
+                    m = r.normalize(v)
+                    iso3.append(r.canonical_key(m) if m else None)
+                out["iso3"] = iso3
+                out[f"{geo}_original"] = out[geo]
+            return out
+        # province / city / prefecture: GB/T 2260 codes, validated against the row year
+        if geo is None:
+            self._record_op(
+                "entity_resolution",
+                {"strategy": f"china_{target}", "target_unit": target, "column_found": False},
+                [], [], None, int(len(out)), None, int(out.shape[1]),
+                warnings=[f"no {target}-like column found; {key_col} not created"],
+            )
+            return out
+        r = get_resolver(target)
+        years = out["year"] if "year" in out.columns else None
+        canon: list = []
+        unresolved = []
+        for i, v in enumerate(out[geo]):
+            y = None
+            if years is not None:
+                yv = years.iloc[i]
+                y = int(yv) if not pd.isna(yv) else None
+            m = r.normalize(v, year=y)
+            canon.append(r.canonical_key(m) if m else None)
+            if m is None:
+                unresolved.append(str(v))
+        out[key_col] = canon
+        out[f"{geo}_original"] = out[geo]
+        self._record_op(
+            "entity_resolution",
+            {
+                "strategy": f"china_{target}",
+                "target_unit": target,
+                "entity_column": geo,
+                "key_column": key_col,
+                "resolved_unique": len({c for c in canon if c}),
+                "unresolved_unique": sorted(set(unresolved))[:20],
+            },
+            [], [], None, int(len(out)), None, int(out.shape[1]),
+            warnings=[f"{len(set(unresolved))} values could not be resolved and are left NULL (not guessed)"] if unresolved else [],
+        )
         return out
 
     def _with_time(self, df: pd.DataFrame, cfg: BuildConfig) -> pd.DataFrame:
-        return df  # time normalization now happens in _canon_key
+        """Time normalization (idempotent; main pass happens inside _canon_key)."""
+        return self._normalize_time_column(df)
+
+
+def _to_int_years(values: pd.Series) -> pd.Series:
+    """Coerce year-ish values (YYYY, YYYY-MM, YYYYQ1, dates, datetimes) to integer years.
+
+    Unparseable values become NULL (Int64) — never guessed."""
+    from app.builds.times import parse_time_value
+
+    parsed: list = []
+    for v in values:
+        if v is None or v is pd.NA or (isinstance(v, float) and pd.isna(v)):
+            parsed.append(None)
+            continue
+        y = getattr(v, "year", None)  # datetime / pd.Timestamp
+        if isinstance(y, int) and not isinstance(y, bool):
+            parsed.append(int(y))
+            continue
+        tv = parse_time_value(str(int(v))) if isinstance(v, (int, float)) else parse_time_value(v)
+        parsed.append(tv.year if tv else None)
+    s = pd.Series(parsed, index=values.index, dtype="Int64")
+    return s.astype("int64") if s.notna().all() else s
 
 
 def canon_keys(cfg: BuildConfig) -> list[str]:
