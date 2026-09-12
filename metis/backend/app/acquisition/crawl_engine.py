@@ -7,9 +7,11 @@ import json
 import re
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
 
 from app.acquisition.fabric import CrawlPlan
+from app.acquisition.fabric_core import CrawlPolicyEngine, DomainRateLimiter
 from app.core.errors import MetisError
 from app.core.logging import get_logger
 from app.domain.enums import StrEnumU
@@ -189,10 +191,10 @@ class CrawlFetchRouter:
 
         self.reader = reader
         self.robots = robots if robots is not None else _fc.ROBOTS
-        self.policy = policy or CrawlPolicyEngine()
-        self.limiter = rate_limiter or DomainRateLimiter(default_interval=0.2)
+        self.policy = policy if policy is not None else CrawlPolicyEngine()
+        self.limiter = rate_limiter if rate_limiter is not None else DomainRateLimiter(default_interval=0.2)
 
-    async def fetch(self, url: str, *, respect_robots: bool = True) -> tuple[WebDocumentArtifact, UntrustedContent]:
+    async def fetch(self, url: str, *, respect_robots: bool = True):
 
         if respect_robots:
             allowed, why = await self.robots.allowed(url)
@@ -301,7 +303,7 @@ class CrawlJobRunner:
                 # discover links within depth budget
                 if item.depth < self.plan.max_depth:
                     link_source = getattr(content, "raw_html", "") or content.text
-                    for link, child_depth, parent in discover_links(link_source, item.url, self.plan, item.depth):
+                    for link, child_depth, _parent in discover_links(link_source, item.url, self.plan, item.depth):
                         self.frontier.push(link, min(child_depth, self.plan.max_depth))
                 self.transition(CrawlState.FETCHING, "continue frontier")
                 if checkpoint_path:

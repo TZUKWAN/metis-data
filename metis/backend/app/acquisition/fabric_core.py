@@ -22,7 +22,7 @@ log = get_logger("fabric")
 
 
 # ---------------- P06-001: CrawlPolicyEngine ----------------
-class PolicyVerdict(str, Enum):
+class PolicyVerdict(Enum):
     ALLOW = "allow"
     BLOCK = "block"
     MANUAL_REVIEW = "manual_review"

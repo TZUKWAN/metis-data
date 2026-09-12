@@ -154,15 +154,15 @@ def test_crawl_policy_blocks_out_of_scope_and_registry():
 
     plan = CrawlPlan(seeds=["https://good.com/a"], allowed_domains=["good.com"])
 
-    assert engine.check(plan)["verdict"] == "allow"
+    assert engine.check(plan)["verdict"] == PolicyVerdict.ALLOW
 
     bad = CrawlPlan(seeds=["https://evil.com/a"], allowed_domains=["evil.com"])
 
-    assert engine.check(bad)["verdict"] == "block"
+    assert engine.check(bad)["verdict"] == PolicyVerdict.BLOCK
 
     outside = CrawlPlan(seeds=["https://other.com/a"], allowed_domains=["good.com"])
 
-    assert engine.check(outside)["verdict"] == "block"
+    assert engine.check(outside)["verdict"] == PolicyVerdict.BLOCK
 
 
 

@@ -17,7 +17,7 @@ def _utcnow() -> str:
 
 
 # ---------------- P05-001: AcquisitionTaskType ----------------
-class AcquisitionTaskType(str, Enum):
+class AcquisitionTaskType(Enum):
     DATASET_DISCOVERY = "dataset_discovery"
     DATASET_ACQUIRE = "dataset_acquire"
     WEB_READ = "web_read"
@@ -183,7 +183,7 @@ class PaperRecord(BaseModel):
 
 
 # ---------------- P05-006: BackendCapability ----------------
-class BackendCapability(str, Enum):
+class BackendCapability(Enum):
     SEARCH = "search"
     READ = "read"
     CRAWL = "crawl"
@@ -198,7 +198,7 @@ class BackendCapability(str, Enum):
     SCREENSHOT = "screenshot"
 
 
-class BackendStatus(str, Enum):
+class BackendStatus(Enum):
     AVAILABLE = "available"
     NOT_INSTALLED = "not_installed"
     NOT_CONFIGURED = "not_configured"
