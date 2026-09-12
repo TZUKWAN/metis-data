@@ -54,7 +54,9 @@ class DirectWebReader:
             text_hash=text_hash,
             backend=self.backend,
         )
-        return art, UntrustedContent(text=text, source_url=url, backend=self.backend)
+        uc = UntrustedContent(text=text, source_url=url, backend=self.backend)
+        uc.raw_html = html
+        return art, uc
 
 
 def _extract_title(html: str) -> str:

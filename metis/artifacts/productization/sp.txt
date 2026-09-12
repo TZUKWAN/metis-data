@@ -1,0 +1,17 @@
+F..sF..                                                                  [100%]
+================================== FAILURES ===================================
+_______________________ test_social_query_plan_bounded ________________________
+metis\backend\tests\test_p14_p18_social_paper.py:15: in test_social_query_plan_bounded
+    assert "x" in plan.platforms and "weibo" in plan.platforms
+E   AssertionError: assert ('x' in ['weibo'])
+E    +  where ['weibo'] = SocialQueryPlan(platforms=['weibo'], keywords=['分析近30天某产品在x和微博的口碑'], hashtags=[], accounts=[], since='2026-08-13', until='2026-09-12', max_records_per_platform=50, comment_depth=0).platforms
+________________________ test_paper_digest_incremental ________________________
+metis\backend\tests\test_p14_p18_social_paper.py:79: in test_paper_digest_incremental
+    svc.attach_store(temp_workspace / "seen.json")
+metis\backend\app\acquisition\collectors.py:197: in attach_store
+    if Path(path).exists():
+       ^^^^
+E   NameError: name 'Path' is not defined
+=========================== short test summary info ===========================
+FAILED metis\backend\tests\test_p14_p18_social_paper.py::test_social_query_plan_bounded
+FAILED metis\backend\tests\test_p14_p18_social_paper.py::test_paper_digest_incremental
