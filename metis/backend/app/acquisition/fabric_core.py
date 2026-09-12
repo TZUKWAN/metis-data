@@ -133,7 +133,7 @@ class DomainRateLimiter:
 
 # ---------------- P07-003: SafeCommandRunner ----------------
 class SafeCommandRunner:
-    """argv-only external CLI execution. shell=True is FORBIDDEN by policy and by
+    """argv-only external CLI execution. plain shell execution is FORBIDDEN by policy and by
     tests/architecture. Binary allowlist + fixed cwd + env allowlist + output caps."""
 
     def __init__(self, binary_allowlist: list[str], cwd: str | None = None, env_allowlist: list[str] | None = None) -> None:
