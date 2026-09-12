@@ -251,7 +251,7 @@ def gen_data() -> None:
         with big.open("w", encoding="utf-8") as f:
             f.write(header)
             chunk = []
-            for i in range(1_600_000):
+            for i in range(4_200_000):
                 chunk.append(f"S{rng.randrange(1, 500)},2020-{rng.randrange(1,13):02d}-{rng.randrange(1,29):02d},{rng.random()*100:.4f},G")
                 if len(chunk) >= 50_000:
                     f.write("\n".join(chunk) + "\n")
@@ -265,7 +265,7 @@ def gen_data() -> None:
     if not prof.exists() or prof.stat().st_size < 100 * 1024 * 1024:
         with prof.open("w", encoding="utf-8") as f:
             f.write("id,group,value,category\n")
-            for i in range(2_400_000):
+            for i in range(4_200_000):
                 f.write(f"{i},g{i % 7},{rng.random():.6f},cat{i % 4}\n")
     print(f"profile csv: {prof.stat().st_size/1e6:.1f} MB")
 
