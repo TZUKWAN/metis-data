@@ -1,0 +1,82 @@
+[
+  {
+    "step": 1,
+    "screen": "home",
+    "action": "load",
+    "target": "app",
+    "expected": "connected",
+    "actual": "已连接",
+    "status": "PASS",
+    "ts": "2026-09-13T18:50:05.888Z"
+  },
+  {
+    "step": 2,
+    "screen": "home",
+    "action": "count",
+    "target": ".panel",
+    "expected": ">=8 panels",
+    "actual": "14 panels",
+    "status": "PASS",
+    "ts": "2026-09-13T18:50:05.891Z"
+  },
+  {
+    "step": 3,
+    "screen": "home",
+    "action": "type",
+    "target": "#req-text",
+    "expected": "帮我构建 2012—2024 年中国地级市层面的数字经济、地",
+    "actual": "typed",
+    "status": "PASS",
+    "ts": "2026-09-13T18:50:05.921Z"
+  },
+  {
+    "step": 4,
+    "screen": "planning",
+    "action": "click",
+    "target": "#btn-agent-plan",
+    "expected": "plan card visible",
+    "actual": "true",
+    "status": "PASS",
+    "ts": "2026-09-13T18:50:10.971Z"
+  },
+  {
+    "step": 5,
+    "screen": "planning",
+    "action": "edit",
+    "target": "time_range",
+    "expected": "2015-2024",
+    "actual": "edited",
+    "status": "PASS",
+    "ts": "2026-09-13T18:50:11.110Z"
+  },
+  {
+    "step": 6,
+    "screen": "search",
+    "action": "click",
+    "target": "#btn-search",
+    "expected": "search started",
+    "actual": "clicked",
+    "status": "PASS",
+    "ts": "2026-09-13T18:50:14.169Z"
+  },
+  {
+    "step": 7,
+    "screen": "search",
+    "action": "wait",
+    "target": "completion",
+    "expected": "COMPLETED",
+    "actual": "COMPLETED",
+    "status": "PASS",
+    "ts": "2026-09-13T18:50:56.793Z"
+  },
+  {
+    "step": 8,
+    "screen": "download",
+    "action": "skip",
+    "target": "no candidates visible",
+    "expected": "skip",
+    "actual": "SKIP",
+    "status": "SKIP",
+    "ts": "2026-09-13T18:50:56.897Z"
+  }
+]

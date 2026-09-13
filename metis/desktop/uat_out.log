@@ -1,0 +1,11 @@
+  step 1: load @ app → PASS
+  step 2: count @ .panel → PASS
+  step 3: type @ #req-text → PASS
+  step 4: click @ #btn-agent-plan → PASS
+  step 5: edit @ time_range → PASS
+  step 6: click @ #btn-search → PASS
+  step 7: wait @ completion → PASS
+  step 8: skip @ no candidates visible → SKIP
+\nUAT complete: 7/8 PASS
+Console errors: 0
+  FAIL: step 8 skip: SKIP
