@@ -1,0 +1,1 @@
+SMOKE FAIL: electronApplication.firstWindow: Timeout 30000ms exceeded while waiting for event "window"

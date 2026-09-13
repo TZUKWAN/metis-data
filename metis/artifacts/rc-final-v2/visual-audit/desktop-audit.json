@@ -1,0 +1,49 @@
+{
+  "summary": {
+    "viewports": [
+      {
+        "viewport": [
+          1366,
+          768
+        ],
+        "screenshot": "D:\\数据智能体\\metis\\artifacts\\rc-final-v2\\screenshots\\desktop-1366x768.png",
+        "audit": {
+          "overlaps": [],
+          "clipped": [],
+          "out_of_viewport": [],
+          "tiny_click_targets": [],
+          "horizontal_scroll": false
+        }
+      },
+      {
+        "viewport": [
+          1920,
+          1080
+        ],
+        "screenshot": "D:\\数据智能体\\metis\\artifacts\\rc-final-v2\\screenshots\\desktop-1920x1080.png",
+        "audit": {
+          "overlaps": [],
+          "clipped": [],
+          "out_of_viewport": [],
+          "tiny_click_targets": [],
+          "horizontal_scroll": false
+        }
+      },
+      {
+        "viewport": [
+          2560,
+          1440
+        ],
+        "screenshot": "D:\\数据智能体\\metis\\artifacts\\rc-final-v2\\screenshots\\desktop-2560x1440.png",
+        "audit": {
+          "overlaps": [],
+          "clipped": [],
+          "out_of_viewport": [],
+          "tiny_click_targets": [],
+          "horizontal_scroll": false
+        }
+      }
+    ]
+  },
+  "consoleErrors": []
+}

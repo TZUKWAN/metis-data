@@ -1,13 +1,42 @@
-/* Metis Data — three-column workspace */
-:root { --bg:#0f1115; --panel:#171a21; --line:#2a2f3a; --text:#dfe3ea; --dim:#8b93a3; --acc:#4f8cff; --ok:#39c26d; --warn:#e0a13a; --err:#e05252; }
+/* Metis Data — glass academic workbench (design tokens §9) */
+:root {
+  --bg-0: #0b0d12;
+  --bg-1: #10131a;
+  --glass-strong: rgba(22, 26, 35, .78);
+  --glass-medium: rgba(25, 30, 40, .62);
+  --glass-light: rgba(255,255,255,.045);
+  --glass-border: rgba(255,255,255,.10);
+  --glass-border-hover: rgba(255,255,255,.17);
+  --text-primary: rgba(255,255,255,.94);
+  --text-secondary: rgba(255,255,255,.68);
+  --text-tertiary: rgba(255,255,255,.46);
+  --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
+  --blur-panel: 22px; --blur-float: 30px;
+  --shadow-panel: 0 14px 42px rgba(0,0,0,.28);
+  /* legacy aliases (compat with existing rules) */
+  --bg: var(--bg-0); --panel: var(--glass-strong); --line: var(--glass-border);
+  --text: var(--text-primary); --dim: var(--text-tertiary); --acc: #4f8cff;
+  --ok: #39c26d; --warn: #e0a13a; --err: #e05252;
+}
 * { box-sizing: border-box; }
-body { margin:0; font-family:"Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--text); font-size:13px; }
-header { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid var(--line); background:var(--panel); position:sticky; top:0; z-index:5;}
+body { margin:0; font-family:"Segoe UI",system-ui,sans-serif; background:var(--bg-0); color:var(--text); font-size:13px; line-height:1.5; }
+.col { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.18) transparent; }
+.col::-webkit-scrollbar { width: 8px; }
+.col::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 4px; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 2px solid var(--acc); outline-offset: 1px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+header { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid var(--glass-border); background:var(--glass-strong); backdrop-filter: blur(var(--blur-panel)) saturate(150%); position:sticky; top:0; z-index:5; }
 .brand { font-weight:700; font-size:16px; } .brand .sub { color:var(--dim); font-weight:400; font-size:12px; margin-left:8px;}
 .conn.ok { color:var(--ok); } .conn.bad { color:var(--err); }
-.grid { display:grid; grid-template-columns: 360px 1fr 320px; gap:10px; padding:10px; height:calc(100vh - 52px); }
+.grid { display:grid; grid-template-columns: clamp(260px,18vw,340px) minmax(0,1fr) clamp(320px,24vw,420px); gap:var(--space-3); padding:var(--space-3); height:calc(100vh - 52px); }
 .col { overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
-.panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+.panel { background:var(--glass-medium); border:1px solid var(--glass-border); border-radius:var(--radius-md); padding:10px 12px; backdrop-filter: blur(var(--blur-panel)) saturate(150%); -webkit-backdrop-filter: blur(var(--blur-panel)) saturate(150%); box-shadow: var(--shadow-panel); }
+@supports not (backdrop-filter: blur(10px)) { .panel { background: rgba(22,26,35,.94); } }
 .panel h3 { margin:0 0 8px; font-size:13px; color:var(--acc); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;}
 button { background:#20242e; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:5px 10px; cursor:pointer; font-size:12px; }
 button:hover { border-color:var(--acc); } button.primary { background:var(--acc); border-color:var(--acc); color:#fff; }

@@ -1,0 +1,13 @@
+{
+  "name": "metis-data-desktop",
+  "productName": "Metis Data",
+  "version": "1.0.0",
+  "description": "Metis Data — research data agent desktop client",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}

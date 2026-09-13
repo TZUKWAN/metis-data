@@ -1,0 +1,15 @@
+D:\数据智能体\metis\desktop\visual_audit_electron.js:1
+"""P30-012/§44/§68: Electron visual + geometry audit at multiple resolutions.
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+SyntaxError: Invalid or unexpected token
+    at wrapSafe (node:internal/modules/cjs/loader:1740:18)
+    at Module._compile (node:internal/modules/cjs/loader:1783:20)
+    at Object..js (node:internal/modules/cjs/loader:1940:10)
+    at Module.load (node:internal/modules/cjs/loader:1530:32)
+    at Module._load (node:internal/modules/cjs/loader:1332:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47
+
+Node.js v25.6.0
