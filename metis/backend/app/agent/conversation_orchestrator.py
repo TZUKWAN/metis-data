@@ -125,7 +125,7 @@ class ConversationOrchestrator:
         run_id = await ORCHESTRATOR.run_search(req_dict, provider_ids, None, None, bundle=bundle.model_dump(mode="json"))
 
         from app.db.repository import REPO
-        run = REPO.get_search_run(run_id)
+
         candidates = REPO.list_candidates(run_id)
         provider_tasks = REPO.list_provider_tasks(run_id)
 
@@ -133,7 +133,6 @@ class ConversationOrchestrator:
         total = len(provider_tasks)
         n_cands = len(candidates)
 
-        sources = ", ".join(bundle.source_plan.provider_priorities[:4])
         reply = f"我正在查找{self._extract_topic(text)}相关的数据。\n\n已搜索 {total} 个数据来源（{done} 个成功），找到 {n_cands} 个候选数据集。结果已放到右侧。"
         if n_cands == 0:
             reply = f"我搜索了 {total} 个来源，但没有找到与「{self._extract_topic(text)}」直接匹配的公开数据。\n\n你可以试着放宽时间范围或地域限制，我可以继续搜索学术数据仓储。"
