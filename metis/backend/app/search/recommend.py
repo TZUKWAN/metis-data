@@ -17,6 +17,10 @@ OPEN_LICENSES = re.compile(r"cc0|cc-?by(?!-nc|-nd)|pddl|odc-by|public domain|usg
 
 def _vars_from_requirement(requirement: dict) -> list[str]:
     v = requirement.get("variables") or {}
+    # PlanningBundle format: list of {concept, role}
+    if isinstance(v, list):
+        return [item.get("concept", "") for item in v if isinstance(item, dict) and item.get("concept")]
+    # legacy dict format: {role: [name,...]}
     out = []
     for role in ("outcomes", "exposures", "mediators", "moderators", "controls", "identifiers", "optional"):
         out += v.get(role) or []

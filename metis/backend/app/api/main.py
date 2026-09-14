@@ -890,6 +890,27 @@ async def account_register(provider_id: str, body: RegisterIn):
     return {**result, "session_id": session.session_id}
 
 
+# ---------------- conversations (simple UI) ----------------
+class ChatMessageIn(BaseModel):
+    text: str
+
+
+@app.post("/api/conversations/{cid}/messages")
+async def conversation_message(cid: str, body: ChatMessageIn):
+    """Single entry point: user message → intent → plan → search → acquire → result."""
+    from app.agent.conversation_orchestrator import ConversationOrchestrator
+
+    orch = ConversationOrchestrator()
+    result = await orch.handle_message(cid, body.text)
+    return {"conversation_id": cid, **result}
+
+
+@app.post("/api/conversations")
+async def create_conversation():
+    import uuid
+    return {"conversation_id": f"conv_{uuid.uuid4().hex[:12]}"}
+
+
 # ---------------- events / health ----------------
 @app.get("/api/events")
 async def events(limit: int = 100):
