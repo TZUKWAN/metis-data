@@ -1,0 +1,11 @@
+.............                                                            [100%]
+Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x0000026690685B20>
+Traceback (most recent call last):
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 130, in __del__
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_subprocess.py", line 107, in close
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\proactor_events.py", line 109, in close
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 833, in call_soon
+  File "C:\Users\lauze\miniconda3\Lib\asyncio\base_events.py", line 556, in _check_closed
+RuntimeError: Event loop is closed
+Task was destroyed but it is pending!
+task: <Task pending name='Task-2' coro=<Connection.run() running at C:\Users\lauze\miniconda3\Lib\site-packages\playwright\_impl\_connection.py:314> wait_for=<Future pending cb=[Task.task_wakeup()]>>

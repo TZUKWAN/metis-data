@@ -1,0 +1,6 @@
+  UAT-01a: chat visible @ #chat-pane → PASS
+  UAT-01b: results visible @ #result-pane → PASS
+  UAT-01c: composer visible @ #composer → PASS
+  UAT-01d: legacy panels @ count → PASS
+  UAT-02a: send via Enter @ #chat-input → PASS
+UAT FAIL: locator.count: Target page, context or browser has been closed

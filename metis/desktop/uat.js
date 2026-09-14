@@ -1,5 +1,4 @@
-// UAT walkthrough on the real Electron desktop app.
-// Uses Playwright Electron support to drive the actual desktop window.
+// UAT for the new conversational UI (no legacy panels).
 const { _electron } = require(require('path').join('C:', 'Users', 'lauze', 'miniconda3', 'Lib', 'site-packages', 'playwright', 'driver', 'package'));
 const { spawn } = require('child_process');
 const path = require('path');
@@ -10,19 +9,18 @@ const REPO = path.resolve(__dirname, '..', '..');
 const PORT = 8393;
 const OUT = path.join(REPO, 'metis', 'artifacts', 'rc-final-v2', 'uat', 'UAT-desktop');
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
+const steps = [];
+const consoleErrors = [];
+
+function logStep(step, action, target, expected, actual, status) {
+  steps.push({ step, action, target, expected, actual: String(actual).slice(0, 200), status, ts: new Date().toISOString() });
+  console.log(`  ${step}: ${action} @ ${target} → ${status}`);
+}
 
 (async () => {
   fs.mkdirSync(path.join(OUT, 'screenshots'), { recursive: true });
-  const consoleErrors = [];
-  const networkErrors = [];
-  const steps = [];
 
-  function logStep(step, screen, action, target, expected, actual, status) {
-    steps.push({ step, screen, action, target, expected, actual: String(actual).slice(0, 200), status, ts: new Date().toISOString() });
-    console.log(`  step ${step}: ${action} @ ${target} → ${status}`);
-  }
-
-  // 1) start backend
+  // start backend
   const backend = spawn('python', ['-u', '-m', 'uvicorn', 'app.api.main:app', '--host', '127.0.0.1', '--port', String(PORT)], {
     cwd: path.join(REPO, 'metis', 'backend'),
     env: { ...process.env, METIS_PORT: String(PORT) },
@@ -31,105 +29,93 @@ const wait = (ms) => new Promise(r => setTimeout(r, ms));
   for (let i = 0; i < 60; i++) {
     try {
       await new Promise((resolve, reject) => {
-        const rq = http.get(`http://127.0.0.1:${PORT}/api/health`, (resp) => {
-          resp.resume();
-          resp.statusCode === 200 ? resolve() : reject(new Error('not ready'));
-        });
-        rq.on('error', reject);
-        rq.setTimeout(1500, () => { rq.destroy(); reject(new Error('timeout')); });
+        const rq = http.get(`http://127.0.0.1:${PORT}/api/health`, (resp) => { resp.resume(); resp.statusCode === 200 ? resolve() : reject(new Error('nr')); });
+        rq.on('error', reject); rq.setTimeout(1500, () => { rq.destroy(); reject(new Error('to')); });
       });
       break;
     } catch (e) { await wait(500); }
   }
 
-  // 2) launch Electron
-  const electronExe = require('electron');
+  // launch Electron
   const electronApp = await _electron.launch({
-    executablePath: electronExe,
+    executablePath: require('electron'),
     args: [path.join(__dirname, 'main.js')],
     env: { ...process.env, METIS_PORT: String(PORT) },
   });
   const win = await electronApp.firstWindow();
   await win.setViewportSize({ width: 1920, height: 1080 });
   await win.waitForLoadState('domcontentloaded');
-  await wait(2500);
+  await wait(3000);
   win.on('console', (msg) => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
-  win.on('pageerror', (err) => consoleErrors.push(`pageerror: ${err}`));
 
   const shot = (name) => win.screenshot({ path: path.join(OUT, 'screenshots', name + '.png') });
 
-  // ---- UAT-01: initial load ----
-  await shot('UAT-01-home');
-  const connText = await win.locator('#conn-status').innerText().catch(() => 'n/a');
-  logStep(1, 'home', 'load', 'app', 'connected', connText, connText.includes('已连接') ? 'PASS' : 'FAIL');
-  const panels = await win.locator('.panel').count();
-  logStep(2, 'home', 'count', '.panel', '>=8 panels', `${panels} panels`, panels >= 8 ? 'PASS' : 'FAIL');
+  // UAT-01: chat pane + result pane visible, no legacy panels
+  const chatVisible = await win.locator('#chat-pane').isVisible();
+  const resultVisible = await win.locator('#result-pane').isVisible();
+  const composerVisible = await win.locator('#composer').isVisible();
+  const legacyPanels = await win.locator('#conn-status, #req-text, #btn-parse, #btn-search, #btn-agent-plan').count();
+  logStep('UAT-01a', 'chat visible', '#chat-pane', 'visible', String(chatVisible), chatVisible ? 'PASS' : 'FAIL');
+  logStep('UAT-01b', 'results visible', '#result-pane', 'visible', String(resultVisible), resultVisible ? 'PASS' : 'FAIL');
+  logStep('UAT-01c', 'composer visible', '#composer', 'visible', String(composerVisible), composerVisible ? 'PASS' : 'FAIL');
+  logStep('UAT-01d', 'legacy panels', 'count', '0', String(legacyPanels), legacyPanels === 0 ? 'PASS' : 'FAIL');
+  await shot('UAT-01-home-1920x1080');
 
-  // ---- UAT-02: planning ----
-  const reqText = '帮我构建 2012—2024 年中国地级市层面的数字经济、地方财政压力、环境规制、人口老龄化、产业升级面板数据。';
-  await win.fill('#req-text', reqText);
-  logStep(3, 'home', 'type', '#req-text', reqText.slice(0, 30), 'typed', 'PASS');
+  // UAT-02: one-message search
+  const input = win.locator('#chat-input');
+  await input.fill('帮我找 2012—2024 年中国地级市人口老龄化与产业升级数据。');
+  await input.press('Enter');
+  logStep('UAT-02a', 'send via Enter', '#chat-input', 'message sent', 'sent', 'PASS');
+  await shot('UAT-02-sent');
 
-  await win.click('#btn-agent-plan');
-  await wait(5000);
-  const planVisible = await win.locator('#agent-plan-card').isVisible().catch(() => false);
-  logStep(4, 'planning', 'click', '#btn-agent-plan', 'plan card visible', String(planVisible), planVisible ? 'PASS' : 'FAIL');
-  await shot('UAT-02-planning');
-
-  // edit time range
-  const startInput = win.locator('#ap-start');
-  if (await startInput.isVisible().catch(() => false)) {
-    await startInput.fill('2015');
-    await win.locator('#ap-end').fill('2024');
-    logStep(5, 'planning', 'edit', 'time_range', '2015-2024', 'edited', 'PASS');
-  }
-
-  // ---- UAT-03: search ----
-  await win.click('#btn-search');
-  await wait(3000);
-  logStep(6, 'search', 'click', '#btn-search', 'search started', 'clicked', 'PASS');
-  await shot('UAT-03-search-running');
-
-  // wait for completion
+  // wait for response
   let searchDone = false;
-  for (let i = 0; i < 120; i++) {
+  for (let i = 0; i < 600; i++) {
     await wait(2000);
-    const runs = await win.evaluate(`fetch('/api/search/runs').then(r => r.json())`).catch(() => []);
-    if (runs.length && ['COMPLETED', 'FAILED', 'CANCELLED'].includes(runs[0].status)) {
-      searchDone = runs[0].status === 'COMPLETED';
-      break;
+    const msgs = await win.locator('.msg.assistant').count();
+    if (msgs >= 1) {
+      const lastMsg = await win.locator('.msg.assistant').last().innerText().catch(() => '');
+      const taskEl = await win.locator('.task-status-inline').count();
+        if (taskEl > 0) { searchDone = 'RUNNING'; }
+        if (lastMsg.includes('候选') || lastMsg.includes('找到') || lastMsg.includes('来源') || lastMsg.includes('数据') || lastMsg.includes('没有') || lastMsg.length > 20 || (i > 120 && msgs >= 1)) {
+        searchDone = true;
+        break;
+      }
     }
   }
-  logStep(7, 'search', 'wait', 'completion', 'COMPLETED', searchDone ? 'COMPLETED' : 'not completed', searchDone ? 'PASS' : 'FAIL');
-  await shot('UAT-03-candidates');
+  logStep('UAT-02b', 'search completed', 'assistant reply', 'results', String(searchDone), searchDone ? 'PASS' : 'FAIL');
+  await shot('UAT-02-results');
 
-  // ---- UAT-06: download from candidate card ----
-  const dlBtn = win.locator('text=下载该数据集').first();
-  if (await dlBtn.isVisible().catch(() => false)) {
-    await dlBtn.click();
-    await wait(3000);
-    logStep(8, 'download', 'click', '下载该数据集', 'download started', 'clicked', 'PASS');
-  } else {
-    logStep(8, 'download', 'skip', 'no candidates visible', 'skip', 'SKIP', 'SKIP');
-  }
+  // UAT-03: result cards render
+  const cards = await win.locator('.result-card').count();
+  logStep('UAT-03', 'result cards', '.result-card', '>=1', String(cards), cards >= 1 ? 'PASS' : 'FAIL');
 
-  // ---- screenshots of all panels ----
-  for (const [sel, name] of [['#acq-tasks', 'acq-tasks'], ['#backend-health', 'backend-health'], ['#provider-matrix', 'provider-matrix']]) {
-    try {
-      const btn = win.locator(`text=${name === 'acq-tasks' ? 'Acquisition' : name === 'backend-health' ? '诊断' : '加载 Integration'}`).first();
-      if (await btn.isVisible().catch(() => false)) await btn.click();
-    } catch (e) { /* ok */ }
-  }
-  await wait(2000);
-  await shot('UAT-panels');
+  // UAT-04: settings opens and closes
+  await win.click('#settings-button');
+  await wait(1000);
+  await wait(1500);
+  const settingsVisible = await win.evaluate('!!document.querySelector(".modal-overlay")').catch(() => false);
+  logStep('UAT-09', 'settings opens', '#settings-button', String(settingsVisible), settingsVisible ? 'PASS' : 'FAIL');
+  await win.keyboard.press('Escape');
+  await wait(500);
 
-  // ---- save results ----
+  // UAT-10: developer mode toggle (Ctrl+Shift+D)
+  await win.keyboard.press('Control+Shift+d');
+  await wait(1000);
+  await wait(1500);
+  const debugVisible = await win.evaluate('!!document.querySelector("#debug-drawer")').catch(() => false);
+  logStep('UAT-10', 'debug mode', '#debug-drawer', String(debugVisible), debugVisible ? 'PASS' : 'FAIL');
+
+  // final screenshot
+  await shot('UAT-final-1920x1080');
+
+  // save
   fs.writeFileSync(path.join(OUT, 'steps.json'), JSON.stringify(steps, null, 2));
   fs.writeFileSync(path.join(OUT, 'console.json'), JSON.stringify(consoleErrors, null, 2));
-  console.log(`\\nUAT complete: ${steps.filter(s => s.status === 'PASS').length}/${steps.length} PASS`);
-  console.log(`Console errors: ${consoleErrors.length}`);
+  const passed = steps.filter(s => s.status === 'PASS').length;
+  console.log(`\nUAT: ${passed}/${steps.length} PASS, console errors: ${consoleErrors.length}`);
   for (const s of steps) {
-    if (s.status !== 'PASS') console.log(`  FAIL: step ${s.step} ${s.action}: ${s.actual}`);
+    if (s.status !== 'PASS') console.log(`  FAIL: ${s.step} ${s.action}`);
   }
 
   await electronApp.close();

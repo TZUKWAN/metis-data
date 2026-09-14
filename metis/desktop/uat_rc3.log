@@ -1,0 +1,15 @@
+  UAT-01a: chat visible @ #chat-pane → PASS
+  UAT-01b: results visible @ #result-pane → PASS
+  UAT-01c: composer visible @ #composer → PASS
+  UAT-01d: legacy panels @ count → PASS
+  UAT-02a: send via Enter @ #chat-input → PASS
+  UAT-02b: search completed @ assistant reply → FAIL
+  UAT-03: result cards @ .result-card → FAIL
+  UAT-09: settings opens @ #settings-button → undefined
+  UAT-10: debug mode @ #debug-drawer → undefined
+
+UAT: 5/9 PASS, console errors: 0
+  FAIL: UAT-02b search completed
+  FAIL: UAT-03 result cards
+  FAIL: UAT-09 settings opens
+  FAIL: UAT-10 debug mode
