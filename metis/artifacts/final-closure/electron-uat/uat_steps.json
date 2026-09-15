@@ -1,0 +1,122 @@
+[
+  {
+    "step": "UAT-01",
+    "action": "empty shell (chat+results+composer, legacy=0)",
+    "expected": "all visible, 0 legacy",
+    "actual": "chat=true results=true composer=true legacy=0",
+    "status": "PASS",
+    "ts": "2026-09-15T20:24:49.331Z"
+  },
+  {
+    "step": "UAT-02",
+    "action": "Enter sends, input clears, task created",
+    "expected": "cleared+user msg+status+task",
+    "actual": "cleared=true user=1 status=1 task=ctask_4805e6c3137a",
+    "status": "PASS",
+    "ts": "2026-09-15T20:24:50.242Z"
+  },
+  {
+    "step": "UAT-03",
+    "action": "async responsiveness",
+    "expected": "status < 2s",
+    "actual": "723ms",
+    "status": "PASS",
+    "ts": "2026-09-15T20:24:50.242Z"
+  },
+  {
+    "step": "UAT-04",
+    "action": "real search completes with results",
+    "expected": "COMPLETE + ≥1 card",
+    "actual": "state=COMPLETE cards=27",
+    "status": "PASS",
+    "ts": "2026-09-15T20:25:35.620Z"
+  },
+  {
+    "step": "UAT-05",
+    "action": "preview replaces list",
+    "expected": "preview visible, list hidden",
+    "actual": "visible=true listHidden=true",
+    "status": "PASS",
+    "ts": "2026-09-15T20:25:37.810Z"
+  },
+  {
+    "step": "UAT-06",
+    "action": "public download → READY",
+    "expected": "可用",
+    "actual": "state=可用",
+    "status": "PASS",
+    "ts": "2026-09-15T20:25:42.347Z"
+  },
+  {
+    "step": "UAT-13",
+    "action": "CSV export downloads file",
+    "expected": "file >100B in Downloads",
+    "actual": "file=export.csv size=2489925",
+    "status": "PASS",
+    "ts": "2026-09-15T20:25:43.966Z"
+  },
+  {
+    "step": "UAT-14",
+    "action": "refresh restores messages+results",
+    "expected": "≥2 msgs, ≥1 card",
+    "actual": "msgs=2 cards=27",
+    "status": "PASS",
+    "ts": "2026-09-15T20:25:47.031Z"
+  },
+  {
+    "step": "UAT-17",
+    "action": "stop button cancels task",
+    "expected": "CANCELLED",
+    "actual": "state=CANCELLED",
+    "status": "PASS",
+    "ts": "2026-09-15T20:25:51.091Z"
+  },
+  {
+    "step": "UAT-15",
+    "action": "new conversation isolates",
+    "expected": "fresh empty state",
+    "actual": "msgs=0 cidChanged=true",
+    "status": "PASS",
+    "ts": "2026-09-15T20:25:54.641Z"
+  },
+  {
+    "step": "VIS",
+    "action": "screenshot 1366x768",
+    "expected": "captured",
+    "actual": "ok",
+    "status": "PASS",
+    "ts": "2026-09-15T20:25:55.928Z"
+  },
+  {
+    "step": "VIS",
+    "action": "screenshot 1600x900",
+    "expected": "captured",
+    "actual": "ok",
+    "status": "PASS",
+    "ts": "2026-09-15T20:25:57.228Z"
+  },
+  {
+    "step": "VIS",
+    "action": "screenshot 2560x1440",
+    "expected": "captured",
+    "actual": "ok",
+    "status": "PASS",
+    "ts": "2026-09-15T20:25:58.578Z"
+  },
+  {
+    "step": "UAT-19",
+    "action": "console errors = 0",
+    "expected": "0",
+    "actual": "0",
+    "status": "PASS",
+    "ts": "2026-09-15T20:25:58.578Z"
+  },
+  {
+    "step": "UAT-19",
+    "action": "unexpected 4xx/5xx = 0",
+    "expected": "0",
+    "actual": "0",
+    "status": "PASS",
+    "ts": "2026-09-15T20:25:58.578Z"
+  }
+]

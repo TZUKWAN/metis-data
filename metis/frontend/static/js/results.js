@@ -41,28 +41,60 @@ async function handleAction(action, resultId) {
     if (itv) showAuthModal(itv, refreshAll);
   } else if (action.startsWith("export")) {
     const fmt = action.split(":")[1];
-    window.location.href = `/api/results/${resultId}/export/${fmt}`;
+    await downloadToFile(`/api/results/${resultId}/export/${fmt}`, `export.${fmt}`);
   }
+}
+
+// Downloads go through plain navigation to an attachment URL: browsers start a
+// download without leaving the page, and the Electron shell saves via will-download.
+async function downloadToFile(url, fallbackName) {
+  // attachment navigation: browsers download without leaving the page;
+  // the Electron shell intercepts will-download and saves to the user's folder
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fallbackName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  noteDownload();
+}
+
+function noteDownload() {
+  const el = $("result-header");
+  if (!el) return;
+  const note = document.createElement("span");
+  note.className = "dim dl-note";
+  note.textContent = " · 文件已保存到下载文件夹";
+  el.appendChild(note);
+  setTimeout(() => note.remove(), 6000);
+}
+
+// desktop shell announces completed downloads — surface it in the header
+if (window.metisDesktop && window.metisDesktop.onDownloadFinished) {
+  window.metisDesktop.onDownloadFinished(({ name }) => {
+    const el = $("result-header");
+    if (el) el.innerHTML += ` <span class="dim">· 已保存 ${name.replace(/<>&"/g, "")}</span>`;
+  });
 }
 
 // P0-04: the ONLY download entry — conversation-scoped result API.
 export async function requestResultDownload(resultId) {
   const card = document.querySelector(`[data-result="${resultId}"] .rc-state`);
-  if (card) card.textContent = "正在获取…";
+  if (card && card.textContent === "已找到") card.textContent = "正在获取…";
   try {
+    // FOUND → POST runs the acquire chain (may need login: 202 + intervention)
     const r = await fetch(`/api/results/${resultId}/download`, { method: "POST" });
     if (r.ok) {
-      const blob = await r.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      const dispo = r.headers.get("content-disposition") || "";
-      a.download = decodeURIComponent((dispo.match(/filename="?([^";]+)"?/) || [])[1] || "dataset");
-      a.click();
-      URL.revokeObjectURL(url);
+      // READY/FINAL served inline — re-issue as a navigable attachment URL
+      await downloadToFile(`/api/results/${resultId}/download`, "dataset");
     } else if (r.status === 202) {
       const j = await r.json();
       if (card) card.textContent = stateCopy(j.state);
+      if (j.state === "需要登录") {
+        const { showAuthModal } = await import('./auth-modal.js');
+        const itvs = await api(`/api/conversations/${state.conversationId}/interventions?state=WAITING_USER`);
+        if (itvs.length) showAuthModal(itvs[0], refreshAll);
+      }
     } else {
       const j = await r.json().catch(() => ({}));
       if (card) card.textContent = "获取失败";

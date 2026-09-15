@@ -39,7 +39,9 @@ class ConversationTaskManager:
                 emit(t.get("conversation_id", ""), "task.updated", {"task_id": task_id, "state": "CANCELLED"})
                 raise
             except Exception as e:  # noqa: BLE001 — the boundary: nothing escapes un-persisted
-                log.error_ctx("conversation pipeline crashed", task_id=task_id, error=str(e)[:400])
+                import traceback
+
+                log.error_ctx("conversation pipeline crashed", task_id=task_id, error=traceback.format_exc()[-800:])
                 code = str(getattr(e, "code", "PIPELINE_ERROR"))
                 t = STORE.get_task(task_id) or {}
                 cid = t.get("conversation_id", "")

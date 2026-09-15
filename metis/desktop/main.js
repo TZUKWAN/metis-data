@@ -111,6 +111,17 @@ function createWindow() {
   });
 
   mainWindow.once('ready-to-show', () => mainWindow.show());
+
+  // dataset/file downloads: save into the user's Downloads folder without a save dialog
+  mainWindow.webContents.session.on('will-download', (_event, item) => {
+    const savePath = path.join(app.getPath('downloads'), item.getFilename());
+    item.setSavePath(savePath);
+    item.once('done', (_e, state) => {
+      if (state === 'completed') {
+        mainWindow.webContents.send('download-finished', { file: savePath, name: item.getFilename() });
+      }
+    });
+  });
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('http') && !url.startsWith(BASE_URL)) {
       shell.openExternal(url);

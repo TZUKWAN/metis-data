@@ -97,6 +97,9 @@ def evaluate_candidates(candidates: list[dict], requirement: dict) -> list[dict]
         # time
         tc = c.get("time_coverage") or {}
         t_start, t_end = tc.get("start"), tc.get("end")
+        if isinstance(req_time, dict):  # PlanningBundle shape {"start":..,"end":..}
+            req_time = [req_time.get("start"), req_time.get("end")]
+            requirement["time_range"] = req_time
         if req_time and t_start and t_end:
             try:
                 s, e = int(str(t_start)[:4]), int(str(t_end)[:4])

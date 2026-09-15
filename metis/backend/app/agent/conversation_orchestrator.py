@@ -235,6 +235,9 @@ class ConversationOrchestrator:
 
         req_dict = dict(bundle.get("requirement") or {})
         req_dict.setdefault("requirement_id", f"req_{uuid.uuid4().hex[:12]}")
+        tr = req_dict.get("time_range")
+        if isinstance(tr, dict):  # bundle shape → domain list shape expected by search
+            req_dict["time_range"] = [tr.get("start"), tr.get("end")] if tr.get("start") and tr.get("end") else None
         provider_ids = bundle.get("source_plan", {}).get("provider_priorities")[:6] or None
         run_id = f"run_{uuid.uuid4().hex[:16]}"
 

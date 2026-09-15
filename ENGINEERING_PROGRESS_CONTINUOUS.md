@@ -35,3 +35,28 @@ Fix: Result API 主链 + requestResultDownload(result_id)
 production 零 import。接线到 Result API。
 
 （后续轮次持续追加）
+
+## Round 1 · Fix Log (commits 37d41c8 → 8510935)
+
+### ISSUE-101..116 P0 closure
+所有 §5 P0-01~P0-16 已关闭：
+- Result 主链：ConversationResultLink（稳定 result_id）→ result_view_for_link → /api/conversations/{id}/results → 前端卡片（只吃 ResultView 字段）
+- Preview：/api/results/{id}/preview 按 FOUND(metadata)/READY(real data)/FINAL(final csv) 分派
+- Download：POST /api/results/{id}/download → Access → (Intervention→probe→auto-resume) → Acquisition → READY
+- Build：plan_build → BuildExecutor.from_build_plan → FINAL link；一句话构建 → DISCOVER_ACQUIRE_BUILD 全链
+- Task：ConversationTaskManager 兜底异常→FAILED + 友好文案；9 个中间态持久化；重启 reconcile
+- WS /ws/conversations/{cid} + 轮询 fallback；取消端点真停管线
+- 架构不变量 9 条（§25）+ 18 个确定性产品 E2E（§24）+ CI conversation-product-e2e job
+
+### Round 2 · Live dogfood defects (found in real browser UAT, fixed in 8510935)
+- ISSUE-201 (P1) 静态 JS 缓存导致升级后 UI 全挂（ws.onmessage 非 async 的 SyntaxError 被缓存放大）
+  Fix: no-cache header + index.html 错误钩子 + cache-bust 参数
+- ISSUE-202 (P1) World Bank JSON [pageinfo,[records]] 结构使 preview 500
+  Fix: _json_records 解包；preview 解析失败降级为 metadata 视图（不再 500）
+- ISSUE-203 (P2) 真实下载验证：SL.UEM.1524.FM.ZS 4.8MB → READY → 预览 17424 行 × 10 列 → CSV 导出 2.5MB 全通
+
+## 当前验证状态
+- 全量回归: 202 passed, 0 failed
+- 产品 E2E: 18/18 (fixture LLM/provider/access/acquisition, CI 可复现)
+- 真实浏览器 UAT: 发送→流式结果→预览→下载→READY→导出 全链 PASS（12 个真实 OECD/WB 候选）
+- 真实服务器: http://0.0.0.0:8300 运行中
