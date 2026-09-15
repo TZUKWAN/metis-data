@@ -47,3 +47,8 @@ metis/workspace/logs/
 # Electron desktop
 metis/desktop/node_modules/
 metis/desktop/smoke_*.log
+metis/workspace/raw/
+metis/workspace/intermediate/
+metis/workspace/final/
+metis/backend/metis/workspace/
+metis/backend/workspace/
