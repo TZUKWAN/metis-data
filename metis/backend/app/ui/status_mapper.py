@@ -13,11 +13,8 @@ STATE_MAP = {
     "CANCELLED": "已取消",
     "FOUND": "已找到",
     "ACQUIRING": "正在获取…",
-    "WAITING_USER": "需要你的操作",
     "READY": "可用",
-    "BUILDING": "正在整理…",
     "FINAL": "最终数据集",
-    "FAILED": "获取失败",
 }
 
 ERROR_MAP = {

@@ -921,7 +921,6 @@ async def conversation_message(cid: str, body: ChatMessageIn):
     _ensure_conversation(cid, title=body.text[:60])
     message_id = f"msg_{_uuid.uuid4().hex[:12]}"
     task_id = f"ctask_{_uuid.uuid4().hex[:12]}"
-    now = datetime.now(UTC).isoformat()
 
     with new_session() as sess:
         sess.add(ConversationMessageRow(message_id=message_id, conversation_id=cid, role="user", content=body.text, created_at=datetime.now(UTC)))
