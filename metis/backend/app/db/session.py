@@ -38,7 +38,37 @@ def init_db() -> None:
     from app.db.models import Base
 
     get_settings().ensure_dirs()
+    _migrate_conversation_tables()
     Base.metadata.create_all(get_engine())
+
+
+def _migrate_conversation_tables() -> None:
+    """Dev-safe schema drift: add columns introduced after a table already exists.
+
+    create_all never alters existing tables; conversation_* tables evolved across
+    the conversational-redesign rounds, so missing columns are added via ALTER TABLE.
+    """
+    from sqlalchemy import text
+
+    from app.ui import models as ui_models
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        for table in (
+            ui_models.ConversationRow,
+            ui_models.ConversationMessageRow,
+            ui_models.ConversationTaskRow,
+            ui_models.ConversationResultLinkRow,
+            ui_models.ConversationInterventionRow,
+        ):
+            existing = {row[1] for row in conn.execute(text(f"PRAGMA table_info({table.__tablename__})"))}
+            if not existing:
+                continue
+            for col in table.__table__.columns:
+                if col.name not in existing:
+                    col_type = col.type.compile(engine.dialect)
+                    conn.execute(text(f"ALTER TABLE {table.__tablename__} ADD COLUMN {col.name} {col_type}"))
+        conn.commit()
 
 
 def new_session() -> Session:

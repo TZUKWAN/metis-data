@@ -4,7 +4,6 @@ from __future__ import annotations
 import asyncio
 import json
 from contextlib import asynccontextmanager
-from datetime import UTC
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
@@ -18,7 +17,6 @@ from app.core.logging import get_logger, setup_logging
 from app.db.recovery import reconcile_on_startup
 from app.db.repository import REPO
 from app.db.session import init_db
-from app.ui.models import ConversationMessageRow, ConversationRow, ConversationTaskRow
 
 log = get_logger("api")
 
@@ -31,6 +29,9 @@ async def lifespan(app: FastAPI):
     get_settings().ensure_dirs()
     init_db()
     reconcile_on_startup()
+    from app.agent.conversation_tasks import MANAGER as CTM
+
+    CTM.reconcile_on_startup()  # §10: no ghost RUNNING conversation tasks after restart
     yield
 
 
@@ -892,64 +893,37 @@ async def account_register(provider_id: str, body: RegisterIn):
     return {**result, "session_id": session.session_id}
 
 
-# ---------------- conversations (async, persistent) ----------------
+# ---------------- conversations (async, persistent) — P0-01..P0-15 / §6-§11 ----------------
 class ChatMessageIn(BaseModel):
     text: str
 
 
-def _ensure_conversation(cid: str, title: str = "") -> None:
-    """Persist a conversation row if it doesn't exist yet."""
-    from app.db.session import new_session
+@app.post("/api/conversations")
+async def create_conversation():
+    from app.ui.conversation_store import STORE
 
-    with new_session() as sess:
-        from sqlalchemy import select
+    return {"conversation_id": STORE.create_conversation()}
 
-        row = sess.execute(select(ConversationRow).where(ConversationRow.conversation_id == cid)).scalar_one_or_none()
-        if row is None:
-            sess.add(ConversationRow(conversation_id=cid, title=title or "新任务", status="active"))
-            sess.commit()
+
+@app.get("/api/conversations")
+async def list_conversations():
+    from app.ui.conversation_store import STORE
+
+    return STORE.list_conversations()
 
 
 @app.post("/api/conversations/{cid}/messages")
 async def conversation_message(cid: str, body: ChatMessageIn):
-    """P0-01: async pattern — persist message, create task, schedule pipeline, return 202 immediately."""
-    import uuid as _uuid
-    from datetime import datetime
+    """Async pattern (P0-01/§12): persist message, create task, schedule the pipeline,
+    return 202 immediately — never waits for LLM/search."""
+    from app.agent.conversation_tasks import MANAGER as CTM
+    from app.ui.conversation_store import STORE
 
-    from app.db.session import new_session
+    STORE.ensure_conversation(cid, title=body.text[:60])
+    message_id = STORE.add_message(cid, "user", body.text)
+    task_id = STORE.create_task(cid, intent="pending")
 
-    _ensure_conversation(cid, title=body.text[:60])
-    message_id = f"msg_{_uuid.uuid4().hex[:12]}"
-    task_id = f"ctask_{_uuid.uuid4().hex[:12]}"
-
-    with new_session() as sess:
-        sess.add(ConversationMessageRow(message_id=message_id, conversation_id=cid, role="user", content=body.text, created_at=datetime.now(UTC)))
-        sess.add(ConversationTaskRow(task_id=task_id, conversation_id=cid, intent="discover_data", state="UNDERSTANDING", created_at=datetime.now(UTC)))
-        sess.commit()
-
-    # schedule background pipeline — returns 202 in <500ms
-    async def _pipeline():
-        from app.agent.conversation_orchestrator import ConversationOrchestrator
-
-        orch = ConversationOrchestrator()
-        result = await orch.handle_message(cid, body.text)
-        # persist assistant reply
-        with new_session() as sess2:
-            sess2.add(ConversationMessageRow(
-                message_id=f"msg_{_uuid.uuid4().hex[:12]}", conversation_id=cid,
-                role="assistant", content=result.get("reply", ""),
-                task_id=task_id, data_json=result,
-                created_at=datetime.now(UTC),
-            ))
-            # update task state
-            from sqlalchemy import update as sa_update
-
-            sess2.execute(sa_update(ConversationTaskRow).where(ConversationTaskRow.task_id == task_id).values(state="COMPLETE", updated_at=datetime.now(UTC)))
-            sess2.commit()
-
-    import asyncio as _asyncio
-    TASKS[task_id] = _asyncio.create_task(_pipeline())
-
+    CTM.start(task_id, _conversation_pipeline(cid, task_id, body.text))
     return JSONResponse(status_code=202, content={
         "message_id": message_id,
         "task_id": task_id,
@@ -958,43 +932,374 @@ async def conversation_message(cid: str, body: ChatMessageIn):
     })
 
 
+async def _conversation_pipeline(cid: str, task_id: str, text: str) -> None:
+    from app.agent.conversation_orchestrator import ORCHESTRATOR_CONV
+    from app.agent.conversation_tasks import emit
+    from app.ui.conversation_store import STORE
+
+    result = await ORCHESTRATOR_CONV.handle_message(cid, text, task_id)
+    STORE.add_message(cid, "assistant", result.get("reply", ""), task_id=task_id, data=result)
+    STORE.update_task(task_id, state="COMPLETE", stage_label="已完成", progress=1.0)
+    emit(cid, "assistant.message", {"task_id": task_id, "reply": result.get("reply", ""), **{k: v for k, v in result.items() if k != "reply"}})
+    emit(cid, "task.completed", {"task_id": task_id, "state": "COMPLETE"})
+
+
 @app.get("/api/conversations/{cid}/messages")
 async def get_messages(cid: str):
-    from sqlalchemy import select
+    from app.ui.conversation_store import STORE
 
-    from app.db.session import new_session
+    return STORE.list_messages(cid)
 
-    with new_session() as s:
-        rows = s.execute(select(ConversationMessageRow).where(ConversationMessageRow.conversation_id == cid).order_by(ConversationMessageRow.created_at)).scalars().all()
-        return [{"message_id": r.message_id, "role": r.role, "content": r.content, "task_id": r.task_id, "created_at": r.created_at.isoformat()} for r in rows]
+
+@app.get("/api/conversations/{cid}/tasks")
+async def get_conversation_tasks(cid: str):
+    from app.ui.conversation_store import STORE
+
+    return STORE.list_tasks(cid)
 
 
 @app.get("/api/conversations/{cid}/task/{task_id}")
 async def get_task_state(cid: str, task_id: str):
-    """Poll task state — frontend uses this instead of waiting for the sync HTTP response."""
-    from sqlalchemy import select
+    from app.ui.conversation_store import STORE
 
-    from app.db.session import new_session
-
-    with new_session() as s:
-        row = s.execute(select(ConversationTaskRow).where(ConversationTaskRow.task_id == task_id)).scalar_one_or_none()
-        if row is None:
-            raise HTTPException(404, "task not found")
-        return {"task_id": row.task_id, "state": row.state, "intent": row.intent}
+    row = STORE.get_task(task_id)
+    if row is None:
+        raise HTTPException(404, "task not found")
+    return row
 
 
-@app.post("/api/conversations")
-async def create_conversation():
-    import uuid as _uuid
-    from datetime import datetime
+@app.post("/api/conversations/{cid}/task/{task_id}/cancel")
+async def cancel_conversation_task(cid: str, task_id: str):
+    """UAT-17: cancel really stops the pipeline (search workers observe the flag)."""
+    from app.agent.conversation_tasks import MANAGER as CTM
+    from app.ui.conversation_store import STORE
 
-    from app.db.session import new_session
+    STORE.update_task(task_id, state="CANCELLED")  # pipeline polls this and aborts
+    CTM.cancel(task_id)
+    from app.agent.conversation_tasks import emit
 
-    cid = f"conv_{_uuid.uuid4().hex[:12]}"
-    with new_session() as sess:
-        sess.add(ConversationRow(conversation_id=cid, title="新任务", created_at=datetime.now(UTC)))
-        sess.commit()
-    return {"conversation_id": cid}
+    emit(cid, "task.updated", {"task_id": task_id, "state": "CANCELLED", "stage_label": "已取消"})
+    return {"task_id": task_id, "state": "CANCELLED"}
+
+
+# ---- results: the single user-facing result entry (§8/§9, P0-02/03/04) ----
+def _result_view(link: dict):
+    from app.ui.projection import result_view_for_link
+
+    return result_view_for_link(link)
+
+
+@app.get("/api/conversations/{cid}/results")
+async def conversation_results(cid: str):
+    from app.ui.conversation_store import STORE
+
+    return [_result_view(lnk).model_dump() for lnk in STORE.list_result_links(cid)]
+
+
+def _get_link_or_404(result_id: str) -> dict:
+    from app.ui.conversation_store import STORE
+
+    link = STORE.get_result_link(result_id)
+    if link is None:
+        raise HTTPException(404, "result not found")
+    return link
+
+
+@app.get("/api/results/{result_id}")
+async def get_result(result_id: str):
+    return _result_view(_get_link_or_404(result_id)).model_dump()
+
+
+@app.get("/api/results/{result_id}/preview")
+async def result_preview(result_id: str, rows: int = 30):
+    """P0-03: ONE preview entry — dispatch by link state:
+    FOUND → metadata preview (no fabricated numbers); READY → real artifact data;
+    FINAL → final dataset preview."""
+    import json as _json
+
+    from app.core.paths import final_dir, raw_root
+    from app.datasets.parsers import parse_table
+    from app.db.repository import REPO
+
+    link = _get_link_or_404(result_id)
+    state, kind = link["state"], link["source_kind"]
+
+    if state == "READY" and kind == "artifact":
+        a = REPO.get_artifact(link["source_ref"])
+        if not a:
+            raise HTTPException(404, "artifact not found")
+        df = parse_table(raw_root() / a["raw_path"]).df
+        return {
+            "preview_kind": "data",
+            "title": link["title"],
+            "columns": list(map(str, df.columns)),
+            "rows": _json.loads(df.head(rows).to_json(orient="records", force_ascii=False)),
+            "total_rows": int(len(df)),
+        }
+
+    if state == "FINAL" and kind == "build":
+        p = final_dir(link["source_ref"]) / "final" / "dataset.csv"
+        if not p.exists():
+            raise HTTPException(404, "final dataset not ready")
+        import pandas as pd
+
+        df = pd.read_csv(p)
+        return {
+            "preview_kind": "final",
+            "title": link["title"],
+            "columns": list(map(str, df.columns)),
+            "rows": _json.loads(df.head(rows).to_json(orient="records", force_ascii=False)),
+            "total_rows": int(len(df)),
+        }
+
+    # FOUND / WAITING_USER / ACQUIRING / FAILED → candidate metadata preview (honest: no data yet)
+    c = REPO.get_candidate(link["source_ref"]) or {}
+    sources = c.get("sources") or [{}]
+    return {
+        "preview_kind": "metadata",
+        "title": link["title"] or c.get("title", ""),
+        "description": c.get("description", ""),
+        "publisher": c.get("publisher", ""),
+        "geography": c.get("geography", []),
+        "time_coverage": c.get("time_coverage"),
+        "variable_hints": c.get("variable_hints", []),
+        "license": c.get("license", "UNKNOWN"),
+        "source_url": sources[0].get("source_url", ""),
+        "state": state,
+    }
+
+
+@app.post("/api/results/{result_id}/download")
+async def result_download(result_id: str):
+    """P0-04: the ONLY download path for the chat UI.
+
+    READY/FINAL → stream the file. FOUND → run the full acquire chain
+    (Access → Intervention when login needed → Acquisition → READY).
+    """
+    from fastapi.responses import FileResponse
+
+    from app.core.paths import final_dir, raw_root
+
+    link = _get_link_or_404(result_id)
+    state, kind = link["state"], link["source_kind"]
+
+    if state == "READY" and kind == "artifact":
+        from app.db.repository import REPO
+
+        a = REPO.get_artifact(link["source_ref"])
+        if not a:
+            raise HTTPException(404, "artifact not found")
+        p = raw_root() / a["raw_path"]
+        return FileResponse(p, filename=p.name)
+
+    if state == "FINAL" and kind == "build":
+        p = final_dir(link["source_ref"]) / "final" / "dataset.csv"
+        if not p.exists():
+            raise HTTPException(404, "final dataset not ready")
+        return FileResponse(p, filename="dataset.csv")
+
+    if state == "FOUND" and kind == "candidate":
+        from app.agent.conversation_orchestrator import ORCHESTRATOR_CONV
+
+        orch_result = await ORCHESTRATOR_CONV._acquire_link(link["conversation_id"], link.get("task_id") or "", link)
+        ok, note = orch_result
+        link2 = _get_link_or_404(result_id)
+        if ok:
+            from app.db.repository import REPO
+
+            a = REPO.get_artifact(link2["source_ref"])
+            return FileResponse(raw_root() / a["raw_path"], filename=(raw_root() / a["raw_path"]).name)
+        return JSONResponse(status_code=202, content={"result_id": result_id, "state": link2["state"], "message": note})
+
+    raise HTTPException(409, f"result in state {state} cannot be downloaded")
+
+
+@app.get("/api/results/{result_id}/export/{fmt}")
+async def result_export(result_id: str, fmt: str):
+    """UAT-13: CSV / XLSX / Parquet export of READY artifacts and FINAL builds."""
+    fmt = fmt.lower()
+    if fmt not in ("csv", "xlsx", "parquet"):
+        raise HTTPException(422, "unsupported export format")
+    import io
+
+    import pandas as pd
+    from fastapi.responses import FileResponse
+
+    from app.core.paths import final_dir, raw_root
+    from app.db.repository import REPO
+
+    link = _get_link_or_404(result_id)
+    if link["state"] == "FINAL" and link["source_kind"] == "build":
+        p = final_dir(link["source_ref"]) / "final" / f"dataset.{fmt}"
+        if not p.exists():
+            raise HTTPException(404, "export not available")
+        return FileResponse(p, filename=f"{link['title'] or 'dataset'}.{fmt}")
+
+    if link["state"] == "READY" and link["source_kind"] == "artifact":
+        a = REPO.get_artifact(link["source_ref"])
+        if not a:
+            raise HTTPException(404, "artifact not found")
+        src = raw_root() / a["raw_path"]
+        if src.suffix.lower() == f".{fmt}":
+            return FileResponse(src, filename=src.name)
+        df = pd.read_csv(src) if src.suffix == ".csv" else None
+        if df is None:
+            from app.datasets.parsers import parse_table
+
+            df = parse_table(src).df
+        buf = io.BytesIO()
+        if fmt == "csv":
+            df.to_csv(buf, index=False)
+        elif fmt == "xlsx":
+            df.to_excel(buf, index=False)
+        else:
+            df.to_parquet(buf, index=False)
+        buf.seek(0)
+        from fastapi.responses import Response as FastResponse
+
+        return FastResponse(
+            content=buf.getvalue(),
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f'attachment; filename="export.{fmt}"'},
+        )
+
+    raise HTTPException(409, f"result in state {link['state']} cannot be exported")
+
+
+@app.post("/api/results/{result_id}/select")
+async def result_select(result_id: str, selected: bool = True):
+    from app.ui.conversation_store import STORE
+
+    link = _get_link_or_404(result_id)
+    data = dict(link.get("data") or {})
+    data["selected"] = selected
+    STORE.update_result_link(result_id, data=data)
+    return {"result_id": result_id, "selected": selected}
+
+
+# ---- interventions (P0-13/14/15) ----
+@app.get("/api/conversations/{cid}/interventions")
+async def conversation_interventions(cid: str, state: str | None = None):
+    from app.ui.conversation_store import STORE
+
+    return STORE.list_interventions(cid, state)
+
+
+@app.get("/api/interventions/{intervention_id}")
+async def get_intervention(intervention_id: str):
+    from app.ui.conversation_store import STORE
+
+    itv = STORE.get_intervention(intervention_id)
+    if not itv:
+        raise HTTPException(404, "intervention not found")
+    return itv
+
+
+@app.post("/api/interventions/{intervention_id}/resume")
+async def resume_intervention(intervention_id: str):
+    """P0-14: '我已完成' hits THIS endpoint — we PROBE the real session state.
+    Only a confirmed login resolves the intervention; failure keeps it waiting."""
+    from app.access.executor import resolve_access
+    from app.agent.conversation_orchestrator import WAITERS, emit
+    from app.ui.conversation_store import STORE
+
+    itv = STORE.get_intervention(intervention_id)
+    if not itv:
+        raise HTTPException(404, "intervention not found")
+    if itv["state"] != "WAITING_USER":
+        return {"intervention_id": intervention_id, "state": itv["state"], "probed": False}
+
+    # probe: re-resolve access for the exact download job this intervention blocks
+    access_job = await resolve_access(
+        itv.get("provider_name", ""),
+        (itv.get("data") or {}).get("dataset_ref", ""),
+        candidate_id=(itv.get("data") or {}).get("candidate_id", ""),
+        download_job_id=itv.get("download_job_id") or "",
+    )
+    authorized = access_job.state == "AUTHORIZED"
+    if authorized:
+        STORE.update_intervention(intervention_id, state="RESOLVED", data={"probe": "authorized"})
+        ev = WAITERS.get(intervention_id)
+        if ev:
+            ev.set()
+        emit(itv["conversation_id"], "intervention.resolved", {"intervention_id": intervention_id, "result_id": itv.get("result_id")})
+        return {"intervention_id": intervention_id, "state": "RESOLVED", "probed": True, "authorized": True}
+
+    STORE.update_intervention(intervention_id, data={"probe": "not_authorized", "access_state": access_job.state})
+    return JSONResponse(status_code=200, content={
+        "intervention_id": intervention_id,
+        "state": "WAITING_USER",
+        "probed": True,
+        "authorized": False,
+        "message": "仍未检测到登录成功。请确认已在打开的浏览器窗口完成登录后重试。",
+    })
+
+
+@app.post("/api/interventions/{intervention_id}/skip")
+async def skip_intervention(intervention_id: str):
+    from app.agent.conversation_orchestrator import WAITERS, emit
+    from app.ui.conversation_store import STORE
+
+    itv = STORE.get_intervention(intervention_id)
+    if not itv:
+        raise HTTPException(404, "intervention not found")
+    STORE.update_intervention(intervention_id, state="SKIPPED", message="已跳过该来源。")
+    ev = WAITERS.get(intervention_id)
+    if ev:
+        ev.set()
+    emit(itv["conversation_id"], "intervention.resolved", {"intervention_id": intervention_id, "result_id": itv.get("result_id"), "skipped": True})
+    return {"intervention_id": intervention_id, "state": "SKIPPED"}
+
+
+# ---- conversation websocket (§11) ----
+CONV_CLIENTS: dict[str, set[WebSocket]] = {}
+
+
+@app.websocket("/ws/conversations/{cid}")
+async def ws_conversation(ws: WebSocket, cid: str):
+    """Realtime task/result/intervention events for ONE conversation.
+    Polling remains as the fallback, not the only mechanism."""
+    from app.events.bus import subscribe
+
+    await ws.accept()
+    q: asyncio.Queue = asyncio.Queue(maxsize=500)
+
+    async def _pump() -> None:
+        while True:
+            event = await q.get()
+            if event.get("payload", {}).get("conversation_id") == cid:
+                await ws.send_text(json.dumps(event, ensure_ascii=False))
+
+    subscribe_q = subscribe()
+    CONV_CLIENTS.setdefault(cid, set()).add(ws)
+    pump = asyncio.create_task(_pump())
+
+    async def _feed() -> None:
+        while True:
+            event = await subscribe_q.get()
+            try:
+                q.put_nowait(event)
+            except asyncio.QueueFull:
+                pass
+
+    feeder = asyncio.create_task(_feed())
+    try:
+        while True:
+            await ws.receive_text()  # keepalive / client pings
+    except WebSocketDisconnect:
+        pass
+    finally:
+        pump.cancel()
+        feeder.cancel()
+        CONV_CLIENTS.get(cid, set()).discard(ws)
+
+
+@app.post("/api/admin/reconcile-tasks")
+async def reconcile_tasks():
+    """§10 restart reconcile: RUNNING-ish tasks with no live asyncio task → FAILED_INTERRUPTED."""
+    from app.agent.conversation_tasks import MANAGER as CTM
+
+    return {"reconciled": CTM.reconcile_on_startup()}
 
 
 # ---------------- events / health ----------------
