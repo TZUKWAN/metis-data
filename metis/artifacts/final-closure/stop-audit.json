@@ -1,0 +1,39 @@
+{
+  "head": "b64f5dd3bf87ec424b76155b930262c230ee4ba6",
+  "ci_run": "35023216804",
+  "generated_at": "2026-09-15T21:03:32.409231+00:00",
+  "p0_open": 0,
+  "p1_open": 0,
+  "conversation_async": "PASS",
+  "conversation_context": "PASS",
+  "results": "PASS",
+  "preview": "PASS",
+  "download": "PASS",
+  "auth": "PASS",
+  "auto_resume": "PASS",
+  "build": "PASS",
+  "export": "PASS",
+  "refresh_restore": "PASS",
+  "conversation_isolation": "PASS",
+  "cancel": "PASS",
+  "deterministic_e2e": "PASS",
+  "electron_uat": "PASS",
+  "real_llm": "PASS",
+  "visual": "PASS",
+  "security": "PASS",
+  "release_ready": true,
+  "evidence": {
+    "local_full_tests": "202 passed, 0 failed",
+    "architecture_invariants": "18 passed (incl. §25 nine gates)",
+    "conversation_product_e2e": "18/18 PASS (fixture LLM/provider/access/acquisition)",
+    "electron_uat": "15/15 PASS (real desktop shell, real search, real download/export)",
+    "real_llm_dogfood": "one-shot build chain PASS with real Qwen3.6-35B-A3B: 22 candidates -> 2 real acquisitions -> FINAL 76921x20 -> CSV 16.3MB",
+    "visual": "6 screenshot groups reviewed (1366x768/1600x900/1920x1080/2560x1440)",
+    "security": "secrets scan 0 non-test findings; runtime workspace untracked; LLM key only in gitignored .env",
+    "blocked_external": [
+      "GS-D WeChat real collection requires user QR scan",
+      "XCrawl / 6551 paid API smoke requires account keys",
+      "some CN platforms return 403 from this network"
+    ]
+  }
+}

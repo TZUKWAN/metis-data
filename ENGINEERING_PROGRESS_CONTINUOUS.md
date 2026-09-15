@@ -60,3 +60,35 @@ production 零 import。接线到 Result API。
 - 产品 E2E: 18/18 (fixture LLM/provider/access/acquisition, CI 可复现)
 - 真实浏览器 UAT: 发送→流式结果→预览→下载→READY→导出 全链 PASS（12 个真实 OECD/WB 候选）
 - 真实服务器: http://0.0.0.0:8300 运行中
+
+## Round 3 · Real LLM dogfood（§51）+ NEW ISSUE HUNT（commits e4496ff → b64f5dd）
+
+### §51 Dogfood 全链（真实 Qwen3.6-35B-A3B + 真实网络）
+消息：「帮我构建2015—2024年国家层面的青年失业率和人均GDP面板数据，优先使用国际组织官方数据」
+- UNDERSTANDING(LLM 分类) → PLANNING(LLM 规划) → SEARCHING(真实 84-provider 检索，22 个候选流式渲染)
+- → COLLECTING(真实下载 ILOSTAT 青年失业率 CSV + OECD PPP) → 2 READY
+- → BUILDING(BuildPlanner+BuildExecutor) → FINAL「会话数据集」76921 行 × 20 列
+- → 预览真实表格 → 导出 CSV 16.3MB (HTTP 200)
+
+### Round 3 发现并修复
+- ISSUE-301 (P0) goal 分类 LLM 把「国际组织」当作 provider 名注入 only_providers，
+  直接覆盖检索优先级 → 只搜了一个不存在的源，0 候选
+  Fix: PROVIDER_ALIASES 中文别名映射 + 注册表验证，无法解析的名字一律丢弃
+- ISSUE-302 (P1) OECD 下载物为非表格文件(ORG)，profile/parse 抛 "No tables found" 使整个 Build 崩溃
+  Fix: 构建前过滤无法解析出列的资产；回复中如实报告跳过数量
+- ISSUE-303 (P2) status_mapper 孤儿模块（§27）→ 整合为唯一文案来源（RESULT_STATE_MAP/ERROR_MAP）
+- ISSUE-304 (P1) runtime workspace（SQLite DB + 真实下载数据）被 git 跟踪
+  Fix: .gitignore 补新布局路径 + git rm --cached（b64f5dd）
+
+### NEW ISSUE HUNT 扫描结果（§55）
+- stub scan: 无 TODO/NotImplemented/纯文本承诺（grep 证据空）
+- orphan scan: projection/status_mapper/auth-modal/browser-monitor 均已接线
+- button scan: 全部按钮有真实 handler（预览/下载/CSV/XLSX/停止/新会话/设置/我已完成/跳过）
+- console/network: Electron UAT unexpected error = 0, unexpected 4xx/5xx = 0
+- restart recovery: 真实证据 — 旧 workspace 任务被 reconcile 标为 FAILED_INTERRUPTED
+- 视觉: 6 组截图（empty/working/results/preview/ready/3 分辨率）逐张人工审查通过
+
+## 审计轮次（§56）
+- Round A 功能链: 产品 E2E 18/18 + Electron UAT 15/15 + 真实 dogfood 全链 ✓
+- Round B 故障/恢复: 失败收敛测试、probe 失败保持等待、取消、重启 reconcile、会话隔离 ✓
+- Round C UX/视觉: 多分辨率截图 + 人工审查 + 无 alert/无内部 ID/毛玻璃克制 ✓
