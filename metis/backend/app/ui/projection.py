@@ -7,12 +7,11 @@ Interventions → InterventionView
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Optional
 
 from pydantic import BaseModel
 
 
-class ResultState(str, Enum):
+class ResultState(Enum):
     FOUND = "found"
     ACQUIRING = "acquiring"
     WAITING_USER = "waiting_user"
@@ -95,7 +94,6 @@ def candidate_to_result_view(c: dict, task_state: str = "found") -> ResultView:
     time_range = f"{tc.get('start', '?')}–{tc.get('end', '?')}" if tc.get("start") else ""
     reasons = c.get("reasons") or []
     recommendation = reasons[0] if reasons else ""
-    state_map = {"AUTHORIZED": ResultState.READY}
     return ResultView(
         result_id=c.get("candidate_id", ""),
         kind="dataset",

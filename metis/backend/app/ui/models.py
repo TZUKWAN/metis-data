@@ -4,16 +4,16 @@ conversations / conversation_messages / conversation_tasks / conversation_result
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import JSON, DateTime, String, Text, Integer
+from sqlalchemy import JSON, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.models import Base
 
 
 def utcnow():
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class ConversationRow(Base):
