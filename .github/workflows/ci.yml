@@ -68,10 +68,30 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: JS syntax check
-        run: node --check metis/frontend/static/app.js
+      - name: JS syntax check (all modules)
+        run: for f in metis/frontend/static/js/*.js; do node --check "$f"; done
       - name: HTML contains app shell
         run: grep -q "Metis Data" metis/frontend/static/index.html
+
+  conversation-product-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: pip install fastapi uvicorn sqlalchemy pandas pyarrow httpx pydantic openpyxl pyreadstat netCDF4 pyshp pycountry playwright pytest pytest-timeout lxml psutil pyyaml
+      - name: Generate test fixtures
+        run: python scripts/gen_fixtures.py
+      - name: Deterministic conversational product E2E (full user chain)
+        env:
+          METIS_BROWSER_HEADLESS: "true"
+          METIS_LLM_BASE_URL: ""
+          METIS_LLM_API_KEY: ""
+          METIS_LLM_MODEL: ""
+        run: python -u -m pytest metis/backend/tests/test_conversation_product.py -v --tb=short --timeout=180
 
   real-provider-smoke:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'

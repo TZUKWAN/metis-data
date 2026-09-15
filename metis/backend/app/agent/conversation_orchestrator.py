@@ -292,7 +292,9 @@ class ConversationOrchestrator:
             return {**discover, "reply": discover["reply"] + "\n\n没有可获取的数据，因此未执行下载。"}
 
         set_stage(cid, task_id, "collecting")
-        n_pick = 2 if build else 1
+        # "这两份 / 两个都 / 全部" → acquire more than one (user plural intent)
+        plural = any(k in text for k in ("两份", "两个", "全部", "都下载", "这几份"))
+        n_pick = 2 if (build or plural) else 1
         acquired: list[str] = []
         blocked: list[str] = []
         for link in links[:n_pick]:
@@ -490,7 +492,7 @@ class ConversationOrchestrator:
             return None
 
         build = REPO.get_build(executor.build_id) or {}
-        if str(build.get("status")) != "COMPLETED":
+        if str(build.get("status")) not in ("COMPLETE", "COMPLETED"):
             return None
 
         rid = STORE.add_result_link(

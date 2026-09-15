@@ -91,6 +91,8 @@ class ConversationStore:
     def update_task(self, task_id: str, **fields) -> None:
         if not fields:
             return
+        if "data" in fields:  # callers use the external name; the column is data_json
+            fields["data_json"] = fields.pop("data")
         fields["updated_at"] = _now()
         with new_session() as s:
             s.execute(sa_update(ConversationTaskRow).where(ConversationTaskRow.task_id == task_id).values(**fields))
@@ -134,6 +136,7 @@ class ConversationStore:
             "build_id": r.build_id,
             "error_code": r.error_code,
             "error_message": r.error_message,
+            "data": r.data_json or {},
             "created_at": r.created_at.isoformat(),
             "updated_at": r.updated_at.isoformat() if r.updated_at else "",
         }
@@ -154,6 +157,8 @@ class ConversationStore:
         return rid
 
     def update_result_link(self, result_id: str, **fields) -> None:
+        if "data" in fields:
+            fields["data_json"] = fields.pop("data")
         fields["updated_at"] = _now()
         with new_session() as s:
             s.execute(sa_update(ConversationResultLinkRow).where(ConversationResultLinkRow.result_id == result_id).values(**fields))
@@ -207,6 +212,8 @@ class ConversationStore:
             return self._intervention_dict(r) if r else None
 
     def update_intervention(self, intervention_id: str, **fields) -> None:
+        if "data" in fields:
+            fields["data_json"] = fields.pop("data")
         fields["updated_at"] = _now()
         with new_session() as s:
             s.execute(sa_update(ConversationInterventionRow).where(ConversationInterventionRow.intervention_id == intervention_id).values(**fields))
@@ -251,7 +258,7 @@ class ConversationStore:
 
         context = {
             "conversation_id": cid,
-            "latest_requirement": (latest_task or {}).get("data_json", {}).get("requirement_text", ""),
+            "latest_requirement": (latest_task or {}).get("data", {}).get("requirement_text", ""),
             "latest_planning_id": (latest_task or {}).get("planning_id"),
             "latest_run_id": (latest_task or {}).get("run_id"),
             "latest_build_id": (latest_task or {}).get("build_id"),
@@ -263,10 +270,12 @@ class ConversationStore:
             "user_constraints": {},
             "history_summary": " ".join(m["content"][:120] for m in messages[-6:]),
         }
-        # constraints accumulated across refine turns live on the latest task
-        if latest_task:
-            context["user_constraints"] = latest_task.get("data_json", {}).get("user_constraints") or {}
-            context["latest_requirement"] = latest_task.get("data_json", {}).get("requirement_text") or context["latest_requirement"]
+        # constraints accumulated across refine turns live on the latest task WITH data —
+        # the newest row is usually the just-created current task (still empty)
+        prior_task = next((t for t in tasks if (t.get("data") or {}).get("requirement_text")), None)
+        if prior_task:
+            context["user_constraints"] = prior_task.get("data", {}).get("user_constraints") or {}
+            context["latest_requirement"] = prior_task.get("data", {}).get("requirement_text") or context["latest_requirement"]
         return context
 
 
