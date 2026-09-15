@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from app.core.config import get_settings
 from app.core.errors import MetisError
 from app.core.logging import get_logger, setup_logging
+from app.ui.models import ConversationRow, ConversationMessageRow, ConversationTaskRow
 from app.db.recovery import reconcile_on_startup
 from app.db.repository import REPO
 from app.db.session import init_db
@@ -890,25 +891,113 @@ async def account_register(provider_id: str, body: RegisterIn):
     return {**result, "session_id": session.session_id}
 
 
-# ---------------- conversations (simple UI) ----------------
+# ---------------- conversations (async, persistent) ----------------
 class ChatMessageIn(BaseModel):
     text: str
 
 
+def _ensure_conversation(cid: str, title: str = "") -> None:
+    """Persist a conversation row if it doesn't exist yet."""
+    from app.db.session import new_session
+    from app.ui.models import ConversationRow
+
+    with new_session() as sess:
+        from sqlalchemy import select
+
+        row = sess.execute(select(ConversationRow).where(ConversationRow.conversation_id == cid)).scalar_one_or_none()
+        if row is None:
+            sess.add(ConversationRow(conversation_id=cid, title=title or "新任务", status="active"))
+            sess.commit()
+
+
 @app.post("/api/conversations/{cid}/messages")
 async def conversation_message(cid: str, body: ChatMessageIn):
-    """Single entry point: user message → intent → plan → search → acquire → result."""
-    from app.agent.conversation_orchestrator import ConversationOrchestrator
+    """P0-01: async pattern — persist message, create task, schedule pipeline, return 202 immediately."""
+    import uuid as _uuid
+    from datetime import datetime, timezone
 
-    orch = ConversationOrchestrator()
-    result = await orch.handle_message(cid, body.text)
-    return {"conversation_id": cid, **result}
+    from app.db.session import new_session
+    from app.ui.models import ConversationMessageRow, ConversationTaskRow
+
+    _ensure_conversation(cid, title=body.text[:60])
+    message_id = f"msg_{_uuid.uuid4().hex[:12]}"
+    task_id = f"ctask_{_uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+
+    with new_session() as sess:
+        sess.add(ConversationMessageRow(message_id=message_id, conversation_id=cid, role="user", content=body.text, created_at=datetime.now(timezone.utc)))
+        sess.add(ConversationTaskRow(task_id=task_id, conversation_id=cid, intent="discover_data", state="UNDERSTANDING", created_at=datetime.now(timezone.utc)))
+        sess.commit()
+
+    # schedule background pipeline — returns 202 in <500ms
+    async def _pipeline():
+        from app.agent.conversation_orchestrator import ConversationOrchestrator
+
+        orch = ConversationOrchestrator()
+        result = await orch.handle_message(cid, body.text)
+        # persist assistant reply
+        with new_session() as sess2:
+            sess2.add(ConversationMessageRow(
+                message_id=f"msg_{_uuid.uuid4().hex[:12]}", conversation_id=cid,
+                role="assistant", content=result.get("reply", ""),
+                task_id=task_id, data_json=result,
+                created_at=datetime.now(timezone.utc),
+            ))
+            # update task state
+            from sqlalchemy import update as sa_update
+
+            sess2.execute(sa_update(ConversationTaskRow).where(ConversationTaskRow.task_id == task_id).values(state="COMPLETE", updated_at=datetime.now(timezone.utc)))
+            sess2.commit()
+
+    import asyncio as _asyncio
+    TASKS[task_id] = _asyncio.create_task(_pipeline())
+
+    return JSONResponse(status_code=202, content={
+        "message_id": message_id,
+        "task_id": task_id,
+        "conversation_id": cid,
+        "state": "UNDERSTANDING",
+    })
+
+
+@app.get("/api/conversations/{cid}/messages")
+async def get_messages(cid: str):
+    from app.db.session import new_session
+    from app.ui.models import ConversationMessageRow
+    from sqlalchemy import select
+
+    with new_session() as s:
+        rows = s.execute(select(ConversationMessageRow).where(ConversationMessageRow.conversation_id == cid).order_by(ConversationMessageRow.created_at)).scalars().all()
+        return [{"message_id": r.message_id, "role": r.role, "content": r.content, "task_id": r.task_id, "created_at": r.created_at.isoformat()} for r in rows]
+
+
+@app.get("/api/conversations/{cid}/task/{task_id}")
+async def get_task_state(cid: str, task_id: str):
+    """Poll task state — frontend uses this instead of waiting for the sync HTTP response."""
+    from app.db.session import new_session
+    from app.ui.models import ConversationTaskRow
+    from sqlalchemy import select
+
+    with new_session() as s:
+        row = s.execute(select(ConversationTaskRow).where(ConversationTaskRow.task_id == task_id)).scalar_one_or_none()
+        if row is None:
+            raise HTTPException(404, "task not found")
+        return {"task_id": row.task_id, "state": row.state, "intent": row.intent}
 
 
 @app.post("/api/conversations")
 async def create_conversation():
-    import uuid
-    return {"conversation_id": f"conv_{uuid.uuid4().hex[:12]}"}
+    import uuid as _uuid
+    from datetime import datetime, timezone
+
+    from app.db.session import new_session
+    from app.ui.models import ConversationRow
+
+    cid = f"conv_{_uuid.uuid4().hex[:12]}"
+    with new_session() as sess:
+        sess.add(ConversationRow(conversation_id=cid, title="新任务", created_at=datetime.now(timezone.utc)))
+        sess.commit()
+    return {"conversation_id": cid}
 
 
 # ---------------- events / health ----------------
