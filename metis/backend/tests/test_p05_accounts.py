@@ -1,17 +1,8 @@
 """Phase 5 acceptance: Account Center APIs (P05-002..012)."""
 from __future__ import annotations
 
-import os
-import socket
-import subprocess
 import sys
-import tempfile
-import threading
-import time
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-
-import sys
 
 import pytest
 
@@ -39,12 +30,11 @@ def api_client(monkeypatch, loop, fixture_server, temp_workspace):
     reset_settings()
     reset_engine()
     init_db()
-    from fastapi.testclient import TestClient
-    from app.api.main import app
-
     # TestClient portals sync calls into the portal loop; we instead drive the ASGI app
     # via httpx ASGITransport on OUR loop so browser + API share one event loop.
     import httpx
+
+    from app.api.main import app
 
     async def call(method, url, json=None):
         transport = httpx.ASGITransport(app=app)

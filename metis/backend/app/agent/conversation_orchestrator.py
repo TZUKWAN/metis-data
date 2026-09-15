@@ -212,17 +212,46 @@ class ConversationOrchestrator:
             "n_results": n,
         }
 
+    # user/LLM source words → real provider_ids (anything unmapped is dropped, never guessed)
+    PROVIDER_ALIASES: dict[str, str] = {
+        "世界银行": "world_bank", "world bank": "world_bank", "worldbank": "world_bank", "wb": "world_bank", "wdi": "world_bank",
+        "oecd": "oecd", "经合组织": "oecd", "经合发展组织": "oecd",
+        "ilo": "ilostat", "ilostat": "ilostat", "国际劳工组织": "ilostat", "劳工组织": "ilostat",
+        "imf": "imf", "国际货币基金组织": "imf", "货币基金组织": "imf",
+        "联合国": "un_databases", "un": "un_databases", "un_data": "un_databases",
+        "un_comtrade": "un_comtrade", "comtrade": "un_comtrade", "联合国商品贸易": "un_comtrade",
+        "美国统计局": "us_census", "us_census": "us_census", "census": "us_census",
+        "欧洲统计局": "eurostat", "eurostat": "eurostat",
+        "中国国家统计局": "nbs_china", "国家统计局": "nbs_china", "nbs": "nbs_china",
+        "zenodo": "zenodo", "figshare": "figshare", "dryad": "dryad",
+    }
+
+    def _resolve_provider_names(self, names: list[str]) -> list[str]:
+        """Map user-language provider mentions to registry ids; drop unknowns."""
+        from app.providers.registry import get_registry
+
+        valid = {p.provider_id for p in get_registry().all()}
+        out: list[str] = []
+        for n in names or []:
+            key = str(n).strip().lower()
+            pid = self.PROVIDER_ALIASES.get(key) or (key if key in valid else None)
+            if pid and pid in valid and pid not in out:
+                out.append(pid)
+        return out
+
     async def _plan(self, cid: str, task_id: str, text: str, understanding: dict) -> dict:
         from app.agent.orchestrator import build_planning_bundle, save_bundle
 
         bundle_model = await build_planning_bundle(text)
         bundle = bundle_model.model_dump(mode="json")
         constraints = understanding.get("constraints") or {}
-        if constraints.get("only_providers"):
-            bundle.setdefault("source_plan", {})["provider_priorities"] = constraints["only_providers"]
-        if constraints.get("exclude_providers"):
+        only = self._resolve_provider_names(constraints.get("only_providers"))
+        if only:
+            bundle.setdefault("source_plan", {})["provider_priorities"] = only
+        excl = self._resolve_provider_names(constraints.get("exclude_providers"))
+        if excl:
             bundle.setdefault("source_plan", {})["provider_priorities"] = [
-                p for p in bundle.get("source_plan", {}).get("provider_priorities", []) if p not in constraints["exclude_providers"]
+                p for p in bundle.get("source_plan", {}).get("provider_priorities", []) if p not in excl
             ]
         planning_id = save_bundle(bundle, requirement_text=text)
         bundle["planning_id"] = planning_id
@@ -443,8 +472,11 @@ class ConversationOrchestrator:
         set_stage(cid, task_id, "building")
         final = await self._build_from_links(cid, task_id)
         if final:
+            n_used = int((final.get("data") or {}).get("n_inputs") or 0)
+            skipped = len(ready) - n_used
+            extra = f"（有 {skipped} 份文件无法解析为表格，已跳过）" if skipped > 0 else ""
             return {
-                "reply": f"已把 {len(ready)} 份数据合成最终数据集「{final['title']}」，已放到右侧。可以预览或下载 CSV / XLSX。",
+                "reply": f"已把 {n_used} 份数据合成最终数据集「{final['title']}」{extra}，已放到右侧。可以预览或下载 CSV / XLSX。",
                 "goal": "build",
                 "final_result_id": final["result_id"],
             }
@@ -469,6 +501,11 @@ class ConversationOrchestrator:
                     art["profile"] = profile_artifact(art["artifact_id"], art["raw_path"])
                 except Exception as e:  # noqa: BLE001
                     log.info_ctx("profile failed", artifact_id=str(art.get("artifact_id")), error=str(e)[:120])
+            # only build from artifacts whose columns actually parsed — a raw
+            # non-tabular file must not crash the whole synthesis
+            if not (art.get("profile") or {}).get("columns"):
+                log.info_ctx("build skips unparseable artifact", artifact_id=str(art.get("artifact_id")))
+                continue
             assets.append({"artifact_id": art["artifact_id"], "profile": art.get("profile") or {}, "variables": []})
         if not assets:
             return None

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-import os
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -102,7 +101,7 @@ def test_resume_and_progress_payload(temp_workspace):
                         stream_to_file(client, desc, dest, on_progress=progress.append, cancel_event=cancel),
                         timeout=0.0,
                     )
-                except (asyncio.TimeoutError, __import__("app.core.errors", fromlist=["MetisError"]).MetisError):
+                except (TimeoutError, __import__("app.core.errors", fromlist=["MetisError"]).MetisError):
                     pass
                 # simulate: seed a partial of 8MB then resume to completion
                 partial = dest.with_suffix(dest.suffix + ".partial")

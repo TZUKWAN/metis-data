@@ -5,7 +5,6 @@ import asyncio
 
 import pytest
 
-
 TEXT = "构建 2015—2023 年国家层面的青年失业率、人均 GDP、教育水平面板，优先使用官方或国际组织数据。"
 
 
@@ -44,8 +43,8 @@ def test_parse_variants(text, unit):
 
 
 def test_parse_time_since_and_conflicts():
-    from app.search.parser import parse_requirement, validate_requirement
     from app.domain.schemas import DataRequirement
+    from app.search.parser import parse_requirement, validate_requirement
 
     r = parse_requirement("monthly unemployment since 2018")
     assert r.time_range[0] == 2018 and r.frequency == "monthly"

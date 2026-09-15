@@ -13,9 +13,8 @@ DATA = Path(__file__).parent / "fixtures" / "data"
 
 def _run_build(temp_workspace, fixture_server, *, missing_policy="none", derived=None, keys=None):
     """Register two fixture artifacts + run the executor end to end."""
-    from app.core import paths
     from app.db.repository import REPO
-    from app.domain.schemas import BuildConfig, BuildInputRef, DatasetArtifact, DownloadJob
+    from app.domain.schemas import BuildConfig, BuildInputRef
     from app.downloads.service import MANAGER
 
     specs = [
@@ -114,7 +113,8 @@ def test_profile_large_file_no_oom(temp_workspace):
 
 def test_variable_semantics_conflicts():
     """A22: same-name GDP different basis not merged; percent/fraction convertible; codings alignable."""
-    from app.datasets.profile import build_variable_semantic as bvs, compare_semantics
+    from app.datasets.profile import build_variable_semantic as bvs
+    from app.datasets.profile import compare_semantics
 
     gdp_current = bvs("gdp", "gdp", unit="usd", price_basis="nominal", currency="CNY")
     gdp_const = bvs("gdp", "gdp", unit="usd", price_basis="real", base_year=2015, currency="USD")
@@ -178,7 +178,7 @@ def test_china_regions(temp_workspace):
 
 def test_time_normalization_and_fy():
     """A25: year/quarter/month/day recognized; FY not treated as calendar year silently."""
-    from app.builds.times import parse_time_value, check_frequency_conflict, aggregate_to_year
+    from app.builds.times import aggregate_to_year, check_frequency_conflict, parse_time_value
 
     cases = {
         "2020": "year", "2020年": "year", "2020-01-01": "day", "2020Q1": "quarter",
@@ -227,6 +227,7 @@ def test_join_cardinality_guard():
 def test_missing_policy_default_none_and_linear_marked():
     """A28: default 0 imputed; linear interpolation marks cells + reports ratio."""
     import numpy as np
+
     from app.builds.joins import apply_missing_policy
 
     df = pd.DataFrame({"year": [1, 2, 3, 4], "v": [1.0, np.nan, np.nan, 4.0]})
@@ -240,7 +241,6 @@ def test_missing_policy_default_none_and_linear_marked():
 
 def test_derived_variable_and_div_zero():
     """A29: formula recorded, inputs explicit, division by zero → NaN not crash."""
-    import numpy as np
     from app.builds.joins import derive_variable
     from app.core.errors import MetisError
 
@@ -294,7 +294,6 @@ def test_golden_build_end_to_end(temp_workspace, fixture_server):
     assert len(pd.read_json(sources)) == 2 if sources.exists() else True
 
     # A34: reproduce — delete final+intermediate, rerun script with raw available
-    import shutil
 
     reproduce_dir = pkg / "scripts"
     final_backup = pkg / "final"
@@ -311,7 +310,6 @@ def test_golden_build_end_to_end(temp_workspace, fixture_server):
 
 def test_methodology_report_honesty(temp_workspace, fixture_server):
     """A33: methodology mentions only real operations; imputation appears only when used."""
-    from app.db.repository import REPO
 
     cfg, result = _run_build(temp_workspace, fixture_server, missing_policy="linear")
     md = (Path(result["package"]["package_dir"]) / "reports" / "methodology.md").read_text(encoding="utf-8")

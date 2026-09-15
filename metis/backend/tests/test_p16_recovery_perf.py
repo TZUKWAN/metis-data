@@ -9,8 +9,6 @@ import sys
 import time
 from pathlib import Path
 
-import pytest
-
 DATA = Path(__file__).parent / "fixtures" / "data"
 BACKEND = Path(__file__).resolve().parents[1]
 

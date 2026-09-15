@@ -132,16 +132,8 @@ def artifact_to_result_view(a: dict) -> ResultView:
     )
 
 
-# UI-facing state copy (§9) — FOUND/ACQUIRING/... → 已找到/正在获取/...
-STATE_LABELS = {
-    "FOUND": "已找到",
-    "ACQUIRING": "正在获取",
-    "WAITING_USER": "需要登录",
-    "READY": "可用",
-    "BUILDING": "正在整理",
-    "FINAL": "最终数据集",
-    "FAILED": "获取失败",
-}
+# UI-facing state copy (§9) — single source of truth is the status mapper
+from app.ui.status_mapper import RESULT_STATE_MAP as STATE_LABELS  # noqa: E402
 
 
 def result_view_for_link(link: dict) -> ResultView:

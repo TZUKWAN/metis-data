@@ -12,11 +12,12 @@ def _client():
     from app.core.config import reset_settings
 
     reset_settings()
-    from app.db.session import reset_engine, init_db
+    from app.db.session import init_db, reset_engine
 
     reset_engine()
     init_db()
     from fastapi.testclient import TestClient
+
     from app.api.main import app
 
     return TestClient(app)

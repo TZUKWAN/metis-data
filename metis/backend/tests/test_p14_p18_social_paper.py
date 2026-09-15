@@ -65,7 +65,7 @@ def test_paper_search_arxiv_real():
 
 def test_paper_digest_incremental(temp_workspace):
     """P18-004/005: second run must not re-flag old papers as 新增."""
-    from app.acquisition.collectors import PaperDigestService, PaperRanker, PaperWatchPlan
+    from app.acquisition.collectors import PaperDigestService, PaperWatchPlan
     from app.acquisition.fabric import PaperRecord
 
     class StaticSource:

@@ -9,8 +9,6 @@ import pytest
 WIN32_ONLY = pytest.mark.skipif(sys.platform != 'win32', reason='DPAPI vault is Windows-only by policy (no plaintext fallback)')
 import sys  # noqa: E402
 
-from conftest import browser_run
-
 
 def test_secret_store_interface(temp_workspace):
     """P03-001/002/003: interface complete; Windows DPAPI roundtrip; import-safe elsewhere."""
@@ -48,12 +46,11 @@ def test_secret_store_interface(temp_workspace):
 def test_storage_state_persist_restore_login(temp_workspace, fixture_server, loop):
     """P03-005/006/007: login → REAL storage_state saved → close browser → fresh session
     with restored state → probe logged_in_selector present (still logged in)."""
-    from app.browser.runtime import MANAGER
     from app.auth.accounts import ACCOUNTS, LoginExecutor
-    from app.auth.browser_state import ensure_valid_session, probe_session_valid, restore_browser_storage
+    from app.auth.browser_state import probe_session_valid, restore_browser_storage
     from app.auth.recipes import PROVIDER_RECIPES, resolve_url
     from app.auth.vault import get_vault
-    from app.browser.runtime import LocatorTarget
+    from app.browser.runtime import MANAGER, LocatorTarget
     from app.db.repository import REPO
     from app.domain.schemas import new_id
 
@@ -112,8 +109,8 @@ def test_storage_state_persist_restore_login(temp_workspace, fixture_server, loo
 @WIN32_ONLY
 def test_expired_session_detection(temp_workspace, fixture_server, loop):
     """P03-008: stored state without login marker → probe fails → SESSION_EXPIRED marked."""
-    from app.browser.runtime import MANAGER
     from app.auth.browser_state import ensure_valid_session, save_browser_state
+    from app.browser.runtime import MANAGER
     from app.db.repository import REPO
 
     async def flow():
@@ -134,11 +131,9 @@ def test_expired_session_detection(temp_workspace, fixture_server, loop):
 @WIN32_ONLY
 def test_oauth_credential_model(temp_workspace):
     """P03-009/010: oauth tokens in vault, metadata in DB; deletion removes everything."""
-    from app.auth.browser_state import OAuthCredential, delete_browser_state
     from app.auth.accounts import ACCOUNTS
-    from app.auth.secret_store import get_secret_store
+    from app.auth.browser_state import OAuthCredential, delete_browser_state
     from app.db.repository import REPO
-    from app.domain.schemas import new_id
 
     cred = OAuthCredential(provider_id="oauth_provider", account_identity="user@example.edu", access_token="at-METIS-TEST-SECRET", refresh_token="rt", expires_at="2027-01-01T00:00:00Z", scope=["datasets"])
     cred.save()

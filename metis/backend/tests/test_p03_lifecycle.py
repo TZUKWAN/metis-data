@@ -6,12 +6,7 @@ After all settle, every worker-owned session must be closed (no orphans).
 from __future__ import annotations
 
 import asyncio
-import asyncio
 import random
-
-from conftest import browser_run
-
-import pytest
 
 from conftest import browser_run
 
@@ -72,7 +67,6 @@ def test_user_takeover_prevents_close(temp_workspace, fixture_server, loop):
         assert MANAGER.get(sid) is not None, "user-owned session must stay alive"
         await MANAGER.get(sid).close()
 
-    import app.browser.runtime as rt
 
     recipe = BROWSER_SEARCH_RECIPES["fixture_catalog"]
     browser_run(flow())

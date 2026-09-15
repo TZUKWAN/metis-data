@@ -4,26 +4,13 @@ backend protocol/registry, safe command runner, router fallback chain."""
 
 from __future__ import annotations
 
-
-
 import asyncio
-
-import json
-
+import sys
 import threading
-
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-
-
-import sys
-
 import pytest
-
 from pydantic import ValidationError
-
-
-
 
 
 def test_task_type_enum_complete():
@@ -143,7 +130,6 @@ def test_backend_status_lifecycle():
 def test_crawl_policy_blocks_out_of_scope_and_registry():
 
     from app.acquisition.fabric import CrawlPlan
-
     from app.acquisition.fabric_core import CrawlPolicyEngine, PolicyVerdict
 
 
@@ -170,7 +156,7 @@ def test_crawl_policy_blocks_out_of_scope_and_registry():
 
 def test_robots_service_allow_and_disallow(temp_workspace):
 
-    from app.acquisition.fabric_core import ROBOTS, RobotsService
+    from app.acquisition.fabric_core import ROBOTS
 
 
 
@@ -249,8 +235,6 @@ def test_rate_limiter_paces(temp_workspace):
 
     import time
 
-
-
     from app.acquisition.fabric_core import DomainRateLimiter
 
 
@@ -282,7 +266,6 @@ def test_rate_limiter_paces(temp_workspace):
 def test_safe_command_runner_blocks_injection():
 
     from app.acquisition.fabric_core import SafeCommandRunner
-
     from app.core.errors import MetisError
 
 
@@ -308,7 +291,6 @@ def test_safe_command_runner_blocks_injection():
 def test_backend_unsupported_capability_and_registry():
 
     from app.acquisition.fabric import BackendCapability, BackendDescriptor
-
     from app.acquisition.fabric_core import BACKEND_REGISTRY, BackendAdapter, UnsupportedCapability
 
 

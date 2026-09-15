@@ -17,6 +17,17 @@ STATE_MAP = {
     "FINAL": "最终数据集",
 }
 
+# result-card states (§9): WAITING_USER reads 需要登录 on a result, 需要你的操作 on a task
+RESULT_STATE_MAP = {
+    "FOUND": "已找到",
+    "ACQUIRING": "正在获取",
+    "WAITING_USER": "需要登录",
+    "READY": "可用",
+    "BUILDING": "正在整理",
+    "FINAL": "最终数据集",
+    "FAILED": "获取失败",
+}
+
 ERROR_MAP = {
     "LLM_TIMEOUT": "数据规划暂时较慢，请重试。",
     "PROVIDER_HTTP_ERROR": "该数据源暂时无法访问，我已继续搜索其他来源。",

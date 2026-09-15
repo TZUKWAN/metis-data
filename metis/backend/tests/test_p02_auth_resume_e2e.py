@@ -6,16 +6,11 @@ ACQUISITION.acquire → verified raw artifact. Restart path re-proves restore.
 """
 from __future__ import annotations
 
-import asyncio
 import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
-
-import asyncio
-
-from conftest import browser_run
 
 SESSION_COOKIE = "metis_session=rc-authenticated"
 SECRET_BODY = b"secret-panel-data,DO-NOT-SHARE\nrow1,1\nrow2,2\n"
@@ -82,10 +77,8 @@ def test_cookie_gated_download_auto_resume(temp_workspace, auth_server, loop):
     from app.auth.browser_state import save_browser_state
     from app.auth.recipes import PROVIDER_RECIPES
     from app.browser.runtime import MANAGER
-    from app.core.errors import MetisError
     from app.db.repository import REPO
     from app.downloads.service import MANAGER as DM
-    from app.domain.enums import DownloadJobStatus
 
     # recipe for the controlled platform (absolute account_url for the probe)
     PROVIDER_RECIPES["fixture_auth"] = {"account_url": f"{auth_server}/login", "logged_in_selector": "#welcome-user"}

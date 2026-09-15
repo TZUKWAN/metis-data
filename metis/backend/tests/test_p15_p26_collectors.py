@@ -36,7 +36,6 @@ def test_chinese_social_recipes_present():
 
 def test_mediacrawler_reference_only_gate():
     """P16-001: production code contains zero MediaCrawler references."""
-    from pathlib import Path
 
     app_dir = Path(__file__).resolve().parents[3] / "metis" / "backend" / "app"
     for f in app_dir.rglob("*.py"):
@@ -83,7 +82,6 @@ def test_agent_reach_health_not_installed(temp_workspace):
     import shutil
 
     from app.acquisition.backends import AgentReachBackend
-    from app.acquisition.fabric import BackendStatus
 
     if shutil.which("agent-reach"):
         pytest.skip("agent-reach installed on this machine")
@@ -94,8 +92,7 @@ def test_agent_reach_health_not_installed(temp_workspace):
 
 def test_clip_template_matching_and_export(temp_workspace):
     """P19-001/002/003: template match → markdown file → path traversal rejected."""
-    from app.acquisition.collectors_ext import ClipService, WebClipTemplate
-    from app.acquisition.collectors_ext import MetadataExtractor
+    from app.acquisition.collectors_ext import ClipService, MetadataExtractor, WebClipTemplate
 
     templates = [WebClipTemplate(name="docs", match_domains=["docs.example.com"])]
     svc = ClipService()
@@ -171,9 +168,9 @@ def test_experience_store_lifecycle():
 
 def test_agent_tools_schema_bound():
     """P25-001: agent tools are strict-schema bound, no run_shell."""
+    from app.acquisition.collectors import plan_social_query
     from app.acquisition.collectors_ext import WeChatOfficialAccountPlan
     from app.acquisition.fabric import CrawlPlan
-    from app.acquisition.collectors import SocialQueryPlan, plan_social_query
 
     # strict schemas validate; no arbitrary command string in any of them
     plan = CrawlPlan(seeds=["https://docs.x/g"], allowed_domains=["docs.x"])

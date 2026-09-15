@@ -32,7 +32,7 @@ def temp_workspace(tmp_path, monkeypatch):
     from app.core import logging as mlog
 
     mlog.clear_registered_secrets()
-    from app.db.session import reset_engine, init_db
+    from app.db.session import init_db, reset_engine
 
     reset_engine()
     init_db()

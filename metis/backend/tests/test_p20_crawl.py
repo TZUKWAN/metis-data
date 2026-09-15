@@ -110,7 +110,6 @@ def test_bounded_crawl_e2e(temp_workspace, site):
     visited = asyncio.new_event_loop().run_until_complete(runner.run())
     print("STATS:", runner.stats, "state:", runner.state)
     if not visited:
-        import sys
         print("REQUESTS:", requests[:8])
     assert 0 < len(visited) <= 25, f"visited {len(visited)}"
     # robots: no /private/ fetch happened
@@ -120,7 +119,6 @@ def test_bounded_crawl_e2e(temp_workspace, site):
     urls = [v["url"] for v in visited]
     assert len(urls) == len(set(urls)), "duplicate canonical visits"
     # checkpoint roundtrip
-    import json
 
     snap = runner.frontier.snapshot()
     assert "seen" in snap

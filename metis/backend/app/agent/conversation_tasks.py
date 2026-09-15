@@ -54,8 +54,9 @@ class ConversationTaskManager:
                 )
                 # user-facing failure copy in the chat itself — never a traceback (UAT-16)
                 from app.agent.conversation_orchestrator import ERROR_COPY
+                from app.ui.status_mapper import ERROR_MAP
 
-                STORE.add_message(cid, "assistant", ERROR_COPY.get(code, "处理你的请求时遇到问题，请重试或换个说法。"), task_id=task_id)
+                STORE.add_message(cid, "assistant", ERROR_MAP.get(code) or ERROR_COPY.get(code, "处理你的请求时遇到问题，请重试或换个说法。"), task_id=task_id)
                 emit(cid, "task.failed", {"task_id": task_id, "state": "FAILED", "error_code": code, "error_message": str(e)[:300]})
             finally:
                 self._tasks.pop(task_id, None)

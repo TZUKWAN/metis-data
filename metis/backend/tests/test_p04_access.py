@@ -15,7 +15,7 @@ def _setup_ws():
     from app.core.config import reset_settings
 
     reset_settings()
-    from app.db.session import reset_engine, init_db
+    from app.db.session import init_db, reset_engine
 
     reset_engine()
     init_db()
@@ -118,7 +118,6 @@ def test_illegal_transition_rejected():
 def test_resume_after_user(monkeypatch):
     _setup_ws()
     from app.access.executor import resolve_access, resume_after_user
-    from app.access.machine import inspect_access_requirements
 
     # build a waiting job via the no-account path
     _patch_adapter(monkeypatch, _Adapter({"access_mode": "EXISTING_ACCOUNT", "requires_login": True, "notes": ""}))

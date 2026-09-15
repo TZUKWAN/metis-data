@@ -5,8 +5,6 @@ import asyncio
 import base64
 import json
 
-import pytest
-
 from conftest import browser_run
 
 

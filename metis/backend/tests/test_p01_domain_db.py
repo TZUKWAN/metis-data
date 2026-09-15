@@ -88,8 +88,8 @@ def test_build_transitions_persist(temp_workspace):
 
 def test_recovery_no_fake_complete(temp_workspace):
     """A35 core invariant: interrupted work never becomes COMPLETE; states stay truthful."""
-    from app.db.repository import REPO
     from app.db.recovery import reconcile_on_startup
+    from app.db.repository import REPO
     from app.domain.schemas import BuildConfig, DownloadJob
 
     # a stuck search run

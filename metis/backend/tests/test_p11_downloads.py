@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import zipfile
 from pathlib import Path
 
 import pytest
@@ -51,10 +50,10 @@ def test_html_disguised_rejected(temp_workspace, fixture_server):
 
 def test_safe_extraction(temp_workspace, fixture_server):
     """A18: normal zip OK; zip-slip/bomb/many-files rejected; nothing escapes workspace."""
+    import tempfile
+
     from app.core.errors import MetisError
     from app.downloads.service import MANAGER
-
-    import tempfile
 
     with tempfile.TemporaryDirectory() as td:
         dest = Path(td) / "extract"
@@ -79,10 +78,10 @@ def test_safe_extraction(temp_workspace, fixture_server):
 
 def test_raw_immutable_guard(temp_workspace, fixture_server):
     """A19: raw checksum unchanged across transforms; writes into raw blocked."""
-    from app.core.errors import MetisError
-    from app.downloads.service import MANAGER
     from app.core import paths
+    from app.core.errors import MetisError
     from app.core.paths import raw_root
+    from app.downloads.service import MANAGER
 
     job = MANAGER.create_job("fixture", "panel", f"{fixture_server}/data/panel_data.csv", license="CC0-1.0")
     dest, info = asyncio.run(MANAGER.http_download(f"{fixture_server}/data/panel_data.csv", job=job))

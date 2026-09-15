@@ -8,11 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-import socket
-import subprocess
-import sys
 import threading
-import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
@@ -112,7 +108,7 @@ def test_429_classified_rate_limited(monkeypatch, stub_llm):
     _with_llm_env(monkeypatch, base)
     monkeypatch.setenv("METIS_LLM_MAX_RETRIES", "0")
     behavior.update({"fail_times": 1, "status": 429})
-    from app.agent.client import LLMClient, AgentError
+    from app.agent.client import AgentError, LLMClient
 
     with pytest.raises(AgentError) as e:
         asyncio.new_event_loop().run_until_complete(LLMClient().complete_json("s", "u"))
@@ -123,7 +119,7 @@ def test_401_classified_auth_error(monkeypatch, stub_llm):
     base, behavior = stub_llm
     _with_llm_env(monkeypatch, base)
     behavior.update({"fail_times": 1, "status": 401})
-    from app.agent.client import LLMClient, AgentError
+    from app.agent.client import AgentError, LLMClient
 
     with pytest.raises(AgentError) as e:
         asyncio.new_event_loop().run_until_complete(LLMClient().complete_json("s", "u"))
@@ -133,7 +129,7 @@ def test_401_classified_auth_error(monkeypatch, stub_llm):
 def test_timeout_classified(monkeypatch):
     _with_llm_env(monkeypatch, "http://127.0.0.1:9")  # nothing listens
     monkeypatch.setenv("METIS_LLM_TIMEOUT", "1")
-    from app.agent.client import LLMClient, AgentError
+    from app.agent.client import AgentError, LLMClient
 
     with pytest.raises(AgentError) as e:
         asyncio.new_event_loop().run_until_complete(LLMClient().complete_json("s", "u"))
@@ -238,9 +234,8 @@ def test_source_planner_china_fiscal_not_kaggle(monkeypatch):
 # ---------- P01-009: query plan with indicator hints ----------
 def test_query_plan_indicator_hints(monkeypatch, stub_llm):
     monkeypatch.delenv("METIS_LLM_BASE_URL", raising=False)
-    from app.agent.schemas import VariableMeasurementPlan
+    from app.agent.schemas import DataRequirementPlan, SourcePlan, VariableConcept, VariableMeasurementPlan
     from app.agent.source_planner import plan_queries
-    from app.agent.schemas import SourcePlan, DataRequirementPlan, VariableConcept
 
     req = DataRequirementPlan(research_goal="youth unemployment panel", unit_of_analysis="country", geography=["global"], time_range={"start": 2015, "end": 2023}, frequency="annual", variables=[VariableConcept(concept="youth_unemployment_rate")])
     sp = SourcePlan(provider_priorities=["world_bank"], provider_queries={"world_bank": ["youth unemployment"]}, search_languages=["en"])
@@ -290,11 +285,12 @@ def test_agent_api_endpoints(monkeypatch, stub_llm):
     from app.core.config import reset_settings
 
     reset_settings()
-    from app.db.session import reset_engine, init_db
+    from app.db.session import init_db, reset_engine
 
     reset_engine()
     init_db()
     from fastapi.testclient import TestClient
+
     from app.api.main import app
 
     with TestClient(app) as c:

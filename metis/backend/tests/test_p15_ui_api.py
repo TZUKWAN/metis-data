@@ -12,11 +12,12 @@ def _client():
     from app.core.config import reset_settings
 
     reset_settings()
-    from app.db.session import reset_engine, init_db
+    from app.db.session import init_db, reset_engine
 
     reset_engine()
     init_db()
     from fastapi.testclient import TestClient
+
     from app.api.main import app
 
     return TestClient(app)
@@ -47,9 +48,10 @@ def test_full_ui_flow_requirement_search_download_profile_build():
     r = c.put(f"/api/requirements/{rid}", json={"time_range": [2016, 2022]})
     assert r.json()["requirement"]["time_range"] == [2016, 2022]
     # build from two fixture artifacts: create downloads via the download API
-    from app.downloads.service import MANAGER
-    from app.db.repository import REPO
     import asyncio
+
+    from app.db.repository import REPO
+    from app.downloads.service import MANAGER
 
     arts = []
     for fname, ref in [("panel_data.csv", "panel"), ("youth_unemployment.csv", "youth")]:

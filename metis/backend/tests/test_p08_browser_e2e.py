@@ -5,12 +5,9 @@ Runs a real Playwright Chromium (headless in CI via env; headed on desktop).
 from __future__ import annotations
 
 import asyncio
-import os
-
-import pytest
-
 import sys
 
+import pytest
 from conftest import browser_run
 
 WIN32_ONLY = pytest.mark.skipif(sys.platform != 'win32', reason='DPAPI vault is Windows-only')
