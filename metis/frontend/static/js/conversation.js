@@ -248,7 +248,7 @@ export function connectConversationWS() {
   const proto = location.protocol === "https:" ? "wss" : "ws";
   const ws = new WebSocket(`${proto}://${location.host}/ws/conversations/${state.conversationId}`);
   state.ws = ws;
-  ws.onmessage = (ev) => {
+  ws.onmessage = async (ev) => {
     try {
       const e = JSON.parse(ev.data);
       const k = e.kind || "";

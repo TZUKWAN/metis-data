@@ -209,7 +209,7 @@ def parse_table(path: Path) -> ParsedTable:
     if fmt == "TXT":
         return ParsedTable(path, "TXT", lambda: pd.read_csv(path, sep=None, engine="python"))
     if fmt == "JSON":
-        return ParsedTable(path, "JSON", lambda: pd.json_normalize(_load_json(path)))
+        return ParsedTable(path, "JSON", lambda: pd.json_normalize(_json_records(_load_json(path))))
     if fmt == "JSONL":
         return ParsedTable(path, "JSONL", lambda: pd.json_normalize([json.loads(ln) for ln in path.read_text(encoding="utf-8", errors="ignore").splitlines() if ln.strip()]))
     if fmt == "PARQUET":
@@ -326,6 +326,42 @@ def parse_table(path: Path) -> ParsedTable:
 
 def _load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8", errors="ignore"))
+
+
+def _json_records(data: Any, _depth: int = 0) -> list[dict]:
+    """Best-effort tabular extraction from provider JSON payloads.
+
+    World Bank style [ {"page":..,"data":[{..},..]}, .. ] and dict-wrapped
+    list-of-records ({ "data": [...] }) unwrap to their record list; anything
+    else falls back to one-row/one-column so preview never crashes on shapes
+    json_normalize cannot handle (lists of lists etc).
+    """
+    if _depth > 4:
+        return [{"value": data}]
+    if isinstance(data, list):
+        # World Bank style payloads: page-info dicts with an embedded record list,
+        # or [meta, [records]] pairs — prefer any embedded list-of-dicts
+        for x in data:
+            if isinstance(x, dict):
+                for v in x.values():
+                    if isinstance(v, list) and v and all(isinstance(r, dict) for r in v):
+                        return v
+            elif isinstance(x, list) and x and all(isinstance(r, dict) for r in x):
+                return x
+        if data and all(isinstance(x, dict) for x in data):
+            return data
+        return [{"value": data}]
+    if isinstance(data, dict):
+        for key in ("data", "records", "results", "rows", "observations"):
+            v = data.get(key)
+            if isinstance(v, list) and v and all(isinstance(r, dict) for r in v):
+                return v
+        for v in data.values():
+            inner = _json_records(v, _depth + 1)
+            if inner and not (len(inner) == 1 and "value" in inner[0]):
+                return inner
+        return [data]
+    return [{"value": data}]
 
 
 def _read_csv_flexible(path: Path) -> pd.DataFrame:

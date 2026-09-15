@@ -1028,7 +1028,16 @@ async def result_preview(result_id: str, rows: int = 30):
         a = REPO.get_artifact(link["source_ref"])
         if not a:
             raise HTTPException(404, "artifact not found")
-        df = parse_table(raw_root() / a["raw_path"]).df
+        try:
+            df = parse_table(raw_root() / a["raw_path"]).df
+        except Exception as e:  # noqa: BLE001 — preview never 500s; degrade honestly
+            return {
+                "preview_kind": "metadata",
+                "title": link["title"],
+                "description": f"该文件（{a.get('file_format', '未知格式')}）暂无法以表格预览：{str(e)[:120]}。可直接下载原文件。",
+                "download_available": True,
+                "state": state,
+            }
         return {
             "preview_kind": "data",
             "title": link["title"],
@@ -1043,7 +1052,16 @@ async def result_preview(result_id: str, rows: int = 30):
             raise HTTPException(404, "final dataset not ready")
         import pandas as pd
 
-        df = pd.read_csv(p)
+        try:
+            df = pd.read_csv(p)
+        except Exception as e:  # noqa: BLE001
+            return {
+                "preview_kind": "metadata",
+                "title": link["title"],
+                "description": f"最终数据集暂无法以表格预览：{str(e)[:120]}。可直接下载。",
+                "download_available": True,
+                "state": state,
+            }
         return {
             "preview_kind": "final",
             "title": link["title"],
@@ -1589,8 +1607,19 @@ async def browser_tabs(session_id: str):
 
 # ---------------- static frontend ----------------
 FRONTEND = Path(__file__).resolve().parents[3] / "frontend" / "static"
+
+
+class _NoCacheStaticFiles(StaticFiles):
+    """Local UI must always revalidate — stale cached JS modules break upgrades."""
+
+    async def get_response(self, path: str, scope):
+        resp = await super().get_response(path, scope)
+        resp.headers["Cache-Control"] = "no-cache"
+        return resp
+
+
 if FRONTEND.exists():
-    app.mount("/ui", StaticFiles(directory=str(FRONTEND), html=True), name="ui")
+    app.mount("/ui", _NoCacheStaticFiles(directory=str(FRONTEND), html=True), name="ui")
 
 
 @app.get("/")

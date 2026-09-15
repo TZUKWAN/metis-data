@@ -14,3 +14,13 @@
 {"ts": "2026-09-15T16:09:37.040176+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET https://sdmx.ilo.org/rest/dataflow/ILO/all/latest \"HTTP/1.1 200 OK\""}
 {"ts": "2026-09-15T16:09:37.349993+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET https://unstats.un.org/sdgapi/v1/sdg/Series/List?pageSize=2000 \"HTTP/1.1 200 OK\""}
 {"ts": "2026-09-15T16:09:43.316363+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET https://unstats.un.org/sdgapi/v1/sdg/Series/List?pageSize=2000 \"HTTP/1.1 200 OK\""}
+{"ts": "2026-09-15T19:35:56.552711+00:00", "level": "INFO", "logger": "conversation", "message": "conversation message", "ctx": {"cid": "conv_af4a82b54db3", "intent": "Intent.DISCOVER_DATA", "text": "找青年失业率数据"}}
+{"ts": "2026-09-15T19:36:20.664320+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: POST http://218.197.140.7:3001/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"ts": "2026-09-15T19:36:20.665434+00:00", "level": "INFO", "logger": "agent.client", "message": "llm complete", "ctx": {"model": "Qwen3.6-35B-A3B", "attempt": "1", "duration_s": "24.1"}}
+{"ts": "2026-09-15T19:36:45.587996+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: POST http://218.197.140.7:3001/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"ts": "2026-09-15T19:36:45.588928+00:00", "level": "INFO", "logger": "agent.client", "message": "llm complete", "ctx": {"model": "Qwen3.6-35B-A3B", "attempt": "1", "duration_s": "24.9"}}
+{"ts": "2026-09-15T19:36:45.591389+00:00", "level": "WARNING", "logger": "agent.measurement", "message": "llm measurement planning failed; using dictionary fallback", "ctx": {"error": "5 validation errors for VariableMeasurementPlan\nalternative_measures.0.kind\n  Input should be 'preferred', 'alternative' or 'proxy' [type=literal_error, input_value='official_statistic', input_type=st"}}
+{"ts": "2026-09-15T19:37:09.716126+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: POST http://218.197.140.7:3001/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"ts": "2026-09-15T19:37:09.717014+00:00", "level": "INFO", "logger": "agent.client", "message": "llm complete", "ctx": {"model": "Qwen3.6-35B-A3B", "attempt": "1", "duration_s": "24.1"}}
+{"ts": "2026-09-15T19:37:09.720115+00:00", "level": "INFO", "logger": "agent.orchestrator", "message": "planning bundle built", "ctx": {"planning_id": "plan_e36780fec52242118d90", "source": "llm", "providers": "4", "queries": "4"}}
+{"ts": "2026-09-15T19:37:10.085973+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET https://data.stats.gov.cn/easyquery.htm?id=zb&dbcode=hgnd&wdcode=zb&m=getTree \"HTTP/1.1 403 Forbidden\""}

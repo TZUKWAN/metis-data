@@ -4,8 +4,17 @@
 <meta charset="utf-8">
 <title>Metis Data</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="/ui/styles.css">
-<script type="module" src="/ui/js/app.js"></script>
+<link rel="stylesheet" href="/ui/styles.css?v=20260916">
+<script>
+  window.__errs = [];
+  window.addEventListener("error", (e) => {
+    window.__errs.push(String((e && e.message) || e) + " @ " + String((e && e.filename) || "") + ":" + String((e && e.lineno) || ""));
+  });
+  window.addEventListener("unhandledrejection", (e) => {
+    window.__errs.push("promise: " + String((e && e.reason && e.reason.stack) || e.reason || e).slice(0, 300));
+  });
+</script>
+<script type="module" src="/ui/js/app.js?v=20260916"></script>
 </head>
 <body>
 <div id="app">
