@@ -111,7 +111,7 @@ async function pollTask(taskId, statusEl) {
 
 function labelFor(s) {
   return ({
-    UNDERSTANDING: "正在理解你的需求…", PLANNING: "正在规划数据方案…", SEARCHING: "正在寻找数据…",
+    QUEUED: "排队中…（已有任务在进行）", UNDERSTANDING: "正在理解你的需求…", PLANNING: "正在规划数据方案…", SEARCHING: "正在寻找数据…",
     COLLECTING: "正在获取数据…", WAITING_USER: "需要你的操作", PROCESSING: "正在整理数据…",
     BUILDING: "正在合成数据集…", COMPLETE: "已完成", FAILED: "遇到问题", CANCELLED: "已取消",
   })[s] || s;

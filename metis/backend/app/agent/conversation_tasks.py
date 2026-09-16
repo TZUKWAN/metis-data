@@ -23,43 +23,67 @@ def emit(cid: str, kind: str, payload: dict) -> None:
     publish(f"conversation.{kind}", "INFO", task_id=cid, payload={"conversation_id": cid, **payload})
 
 
+# concurrent conversation pipelines are bounded so a burst of messages can
+# never starve the browser/LLM/search backends (queued tasks show 排队中)
+def _max_concurrent() -> int:
+    import os
+
+    try:
+        return max(1, int(os.environ.get("METIS_CONVERSATION_MAX_CONCURRENCY", "3")))
+    except ValueError:
+        return 3
+
+
 class ConversationTaskManager:
     def __init__(self) -> None:
         self._tasks: dict[str, asyncio.Task] = {}
+        self._slots: asyncio.Semaphore | None = None
+
+    def _semaphore(self) -> asyncio.Semaphore:
+        if self._slots is None:  # env read lazily so runtime configuration sticks
+            self._slots = asyncio.Semaphore(_max_concurrent())
+        return self._slots
 
     def start(self, task_id: str, coro: Coroutine) -> asyncio.Task:
-        """Wrap pipeline in failure-converging supervisor (P0-11)."""
+        """Wrap pipeline in failure-converging supervisor (P0-11) + concurrency gate."""
 
         async def _supervised() -> None:
-            try:
-                await coro
-            except asyncio.CancelledError:
-                STORE.update_task(task_id, state="CANCELLED", stage_label="已取消")
+            sem = self._semaphore()
+            queued = sem.locked()
+            if queued:
+                STORE.update_task(task_id, state="QUEUED", stage_label="排队中…（已有任务在进行）")
                 t = STORE.get_task(task_id) or {}
-                emit(t.get("conversation_id", ""), "task.updated", {"task_id": task_id, "state": "CANCELLED"})
-                raise
-            except Exception as e:  # noqa: BLE001 — the boundary: nothing escapes un-persisted
-                import traceback
+                emit(t.get("conversation_id", ""), "task.updated", {"task_id": task_id, "state": "QUEUED", "stage_label": "排队中…（已有任务在进行）"})
+            async with sem:
+                try:
+                    await coro
+                except asyncio.CancelledError:
+                    STORE.update_task(task_id, state="CANCELLED", stage_label="已取消")
+                    t = STORE.get_task(task_id) or {}
+                    emit(t.get("conversation_id", ""), "task.updated", {"task_id": task_id, "state": "CANCELLED"})
+                    raise
+                except Exception as e:  # noqa: BLE001 — the boundary: nothing escapes un-persisted
+                    import traceback
 
-                log.error_ctx("conversation pipeline crashed", task_id=task_id, error=traceback.format_exc()[-800:])
-                code = str(getattr(e, "code", "PIPELINE_ERROR"))
-                t = STORE.get_task(task_id) or {}
-                cid = t.get("conversation_id", "")
-                STORE.update_task(
-                    task_id,
-                    state="FAILED",
-                    error_code=code,
-                    error_message=str(e)[:500],
-                    stage_label="遇到问题",
-                )
-                # user-facing failure copy in the chat itself — never a traceback (UAT-16)
-                from app.agent.conversation_orchestrator import ERROR_COPY
-                from app.ui.status_mapper import ERROR_MAP
+                    log.error_ctx("conversation pipeline crashed", task_id=task_id, error=traceback.format_exc()[-800:])
+                    code = str(getattr(e, "code", "PIPELINE_ERROR"))
+                    t = STORE.get_task(task_id) or {}
+                    cid = t.get("conversation_id", "")
+                    STORE.update_task(
+                        task_id,
+                        state="FAILED",
+                        error_code=code,
+                        error_message=str(e)[:500],
+                        stage_label="遇到问题",
+                    )
+                    # user-facing failure copy in the chat itself — never a traceback (UAT-16)
+                    from app.agent.conversation_orchestrator import ERROR_COPY
+                    from app.ui.status_mapper import ERROR_MAP
 
-                STORE.add_message(cid, "assistant", ERROR_MAP.get(code) or ERROR_COPY.get(code, "处理你的请求时遇到问题，请重试或换个说法。"), task_id=task_id)
-                emit(cid, "task.failed", {"task_id": task_id, "state": "FAILED", "error_code": code, "error_message": str(e)[:300]})
-            finally:
-                self._tasks.pop(task_id, None)
+                    STORE.add_message(cid, "assistant", ERROR_MAP.get(code) or ERROR_COPY.get(code, "处理你的请求时遇到问题，请重试或换个说法。"), task_id=task_id)
+                    emit(cid, "task.failed", {"task_id": task_id, "state": "FAILED", "error_code": code, "error_message": str(e)[:300]})
+                finally:
+                    self._tasks.pop(task_id, None)
 
         t = asyncio.create_task(_supervised())
         self._tasks[task_id] = t
@@ -82,7 +106,7 @@ class ConversationTaskManager:
         n = 0
         for cid in [c["conversation_id"] for c in STORE.list_conversations(500)]:
             for t in STORE.list_tasks(cid):
-                if t["state"] in ("UNDERSTANDING", "PLANNING", "SEARCHING", "COLLECTING", "PROCESSING", "BUILDING") and t["task_id"] not in self._tasks:
+                if t["state"] in ("QUEUED", "UNDERSTANDING", "PLANNING", "SEARCHING", "COLLECTING", "PROCESSING", "BUILDING") and t["task_id"] not in self._tasks:
                     STORE.update_task(t["task_id"], state="FAILED", error_code="FAILED_INTERRUPTED", error_message="服务重启，任务被中断。请重试。", stage_label="已中断")
                     n += 1
         return n

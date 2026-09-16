@@ -191,7 +191,10 @@ class DownloadManager:
             content = fh.read(65536)
         # content sniffing (A17): HTML masquerading as data file
         suffix = file_path.suffix.lower()
-        if suffix in (".csv", ".tsv", ".zip", ".xlsx", ".parquet", ".dta", ".sav", ".json") and looks_like_html(content):
+        # A17 content-first guard: an HTML payload is never valid tabular data,
+        # whatever the suffix (or lack of one — extensionless descriptor files
+        # from portal-page source_urls would otherwise slip into raw/).
+        if suffix != ".html" and looks_like_html(content):
             job["status"] = DownloadJobStatus.INVALID_CONTENT
             job["error_code"] = "INVALID_DOWNLOAD_CONTENT"
             job["error_message"] = "downloaded file looks like an HTML page (login/error), not the claimed data format"

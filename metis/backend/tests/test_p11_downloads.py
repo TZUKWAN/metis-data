@@ -7,10 +7,12 @@ from pathlib import Path
 
 import pytest
 
+from app.db.repository import REPO
+from app.downloads.service import MANAGER
+
 
 def test_download_requires_job(temp_workspace):
     from app.core.errors import MetisError
-    from app.downloads.service import MANAGER
 
     with pytest.raises(MetisError) as e:
         asyncio.run(MANAGER.http_download("http://127.0.0.1:1/x.csv"))
@@ -46,6 +48,24 @@ def test_html_disguised_rejected(temp_workspace, fixture_server):
     assert e.value.code == "INVALID_DOWNLOAD_CONTENT"
     saved = MANAGER.raw_checksum_snapshot()
     assert not any("login_page_disguised" in k for k in saved)
+
+
+def test_extensionless_html_rejected(temp_workspace, tmp_path):
+    """A17 content-first: extensionless portal-page payloads never reach raw/.
+
+    Regression: an OECD descriptor once named a file after the portal URL
+    (no suffix) — the suffix-scoped sniff let the HTML page commit into raw/.
+    """
+    from app.core.errors import MetisError
+    from app.downloads.service import MANAGER
+
+    p = tmp_path / "data-explorer.oecd.org"  # deliberately no suffix
+    p.write_text("<!doctype html><html><body>login</body></html>", encoding="utf-8")
+    job = MANAGER.create_job("oecd", "DSD_X", "https://data-explorer.oecd.org")
+    with pytest.raises(MetisError) as e:
+        asyncio.run(MANAGER._verify_and_commit(p, REPO.get_download_job(job.download_job_id), p.stat().st_size))
+    assert e.value.code == "INVALID_DOWNLOAD_CONTENT"
+    assert not any("DSD_X" in k for k in MANAGER.raw_checksum_snapshot())
 
 
 def test_safe_extraction(temp_workspace, fixture_server):

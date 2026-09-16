@@ -321,15 +321,31 @@ class OecdAdapter(ProviderAdapter):
     async def get_access_requirements(self, dataset_ref: str) -> dict:
         return {"access_mode": "PUBLIC_ANONYMOUS_API", "requires_login": False, "restricted": False, "license": "OECD-OPEN", "notes": "SDMX CSV download"}
 
+    @staticmethod
+    def _sdmx_csv_url(dataset_ref: str, access_context: dict | None = None) -> tuple[str, str]:
+        """dataflow ref → (SDMX CSV url, safe filename). Never the explorer page."""
+        agency, fid = (dataset_ref.split(":") + [""])[:2] if ":" in dataset_ref else ("OECD.SDD.TPS", dataset_ref)
+        safe = "".join(c if c.isalnum() or c in "_-." else "_" for c in fid)[:80] or "dataset"
+        url = f"https://sdmx.oecd.org/public/rest/data/{agency},{fid},latest/?startPeriod={(access_context or {}).get('start','2010')}&format=csvfilewithlabels"
+        return url, f"oecd_{safe}.csv"
+
+    async def build_acquisition_descriptor(self, dataset_ref: str, access_context: dict | None = None):
+        """v2: describe the real SDMX CSV endpoint — the base default would use the
+        data-explorer portal page as the direct URL (an HTML page, not data)."""
+        from app.providers.download_helper import AcquisitionDescriptor
+
+        url, filename = self._sdmx_csv_url(dataset_ref, access_context)
+        cand = await self.get_dataset_metadata(dataset_ref)
+        return AcquisitionDescriptor(url=url, filename=filename, expected_type="csv", license=cand.license)
+
     async def acquire_dataset(self, dataset_ref: str, dest_dir, access_context: dict | None = None) -> list[str]:
         from pathlib import Path
 
-        agency, fid = (dataset_ref.split(":") + [""])[:2] if ":" in dataset_ref else ("OECD.SDD.TPS", dataset_ref)
-        url = f"https://sdmx.oecd.org/public/rest/data/{agency},{fid},latest/?startPeriod={(access_context or {}).get('start','2010')}&format=csvfilewithlabels"
+        url, filename = self._sdmx_csv_url(dataset_ref, access_context)
         r = await get(url, timeout=240, max_retries=1)
         if r.status != 200:
             raise RuntimeError(f"oecd data HTTP {r.status}")
-        p = Path(dest_dir) / f"oecd_{fid}.csv"
+        p = Path(dest_dir) / filename
         write_small_payload(p, r.content)
         return [str(p)]
 
@@ -372,6 +388,15 @@ class UnComtradeAdapter(ProviderAdapter):
 
     async def get_access_requirements(self, dataset_ref: str) -> dict:
         return {"access_mode": "PUBLIC_ANONYMOUS_API", "requires_login": False, "restricted": False, "license": "UN-OPEN", "notes": "public preview API; full API needs free subscription key"}
+
+    async def build_acquisition_descriptor(self, dataset_ref: str, access_context: dict | None = None):
+        """v2: the comtrade preview API is the real data endpoint — never the portal page."""
+        from app.providers.download_helper import AcquisitionDescriptor
+
+        year = dataset_ref.rsplit("_", 1)[-1]
+        reporter = (access_context or {}).get("reporterCode", "156")
+        url = f"https://comtradeapi.un.org/public/v1/preview/C/A/HS?reporterCode={reporter}&period={year}&cmdCode=TOTAL&flowCode=X"
+        return AcquisitionDescriptor(url=url, filename=f"un_comtrade_{reporter}_{year}.json", expected_type="json", license="UN-OPEN")
 
     async def acquire_dataset(self, dataset_ref: str, dest_dir, access_context: dict | None = None) -> list[str]:
         from pathlib import Path
