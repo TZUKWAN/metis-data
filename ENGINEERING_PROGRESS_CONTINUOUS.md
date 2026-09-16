@@ -107,3 +107,35 @@ production 零 import。接线到 Result API。
   槽满时任务持久化 QUEUED「排队中…」，重启 reconcile 覆盖 QUEUED 幽灵；测试 4 连跑稳定
 
 验证: 全量 205 passed / 0 failed（新增 2 个任务管理器测试 + 1 个无扩展名 HTML 回归测试）
+
+## Round 5 · 全产品模拟用户验收（Computer Use 真实操作 + 侧边浏览器真实 UI）
+
+覆盖模块（清单见 metis/artifacts/final-closure/uat-manual/TESTPLAN.md）：
+1. 启动链路（真实 Electron：启动屏→自动拉起后端→UI→连接绿点）
+2. 顶栏（连接点/新会话/设置）
+3. 输入区：空值禁用、纯空格禁用、Enter 发送+清空、Shift+Enter 换行不发送、
+   2500 字超长输入、纯符号输入、快速连续提交
+4. 任务生命周期：异步状态条即时出现、阶段文案、进度条、单任务取消、
+   多任务并行+批量取消（2×CANCELLED）
+5. 结果卡：计数头、状态徽标、预览(FOUND metadata)/返回、下载→READY（同 result_id）、
+   READY 真实数据预览(17424 行×10 列)、CSV 2.5MB/XLSX 578KB 导出
+6. 刷新恢复（消息+结果+READY 状态全恢复）、新会话隔离（UI 清空+服务端数据保留）
+7. 设置弹窗（登录列表/隐私/关闭）、调试抽屉开合（Ctrl+Shift+D）
+8. 探索性：运行中发消息、符号/超长/重复输入、连续预览开关、建议按钮
+9. 持续观测：591 个请求 0 个 4xx/5xx、0 ERROR 日志、页面 0 JS 错误
+
+发现并修复：
+- UAT-BUG-01 (P1) 任务运行中新消息被静默丢弃（sending 锁持有至整条管线结束）
+  根因修复：移除跨消息锁；同文本防抖由立即清空输入承担；过载由后端 QUEUED 门承担
+  回归：conversation 套件 20 passed；实时 UI 验证 3 并行任务+逐个停止
+- （伪影排除）符号消息"双发"系测试脚本重试所致，非产品缺陷
+
+不可自然达路径（由确定性测试覆盖）：
+- Auth 弹窗/浏览器监视：需"登录来源候选"，真实搜索当前只返回公开 API 源；
+  覆盖于 tests/test_conversation_product.py（intervention 创建/probe 失败保持等待/
+  登录后自动续传 READY）+ 架构不变量 + Electron UAT 15/15
+
+环境约束（非产品问题）：
+- 桌面被用户活跃使用（同名应用切换/窗口被关闭），Electron 突刺式验收仅完成
+  启动链路+真实键鼠输入发送；其余 UI 交互在 ZCode 侧边浏览器对同一真实
+  后端+UI 完成（用户此前明确要求的测试通道）
