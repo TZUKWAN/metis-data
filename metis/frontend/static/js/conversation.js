@@ -29,12 +29,13 @@ export function initConversation() {
   composer.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = input.value.trim();
-    if (!text || state.sending) return;
-    state.sending = true;
+    if (!text) return;
+    // clearing the input immediately is the double-submit guard for the SAME text;
+    // distinct messages may run concurrently — the backend queues beyond its limit
     input.value = "";
     input.style.height = "auto";
     send.disabled = true;
-    sendMessage(text).finally(() => { state.sending = false; send.disabled = !!input.value.trim() === false; });
+    sendMessage(text).finally(() => { send.disabled = !input.value.trim(); });
   });
 
   document.querySelectorAll(".suggestion").forEach(btn => {

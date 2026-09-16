@@ -9,7 +9,6 @@ export const state = {
   interventions: [],
   connection: "connecting",
   polling: null,
-  sending: false,
   ws: null,
 };
 
