@@ -92,3 +92,18 @@ production 零 import。接线到 Result API。
 - Round A 功能链: 产品 E2E 18/18 + Electron UAT 15/15 + 真实 dogfood 全链 ✓
 - Round B 故障/恢复: 失败收敛测试、probe 失败保持等待、取消、重启 reconcile、会话隔离 ✓
 - Round C UX/视觉: 多分辨率截图 + 人工审查 + 无 alert/无内部 ID/毛玻璃克制 ✓
+
+## Round 4 · 后续迭代（OECD/Comtrade adapter 修复 + 大文件路径 + 并发上限）
+
+- ISSUE-401 (P1) 基类默认 descriptor 把门户页 source_url 当直链：OECD 下载物实为
+  174KB 的 data-explorer HTML 页且已提交进 raw/（无扩展名绕过后缀嗅探）
+  Fix 1: DownloadManager 内容优先守卫 — 任何非 .html 文件若内容为 HTML → INVALID_DOWNLOAD_CONTENT，
+  永不进 raw/（v2 失败自动落 legacy 正确路径）
+  Fix 2: OecdAdapter/UnComtradeAdapter 补 build_acquisition_descriptor 精确化
+  （SDMX csvfilewithlabels / comtrade preview API，带安全文件名与扩展名）
+- ISSUE-402 (P2) 大文件路径确认：OECD 走新 v2 descriptor → stream_to_file 有界流式；
+  legacy 小载荷仍受 32MB SMALL_PAYLOAD_CAP 保护，超限诚实报 DOWNLOAD_TOO_LARGE
+- ISSUE-403 (P2) 会话管线并发上限：METIS_CONVERSATION_MAX_CONCURRENCY（默认 3），
+  槽满时任务持久化 QUEUED「排队中…」，重启 reconcile 覆盖 QUEUED 幽灵；测试 4 连跑稳定
+
+验证: 全量 205 passed / 0 failed（新增 2 个任务管理器测试 + 1 个无扩展名 HTML 回归测试）
